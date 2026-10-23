@@ -1,20 +1,28 @@
 "use client";
 
-import { Info, Map, Plus, SquareStack } from "lucide-react";
+import { Info, Map, Plus, ShieldCheck, SquareStack } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AppView = "map" | "list" | "add" | "about";
+export type AppView = "map" | "list" | "add" | "about" | "admin";
 
 type BottomNavProps = {
   view: AppView;
   onChange: (view: AppView) => void;
 };
 
-const items: Array<{ id: AppView; label: string; icon: typeof Map }> = [
+type NavItem = { id: AppView; label: string; icon: typeof Map; ariaLabel?: string };
+
+const items: NavItem[] = [
   { id: "map", label: "Explorar", icon: Map },
   { id: "list", label: "Lugares", icon: SquareStack },
   { id: "add", label: "Agregar", icon: Plus },
   { id: "about", label: "Guía", icon: Info },
+  {
+    id: "admin",
+    label: "Admin",
+    icon: ShieldCheck,
+    ariaLabel: "Abrir panel de administración",
+  },
 ];
 
 /** Barra de navegación inferior estilo app móvil (footer fijo con safe-area). */
@@ -47,9 +55,15 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
             <Plus className="h-7 w-7" strokeWidth={2.6} aria-hidden />
           </button>
         </li>
-        {items.slice(2).map(({ id, label, icon: Icon }) => (
+        {/* El FAB cubre "add"; aquí van solo las vistas restantes (2 + FAB + 2 = 5). */}
+        {items.slice(3).map(({ id, label, icon: Icon, ariaLabel }) => (
           <li key={id} className="flex justify-center">
-            <NavButton active={view === id} label={label} onClick={() => onChange(id)}>
+            <NavButton
+              active={view === id}
+              label={label}
+              onClick={() => onChange(id)}
+              ariaLabel={ariaLabel}
+            >
               <Icon className="h-[22px] w-[22px]" aria-hidden />
             </NavButton>
           </li>
@@ -63,17 +77,20 @@ function NavButton({
   active,
   label,
   onClick,
+  ariaLabel,
   children,
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
+  ariaLabel?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label={ariaLabel}
       aria-current={active ? "page" : undefined}
       className={cn(
         "flex min-h-[44px] w-full min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[11px] font-semibold transition-colors",

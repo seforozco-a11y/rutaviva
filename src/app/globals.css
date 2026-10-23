@@ -242,4 +242,21 @@ section[data-radix-toast-viewport] {
   z-index: 1200 !important;
 }
 
+/* Dialogs y AlertDialog (lightbox de fotos, panel admin) por encima del drawer;
+   select y dropdown por encima de sus dialogs */
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-overlay"] {
+  z-index: 1300 !important;
+}
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"] {
+  z-index: 1301 !important;
+}
+[data-slot="select-content"] {
+  z-index: 1400 !important;
+}
+[data-slot="dropdown-menu-content"] {
+  z-index: 1350 !important;
+}
+
 /* fin de estilos RutaViva */

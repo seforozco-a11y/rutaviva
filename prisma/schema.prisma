@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,26 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Lugares "singulares" (patrimonio, miradores, gastronomía, naturaleza, etc.)
-// Escalable: se agregan desde el panel/formulario sin tocar código.
+// Lugares "singulares" (playas, miradores, gastronomía, naturaleza, etc.).
+// Escalable: se agregan desde el panel admin o por sugerencias de usuarios,
+// sin tocar código. El campo `status` alimenta el flujo de moderación:
+//   PENDING  → enviada por un usuario, esperando validación del admin
+//   APPROVED → publicada en la app (visible en mapa/lista/detalle)
+//   REJECTED → descartada tras revisión
 model SingularPlace {
   id          String   @id @default(cuid())
   name        String
@@ -45,9 +25,52 @@ model SingularPlace {
   tips        String?
   featured    Boolean  @default(false)
   active      Boolean  @default(true)
+  status      String   @default("APPROVED") // PENDING | APPROVED | REJECTED
+  source      String   @default("ADMIN") // ADMIN | USER
+  suggestedBy String? // nombre del usuario que sugirió (si source = USER)
+  city        String   @default("Manzanillo")
+  state       String   @default("Colima")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  reviews Review[]
+  photos  Photo[]
+
   @@index([category])
   @@index([active])
+  @@index([status])
+}
+
+// Reseñas escritas por usuarios. Pasan por validación del admin antes de
+// publicarse (status PENDING → APPROVED / REJECTED).
+model Review {
+  id         String        @id @default(cuid())
+  placeId    String
+  place      SingularPlace @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  authorName String
+  rating     Int // 1..5
+  comment    String
+  status     String        @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt  DateTime      @default(now())
+
+  photos Photo[]
+
+  @@index([placeId])
+  @@index([status])
+}
+
+// Fotos: de reseñas de usuarios o de sugerencias de lugares (portada).
+// Las fotos de usuarios también se validan junto con su contenido.
+model Photo {
+  id        String         @id @default(cuid())
+  url       String // data URL (upload comprimido) o ruta /images/...
+  placeId   String?
+  place     SingularPlace? @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  reviewId  String?
+  review    Review?        @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  status    String         @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt DateTime       @default(now())
+
+  @@index([placeId])
+  @@index([reviewId])
 }

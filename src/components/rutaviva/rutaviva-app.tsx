@@ -9,9 +9,10 @@ import { PlacesList } from "./places-list";
 import { AddPlaceForm } from "./add-place-form";
 import { AboutPanel } from "./about-panel";
 import { PlaceDetailSheet } from "./place-detail-sheet";
+import { AdminPanel } from "./admin/admin-panel";
 import { fetchNearbyPlaces, clearNearbyCache } from "@/lib/nearby-client";
 import { useToast } from "@/hooks/use-toast";
-import { COMMON_TYPES, categoryLabel } from "@/lib/geo";
+import { COMMON_TYPES } from "@/lib/geo";
 import type {
   Coordinates,
   NearbyPlaceDTO,
@@ -24,17 +25,6 @@ const ONBOARD_KEY = "rutaviva:onboarded";
 
 // Punto de respaldo: Centro Histórico de Manzanillo, Colima
 const DEMO_POINT: Coordinates = { lat: 19.0536, lng: -104.3149 };
-
-function haversine(a: Coordinates, b: Coordinates): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const la1 = (a.lat * Math.PI) / 180;
-  const la2 = (b.lat * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
 
 export function RutavivaApp() {
   const { toast } = useToast();
@@ -215,28 +205,16 @@ export function RutavivaApp() {
     setView("splash");
   }, []);
 
-  // ---- Alta de lugar singular ----
-  const handleCreated = useCallback(
-    (place: SingularPlaceDTO) => {
-      toast({
-        title: "¡Lugar publicado!",
-        description: `${place.name} ya aparece en el mapa para todos.`,
-      });
-      const dto: SingularPlaceDTO = {
-        ...place,
-        categoryLabel: categoryLabel(place.category),
-        distanceKm: origin ? haversine(origin, { lat: place.lat, lng: place.lng }) : null,
-      };
-      // Mostrar de inmediato y refrescar en segundo plano
-      queryClient.setQueryData<SingularPlaceDTO[]>(
-        ["places", origin?.lat ?? null, origin?.lng ?? null],
-        (prev) => (prev ? [dto, ...prev] : [dto])
-      );
-      queryClient.invalidateQueries({ queryKey: ["places"] });
-      flyTo({ lat: place.lat, lng: place.lng }, 16);
-    },
-    [toast, queryClient, flyTo, origin]
-  );
+  // ---- Sugerencia de lugar (entra PENDING a la cola del admin) ----
+  const handleSuggested = useCallback(() => {
+    toast({
+      title: "¡Sugerencia enviada a revisión!",
+      description:
+        "El equipo RutaViva la validará antes de publicarla. ¡Gracias por sumar!",
+    });
+  }, [toast]);
+
+  const handleSuggestionDone = useCallback(() => setView("map"), []);
 
   const handleRetryNearby = useCallback(() => {
     clearNearbyCache();
@@ -299,7 +277,16 @@ export function RutavivaApp() {
             )}
             {view === "add" && (
               <div className="rv-scroll absolute inset-0 overflow-y-auto bg-gradient-to-b from-emerald-50/60 to-background">
-                <AddPlaceForm origin={origin} onCreated={handleCreated} />
+                <AddPlaceForm
+                  origin={origin}
+                  onSuggested={handleSuggested}
+                  onDone={handleSuggestionDone}
+                />
+              </div>
+            )}
+            {view === "admin" && (
+              <div className="rv-scroll absolute inset-0 overflow-y-auto bg-gradient-to-b from-stone-50 to-background">
+                <AdminPanel origin={origin} />
               </div>
             )}
             {view === "about" && (
@@ -308,7 +295,7 @@ export function RutavivaApp() {
               </div>
             )}
           </main>
-          <BottomNav view={view === "splash" ? "map" : view} onChange={(v) => setView(v)} />
+          <BottomNav view={view} onChange={(v) => setView(v)} />
         </>
       )}
 

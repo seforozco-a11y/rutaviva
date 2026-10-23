@@ -15,6 +15,8 @@ export type SingularPlaceDTO = {
   tips: string | null;
   featured: boolean;
   distanceKm: number | null;
+  ratingAvg: number | null;
+  ratingCount: number;
   createdAt: string;
 };
 
@@ -25,6 +27,38 @@ export type NearbyPlaceDTO = {
   lng: number;
   type: string;
   distanceKm: number;
+};
+
+/** Reseña pública (ya validada por el equipo RutaViva). */
+export type PublicReviewDTO = {
+  id: string;
+  authorName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  photos: Array<{ id: string; url: string }>;
+};
+
+/** Respuesta de GET /api/places/[id]. */
+export type PlaceDetailResponse = {
+  place: {
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    categoryLabel: string;
+    lat: number;
+    lng: number;
+    address: string | null;
+    imageUrl: string | null;
+    tips: string | null;
+    featured: boolean;
+    city: string;
+    state: string;
+    ratingAvg: number | null;
+    ratingCount: number;
+  };
+  reviews: PublicReviewDTO[];
 };
 
 /** Detalle unificado para el bottom-sheet. */

@@ -178,6 +178,15 @@ export function PlacesList({
                       <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
                         {p.categoryLabel}
                       </Badge>
+                      {p.ratingCount > 0 && (
+                        <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+                          <Star
+                            className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
+                            aria-hidden
+                          />
+                          {(p.ratingAvg ?? 0).toFixed(1)} ({p.ratingCount})
+                        </span>
+                      )}
                       {p.distanceKm != null && (
                         <span className="text-xs font-semibold text-emerald-700">
                           a {formatDistance(p.distanceKm)}

@@ -1,6 +1,16 @@
 "use client";
 
-import { BookOpen, Database, Globe2, ImagePlay, MapPinned, Smartphone, Star } from "lucide-react";
+import {
+  BookOpen,
+  Database,
+  Globe2,
+  ImagePlay,
+  MapPinned,
+  ShieldCheck,
+  Smartphone,
+  Star,
+  UserPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { COMMON_TYPES, SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { SingularPlaceDTO } from "@/lib/place-types";
@@ -30,6 +40,43 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
         <Stat value={String(places.length)} label="Lugares singulares" />
         <Stat value={String(categoriesUsed)} label="Categorías activas" />
         <Stat value={String(COMMON_TYPES.length)} label="Servicios en vivo" />
+      </section>
+
+      {/* Flujo de publicación */}
+      <section
+        aria-label="Cómo funciona la publicación"
+        className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm"
+      >
+        <h2 className="flex items-center gap-2 text-sm font-bold text-stone-800">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <ShieldCheck className="h-4 w-4" aria-hidden />
+          </span>
+          ¿Cómo funciona la publicación?
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-stone-500">
+          Los viajeros sugieren lugares, reseñas y fotos → el equipo RutaViva las revisa → solo
+          lo validado se publica en la app.
+        </p>
+        <ol className="mt-3 space-y-2.5">
+          <PublishStep
+            n={1}
+            icon={UserPlus}
+            title="Sugieres"
+            text="Envías lugares y reseñas con tus fotos desde la app; todo entra a revisión."
+          />
+          <PublishStep
+            n={2}
+            icon={ShieldCheck}
+            title="Validamos"
+            text="Previo estudio, el equipo RutaViva revisa cada aporte con los formatos de publicación."
+          />
+          <PublishStep
+            n={3}
+            icon={MapPinned}
+            title="Se publica"
+            text="Lo aprobado aparece en el mapa y en las reseñas del lugar, para toda la comunidad."
+          />
+        </ol>
       </section>
 
       <div className="space-y-3">
@@ -91,6 +138,36 @@ function Stat({ value, label }: { value: string; label: string }) {
       <p className="text-2xl font-black text-emerald-700">{value}</p>
       <p className="mt-0.5 text-[11px] font-medium leading-tight text-stone-500">{label}</p>
     </div>
+  );
+}
+
+function PublishStep({
+  n,
+  icon: Icon,
+  title,
+  text,
+}: {
+  n: number;
+  icon: typeof Database;
+  title: string;
+  text: string;
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        aria-hidden
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-black text-white"
+      >
+        {n}
+      </span>
+      <div>
+        <p className="flex items-center gap-1.5 text-sm font-bold text-stone-800">
+          <Icon className="h-4 w-4 text-emerald-600" aria-hidden />
+          {title}
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-stone-500">{text}</p>
+      </div>
+    </li>
   );
 }
 
