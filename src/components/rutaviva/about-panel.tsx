@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Database, Globe2, ImagePlay, Smartphone, Star } from "lucide-react";
+import { BookOpen, Database, Globe2, ImagePlay, MapPinned, Smartphone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { COMMON_TYPES, SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { SingularPlaceDTO } from "@/lib/place-types";
@@ -18,7 +18,7 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
       <header className="space-y-1">
         <h1 className="text-2xl font-black tracking-tight text-stone-800">Guía de la app</h1>
         <p className="text-sm text-stone-500">
-          RutaViva es tu guía turística local: lugares singulares + servicios esenciales.
+          RutaViva es tu guía turística de Manzanillo: lugares singulares + servicios esenciales.
         </p>
       </header>
 
@@ -39,6 +39,11 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
           text="Los lugares singulares viven en una base de datos (Prisma + SQLite, migre a Postgres cuando quieras). Agrega lugares desde el botón + sin tocar código, o conecta un panel de administración con roles."
         />
         <InfoCard
+          icon={MapPinned}
+          title="De Manzanillo a todo Colima"
+          text="Arrancamos en Manzanillo. Siguientes paradas: Armería y Tecomán en la costa; luego Colima, Comala, Villa de Álvarez, Coquimatlán, Cuauhtémoc, Ixtlahuacán y Minatitlán. Cada municipio llega con su propio catálogo de lugares singulares, sin cambiar una línea de código."
+        />
+        <InfoCard
           icon={Globe2}
           title="Datos abiertos en vivo"
           text="Farmacias, gasolineras, tiendas, cajeros y más provienen de OpenStreetMap (Overpass API): gratis, sin API key y siempre actualizados por la comunidad. Si mañana agregas una categoría nueva, solo añades su filtro."
@@ -51,7 +56,7 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
         <InfoCard
           icon={ImagePlay}
           title="Categorías ampliables"
-          text={`Hoy: ${SINGULAR_CATEGORIES.map((c) => c.label).join(", ")}. Nuevas categorías (playas, ruinas, vida nocturna…) son un cambio pequeño en el catálogo.`}
+          text={`Hoy: ${SINGULAR_CATEGORIES.map((c) => c.label).join(", ")}. Nuevas categorías (lanchas, ruinas, vida nocturna…) son un cambio pequeño en el catálogo.`}
         />
         <InfoCard
           icon={BookOpen}

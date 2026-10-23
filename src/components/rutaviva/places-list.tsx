@@ -28,6 +28,8 @@ type PlacesListProps = {
   nearby: NearbyPlaceDTO[];
   nearbyLoading: boolean;
   nearbyError: string | null;
+  tab: "singulares" | "servicios";
+  onTabChange: (tab: "singulares" | "servicios") => void;
   onFlyTo: (c: Coordinates) => void;
   onSelect: (d: PlaceDetail) => void;
   onRetryPlaces: () => void;
@@ -42,12 +44,13 @@ export function PlacesList({
   nearby,
   nearbyLoading,
   nearbyError,
+  tab,
+  onTabChange,
   onFlyTo,
   onSelect,
   onRetryPlaces,
   onRetryNearby,
 }: PlacesListProps) {
-  const [tab, setTab] = useState<"singulares" | "servicios">("singulares");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
 
@@ -96,7 +99,7 @@ export function PlacesList({
             type="button"
             role="tab"
             aria-selected={tab === id}
-            onClick={() => setTab(id)}
+            onClick={() => onTabChange(id)}
             className={
               "min-h-[40px] rounded-xl text-sm font-bold transition " +
               (tab === id

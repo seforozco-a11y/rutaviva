@@ -43,5 +43,5 @@ export type PlaceDetail = {
   imageUrl?: string | null;
 };
 
-/** Punto de respaldo (Zócalo, CDMX) si el GPS se deniega o no está disponible. */
-export const DEMO_ORIGIN: Coordinates = { lat: 19.4326, lng: -99.1332 };
+/** Punto de respaldo (Centro Histórico de Manzanillo, Colima) si el GPS se deniega o no está disponible. */
+export const DEMO_ORIGIN: Coordinates = { lat: 19.0536, lng: -104.3149 };

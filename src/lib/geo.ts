@@ -34,13 +34,14 @@ export function directionsUrl(dest: Coordinates, label?: string): string {
 
 /** Categorías de lugares singulares (extensible desde la base de datos). */
 export const SINGULAR_CATEGORIES = [
-  { id: "monumento", label: "Monumento" },
-  { id: "museo", label: "Museo" },
-  { id: "mirador", label: "Mirador" },
-  { id: "plaza", label: "Plaza histórica" },
-  { id: "parque", label: "Parque" },
-  { id: "gastronomia", label: "Gastronomía" },
+  { id: "playa", label: "Playa" },
   { id: "naturaleza", label: "Naturaleza" },
+  { id: "mirador", label: "Mirador" },
+  { id: "monumento", label: "Monumento" },
+  { id: "plaza", label: "Plaza histórica" },
+  { id: "gastronomia", label: "Gastronomía" },
+  { id: "museo", label: "Museo" },
+  { id: "parque", label: "Parque" },
   { id: "cultura", label: "Cultura" },
   { id: "otro", label: "Otro" },
 ] as const;

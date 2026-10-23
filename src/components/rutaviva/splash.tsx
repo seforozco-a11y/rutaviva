@@ -17,11 +17,17 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
       aria-label="Portada de RutaViva"
       className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-teal-800 text-emerald-50"
     >
-      {/* Decoración */}
+      {/* Fondo fotográfico de Manzanillo + velo para legibilidad */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl" />
-        <div className="absolute top-1/3 -left-28 h-80 w-80 rounded-full bg-lime-400/15 blur-3xl" />
-        <div className="absolute -bottom-28 right-1/4 h-80 w-80 rounded-full bg-teal-300/20 blur-3xl" />
+        <Image
+          src="/hero-manzanillo.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/85 via-emerald-950/75 to-teal-900/90" />
         <div className="absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:22px_22px]" />
       </div>
 
@@ -55,7 +61,7 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
         >
           <p className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium tracking-wide text-amber-200">
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
-            Tu ciudad, como nunca la habías visto
+            Disponible hoy en Manzanillo, Colima
           </p>
           <h1 className="text-5xl font-black tracking-tight">
             Ruta
@@ -65,7 +71,7 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
           </h1>
           <p className="mx-auto max-w-sm text-balance text-sm leading-relaxed text-emerald-100/85 sm:text-base">
             Descubre los <strong className="font-semibold text-white">lugares singulares</strong> de
-            tu alrededor — miradores, plazas, sabor local — y encuentra todo lo esencial: farmacias,
+            Manzanillo — playas, miradores, sabor local — y encuentra todo lo esencial: farmacias,
             gasolineras, tiendas y más.
           </p>
         </motion.div>
@@ -131,7 +137,7 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
             className="h-11 w-full rounded-2xl border border-white/20 text-sm font-semibold text-emerald-100 hover:bg-white/10 hover:text-white"
           >
             <MapPin className="h-4 w-4" aria-hidden />
-            Entrar con ubicación demo (CDMX)
+            Explorar Manzanillo (ubicación demo)
           </Button>
         </motion.div>
       </div>
@@ -139,8 +145,9 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
       {/* Pie de portada */}
       <footer className="relative px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center">
         <p className="text-[11px] leading-relaxed text-emerald-200/70">
-          Disponible hoy para <span className="font-semibold text-amber-200">Android</span> · iOS
-          muy pronto · Datos de mapa de OpenStreetMap
+          Empezamos en <span className="font-semibold text-amber-200">Manzanillo</span> · Pronto en
+          todo Colima · <span className="font-semibold text-amber-200">Android</span> hoy, iOS muy
+          pronto · Datos de mapa de OpenStreetMap
         </p>
       </footer>
     </section>

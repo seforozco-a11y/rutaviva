@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Splash } from "./splash";
 import { BottomNav, type AppView } from "./bottom-nav";
 import { MapView, type MapFilter } from "./map-view";
@@ -9,9 +9,9 @@ import { PlacesList } from "./places-list";
 import { AddPlaceForm } from "./add-place-form";
 import { AboutPanel } from "./about-panel";
 import { PlaceDetailSheet } from "./place-detail-sheet";
-import { fetchNearbyPlaces } from "@/lib/nearby-client";
+import { fetchNearbyPlaces, clearNearbyCache } from "@/lib/nearby-client";
 import { useToast } from "@/hooks/use-toast";
-import { categoryLabel } from "@/lib/geo";
+import { COMMON_TYPES, categoryLabel } from "@/lib/geo";
 import type {
   Coordinates,
   NearbyPlaceDTO,
@@ -22,8 +22,8 @@ import type { MapFocus } from "./map-canvas";
 
 const ONBOARD_KEY = "rutaviva:onboarded";
 
-// Punto de respaldo: Zócalo, CDMX
-const DEMO_POINT: Coordinates = { lat: 19.4326, lng: -99.1332 };
+// Punto de respaldo: Centro Histórico de Manzanillo, Colima
+const DEMO_POINT: Coordinates = { lat: 19.0536, lng: -104.3149 };
 
 function haversine(a: Coordinates, b: Coordinates): number {
   const R = 6371;
@@ -36,11 +36,6 @@ function haversine(a: Coordinates, b: Coordinates): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function clearNearbyClientCache() {
-  const g = globalThis as unknown as { __rvNearbyCache?: Map<string, unknown> };
-  g.__rvNearbyCache?.clear();
-}
-
 export function RutavivaApp() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -51,6 +46,7 @@ export function RutavivaApp() {
   const [originSource, setOriginSource] = useState<"gps" | "demo" | null>(null);
   const [locating, setLocating] = useState(false);
   const [filter, setFilter] = useState<MapFilter>("singulares");
+  const [listTab, setListTab] = useState<"singulares" | "servicios">("singulares");
 
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const focusK = useRef(0);
@@ -69,15 +65,41 @@ export function RutavivaApp() {
     },
   });
 
-  const nearbyQuery = useQuery({
-    queryKey: ["nearby", filter, origin?.lat ?? null, origin?.lng ?? null],
-    queryFn: () => fetchNearbyPlaces(origin as Coordinates, filter),
-    enabled: filter !== "singulares" && origin !== null,
-    retry: 1,
+  // Una query por tipo de servicio: se activa con el filtro del mapa o con la
+  // pestaña Servicios de la lista. Nota: en TanStack v5 una query deshabilitada
+  // está "pending", por eso usamos isLoading (pending + fetching) para la UI.
+  const nearbyQueries = useQueries({
+    queries: COMMON_TYPES.map((t) => ({
+      queryKey: ["nearby", t.id, origin?.lat ?? null, origin?.lng ?? null],
+      queryFn: () => fetchNearbyPlaces(origin as Coordinates, t.id),
+      enabled:
+        origin !== null &&
+        (filter === t.id || (view === "list" && listTab === "servicios")),
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    })),
   });
 
+  const nearbyByType = new Map(
+    COMMON_TYPES.map((t, i) => [t.id, nearbyQueries[i]])
+  );
+
   const places = placesQuery.data ?? [];
-  const nearby = nearbyQuery.data ?? [];
+
+  // Datos para el mapa: solo el tipo seleccionado en el filtro.
+  const selectedNearby =
+    filter !== "singulares" ? nearbyByType.get(filter) : undefined;
+  const nearbyForMap = selectedNearby?.data ?? [];
+  const nearbyLoadingForMap = selectedNearby?.isLoading ?? false;
+
+  // Datos para la lista: todos los tipos juntos.
+  const allNearbyResults = COMMON_TYPES.map((t) => nearbyByType.get(t.id));
+  const nearbyForList = allNearbyResults.flatMap((r) => r?.data ?? []);
+  const nearbyLoadingForList = allNearbyResults.some(
+    (r) => r?.isLoading ?? false
+  );
+  const nearbyAllFailed =
+    allNearbyResults.length > 0 && allNearbyResults.every((r) => r?.isError);
 
   /** Centra el mapa en un punto (con vista de mapa activa). */
   const focusOn = useCallback((c: Coordinates, zoom = 15) => {
@@ -130,7 +152,7 @@ export function RutavivaApp() {
         if (!opts?.silent) {
           toast({
             title: "GPS no disponible",
-            description: "Usamos la ubicación demo (Centro de CDMX).",
+            description: "Usamos la ubicación demo (Centro de Manzanillo).",
           });
         }
         setOrigin(DEMO_POINT);
@@ -160,7 +182,7 @@ export function RutavivaApp() {
               variant: "destructive",
               title: "No pudimos usar tu GPS",
               description:
-                "Permiso denegado o no disponible. Activamos la ubicación demo (CDMX); puedes reintentar cuando quieras.",
+                "Permiso denegado o no disponible. Activamos la ubicación demo (Manzanillo); puedes reintentar cuando quieras.",
             });
           }
         },
@@ -217,18 +239,20 @@ export function RutavivaApp() {
   );
 
   const handleRetryNearby = useCallback(() => {
-    clearNearbyClientCache();
-    void nearbyQuery.refetch();
-  }, [nearbyQuery]);
+    clearNearbyCache();
+    queryClient.invalidateQueries({ queryKey: ["nearby"] });
+  }, [queryClient]);
 
   const placesError =
     placesQuery.error instanceof Error ? placesQuery.error.message : null;
-  const nearbyError =
-    nearbyQuery.error instanceof Error
-      ? nearbyQuery.error.message
-      : nearbyQuery.isError
-        ? "No pudimos consultar los servicios cercanos."
-        : null;
+  const nearbyError = selectedNearby?.error instanceof Error
+    ? selectedNearby.error.message
+    : selectedNearby?.isError
+      ? "No pudimos consultar los servicios cercanos."
+      : null;
+  const nearbyListError = nearbyAllFailed
+    ? "No pudimos consultar los servicios cercanos. Revisa tu conexión e intenta de nuevo."
+    : null;
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
@@ -242,8 +266,8 @@ export function RutavivaApp() {
                 origin={origin}
                 originSource={originSource}
                 places={places}
-                nearby={nearby}
-                nearbyLoading={nearbyQuery.isPending || nearbyQuery.isRefetching}
+                nearby={nearbyForMap}
+                nearbyLoading={nearbyLoadingForMap}
                 nearbyError={nearbyError}
                 filter={filter}
                 focus={focus}
@@ -261,9 +285,11 @@ export function RutavivaApp() {
                   places={places}
                   placesLoading={placesQuery.isPending}
                   placesError={placesError}
-                  nearby={nearby}
-                  nearbyLoading={nearbyQuery.isPending || nearbyQuery.isRefetching}
-                  nearbyError={nearbyError}
+                  nearby={nearbyForList}
+                  nearbyLoading={nearbyLoadingForList}
+                  nearbyError={nearbyListError}
+                  tab={listTab}
+                  onTabChange={setListTab}
                   onFlyTo={flyTo}
                   onSelect={openDetail}
                   onRetryPlaces={() => void placesQuery.refetch()}

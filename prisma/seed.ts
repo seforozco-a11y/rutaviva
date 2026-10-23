@@ -1,5 +1,10 @@
 /**
- * Seed inicial de lugares singulares (CDMX) para RutaViva.
+ * Seed inicial de lugares singulares de MANZANILLO, COLIMA para RutaViva.
+ * Estrategia: arrancamos en Manzanillo y después extendemos al resto de los
+ * municipios de Colima (Armería, Tecomán, Colima, Comala, Villa de Álvarez,
+ * Coquimatlán, Cuauhtémoc, Ixtlahuacán, Minatitlán).
+ *
+ * Este seed LIMPIA la tabla y la vuelve a poblar (útil en desarrollo).
  * Ejecutar con: bun prisma/seed.ts
  */
 import { PrismaClient } from "@prisma/client";
@@ -8,142 +13,159 @@ const db = new PrismaClient();
 
 const places = [
   {
-    name: "Ángel de la Independencia",
+    name: "Playa La Audiencia",
     description:
-      "El monumento icónico de la Ciudad de México sobre Paseo de la Reforma. Punto de encuentro clásico para celebraciones, caminatas y fotos al atardecer.",
-    category: "monumento",
-    lat: 19.4270,
-    lng: -99.1677,
-    address: "Paseo de la Reforma y Av. Florencia, Juárez",
-    tips: "Los domingos por la mañana Reforma se cierra a autos: ideal para bici.",
+      "La bahía más querida de Manzanillo: aguas cristalinas y tranquilas en la península de Santiago, con el islote frente a la orilla. Ideal para nadar, hacer snorkel y venir en familia.",
+    category: "playa",
+    lat: 19.1137,
+    lng: -104.3444,
+    address: "Península de Santiago, Zona Hotelera Norte",
+    tips: "Por la mañana el mar está como espejo: es la mejor hora para snorkel cerca del islote.",
     featured: true,
   },
   {
-    name: "Zócalo · Plaza de la Constitución",
+    name: "Playa Miramar",
     description:
-      "Una de las plazas más grandes del mundo, rodeada por la Catedral Metropolitana y el Palacio Nacional con murales de Diego Rivera.",
-    category: "plaza",
-    lat: 19.4326,
-    lng: -99.1332,
-    address: "Plaza de la Constitución, Centro Histórico",
-    tips: "Sube al mirador de la Catedral para una vista única del Centro.",
+      "La playa más popular del puerto: olas fuertes para surf y boogie, kilómetros de arena, palapas y restaurantes de mariscos con vista al atardecer.",
+    category: "playa",
+    lat: 19.0937,
+    lng: -104.3290,
+    address: "Blvd. Miguel de la Madrid, Santiago",
+    tips: "Respeta las banderas: roja = oleaje fuerte. El atardecer desde el malecón es obligatorio.",
     featured: true,
   },
   {
-    name: "Palacio de Bellas Artes",
+    name: "Playa Salahua",
     description:
-      "Máxima casa de la cultura en México: fachada de mármol, cúpula de vitral Tiffany y murales de Rivera, Siqueiros y Orozco.",
-    category: "cultura",
-    lat: 19.4352,
-    lng: -99.1414,
-    address: "Av. Juárez s/n, Centro Histórico",
-    tips: "Los domingos la entrada al museo es gratuita.",
+      "Playa de la zona hotelera con ambiente clásico de puerto: palapas, clubes de playa y puestos de cocadas frente a la bahía de Santiago.",
+    category: "playa",
+    lat: 19.1087,
+    lng: -104.3400,
+    address: "Blvd. Costero Miguel de la Madrid, Salahua",
+    tips: "Perfecta para caminar al atardecer entre Salahua y Miramar.",
+    featured: false,
+  },
+  {
+    name: "Playa Santiago",
+    description:
+      "Poblado pesquero con sabor auténtico: malecón nuevo, lanchas de colores y la franja de marisquerías más querida del puerto. De aquí salen los tours del pez vela.",
+    category: "playa",
+    lat: 19.0732,
+    lng: -104.3356,
+    address: "Playa Santiago, Manzanillo",
+    tips: "Pide pescado zarandeado en las palapas del malecón y pregunta por el tour de avistamiento.",
     featured: true,
   },
   {
-    name: "Museo Nacional de Antropología",
+    name: "Playa La Boquita",
     description:
-      "Uno de los mejores museos del mundo: la Piedra del Sol azteca, tesoros mayas y salas de todas las culturas de México.",
-    category: "museo",
-    lat: 19.4260,
-    lng: -99.1863,
-    address: "Av. Paseo de la Reforma & Calz. Gandhi, Chapultepec",
-    tips: "Dedícale al menos 3 horas; no te pierdas la sala Mexica.",
-    featured: true,
+      "Donde el estero abraza al mar: aguas serenas para niños, restaurantes con pieles frescas traídas de la laguna y lanchas que recorren el manglar.",
+    category: "playa",
+    lat: 19.0570,
+    lng: -104.3520,
+    address: "La Boquita, Manzanillo",
+    tips: "El combo favorito: tarde de playa + lancha por el estero al atardecer.",
+    featured: false,
   },
   {
-    name: "Castillo de Chapultepec",
+    name: "Playa Ventanas",
     description:
-      "El único castillo real de América Latina, con vistas espectaculares, salas de Maximiliano y Carlota y el Museo de Historia Nacional.",
-    category: "monumento",
-    lat: 19.4204,
-    lng: -99.1820,
-    address: "Bosque de Chapultepec I Sección",
-    tips: "Llega temprano para evitar filas y aprovechar el bosque.",
+      "Cuevas y arcos tallados por el mar en una playa semi-virgen al norte del puerto. La postal más salvaje de Manzanillo, sin desarrollos a la vista.",
+    category: "playa",
+    lat: 19.1490,
+    lng: -104.4700,
+    address: "Carretera Manzanillo–Barra de Navidad, km norte",
+    tips: "Con marea baja puedes entrar a las cuevas; con marea alta desaparecen. Lleva sombra y agua.",
+    featured: false,
   },
   {
-    name: "Casa Azul · Frida Kahlo",
+    name: "Playa Carrizales",
     description:
-      "La casa natal de Frida Kahlo en Coyoacán, pintada de azul cobalto, con su obra, vestidos y el jardín que la inspiró.",
-    category: "museo",
-    lat: 19.3550,
-    lng: -99.1624,
-    address: "Londres 247, Del Carmen, Coyoacán",
-    tips: "Compra boletos en línea: las filas pueden superar la hora.",
+      "Playa tortuguera donde el estero se une al mar: palapas rústicas, paseo en lancha por el manglar y liberación de crías de tortuga en temporada.",
+    category: "playa",
+    lat: 19.1630,
+    lng: -104.5100,
+    address: "Carrizales, norte de Manzanillo",
+    tips: "Pregunta por la liberación de tortugas al atardecer: experiencia imperdible para niños.",
+    featured: false,
   },
   {
-    name: "Mirador Torre Latinoamericana",
+    name: "Mirador de la Bahía de Santiago",
     description:
-      "Rascacielos emblemático de 1956 con mirador a 360° en el piso 44: la mejor vista del Centro Histórico y los volcanes.",
+      "Las paradas panorámicas sobre el Blvd. Costero regalan la postal clásica del puerto: la bahía entera, los barcos y el verde de la selva baja al mar.",
     category: "mirador",
-    lat: 19.4336,
-    lng: -99.1406,
-    address: "Eje Central Lázaro Cárdenas 2, Centro",
-    tips: "Al atardecer la vista de los volcanes es espectacular.",
+    lat: 19.0850,
+    lng: -104.3330,
+    address: "Blvd. Costero Miguel de la Madrid, entre Miramar y Santiago",
+    tips: "Para al atardecer: el sol cae justo frente a la bahía.",
+    featured: false,
   },
   {
-    name: "Mercado de Coyoacán",
+    name: "Monumento al Pescador",
     description:
-      "Mercado tradicional con tostadas legendarias, esquites, jugos y artesanías. El sabor auténtico del sur de la ciudad.",
-    category: "gastronomia",
-    lat: 19.3534,
-    lng: -99.1609,
-    address: "Malintzi 197, Barrio del Carmen, Coyoacán",
-    tips: "Prueba las tostadas de pata y el agua de horchata.",
-  },
-  {
-    name: "Trajineras de Xochimilco",
-    description:
-      "Canales prehispánicos Patrimonio de la Humanidad: recorre las chinampas en trajinera con música, comida y flores.",
-    category: "naturaleza",
-    lat: 19.2606,
-    lng: -99.1031,
-    address: "Embarcadero Caltongo / Nativitas, Xochimilco",
-    tips: "Ve con tiempo: los fines de semana hay mucha demanda.",
-  },
-  {
-    name: "Parque México",
-    description:
-      "El corazón art déco de la Condesa: lagos, puentes, ciclistas y perritos. Perfecto para descansar entre café y cafés.",
-    category: "parque",
-    lat: 19.4149,
-    lng: -99.1740,
-    address: "Av. México s/n, Condesa",
-    tips: "Cafés y taquerías excelentes rodean todo el parque.",
-  },
-  {
-    name: "Cerro del Ajusco · Pico del Águila",
-    description:
-      "El techo de la ciudad (3,930 m): senderismo entre pinos con vistas al valle de México y, con suerte, a los volcanes.",
-    category: "naturaleza",
-    lat: 19.2106,
-    lng: -99.2537,
-    address: "Pico del Águila, Tlalpan",
-    tips: "Lleva abrigo: la temperatura baja mucho respecto a la ciudad.",
-  },
-  {
-    name: "Pirámides de Teotihuacán",
-    description:
-      "La antigua ciudad de los dioses a 1 hora de la capital: Pirámide del Sol y de la Luna, Calzada de los Muertos y templos con murales.",
+      "El ícono del Puerto de Manzanillo: la escultura que celebra a quienes le dieron el título de Capital Mundial del Pez Vela. Parada obligatoria para la foto del viaje.",
     category: "monumento",
-    lat: 19.6925,
-    lng: -98.8438,
-    address: "San Juan Teotihuacán, Estado de México",
-    tips: "Sal temprano desde el Terminal Norte; sube a la Pirámide de la Luna para la mejor foto.",
+    lat: 19.0487,
+    lng: -104.3135,
+    address: "Blvd. Costero Miguel de la Madrid, entrada al puerto",
+    tips: "Combínalo con una caminata por el malecón del centro, está a unos minutos.",
     featured: true,
+  },
+  {
+    name: "Centro Histórico y Malecón",
+    description:
+      "El corazón del puerto: Plaza Juárez, el reloj público, la glorieta con palapa y un malecón para caminar frente a la bahía entre vendedores de cocadas y agua de coco.",
+    category: "plaza",
+    lat: 19.0537,
+    lng: -104.3148,
+    address: "Plaza Juárez, Centro de Manzanillo",
+    tips: "Los fines de semana hay eventos y baile en la plaza por la noche.",
+    featured: true,
+  },
+  {
+    name: "Mercado Municipal",
+    description:
+      "El sabor real del puerto bajo un techo: mariscos recién traídos, tacos de pescado, aguas frescas de jamaica y horchata, y artesanías de concha.",
+    category: "gastronomia",
+    lat: 19.0550,
+    lng: -104.3125,
+    address: "Centro, Manzanillo",
+    tips: "Ve con hambre por la mañana: los puestos de mariscos salen frescos de la compra diaria.",
+    featured: false,
+  },
+  {
+    name: "El Tortugario · Laguna de Cuyutlán",
+    description:
+      "Centro de educación ambiental entre manglares y salinas: cocodrilos, tortugas e iguanas, con recorridos en lancha por la laguna. La aventura ecológica de la región (30 min del puerto).",
+    category: "naturaleza",
+    lat: 18.9866,
+    lng: -104.3630,
+    address: "Cuyutlán, municipio de Armería (30 min de Manzanillo)",
+    tips: "Lleva repelente y calzado cómodo; el recorrido guiado en lancha vale cada peso.",
+    featured: true,
+  },
+  {
+    name: "Museo de la Sal de Cuyutlán",
+    description:
+      "La historia del oro blanco que puso a Cuyutlán en el mapa: salinas, la técnica prehispánica de la cocina de sal y el viejo ferrocarril que la llevaba al puerto.",
+    category: "museo",
+    lat: 18.9880,
+    lng: -104.3580,
+    address: "Cuyutlán, municipio de Armería",
+    tips: "Combínalo con El Tortugario, están a pocos minutos uno del otro.",
+    featured: false,
   },
 ];
 
 async function main() {
-  const count = await db.singularPlace.count();
-  if (count > 0) {
-    console.log(`Seed omitido: ya existen ${count} lugares singulares.`);
-    return;
-  }
+  // Desarrollo: limpiar y re-sembrar para reflejar la región actual (Manzanillo).
+  const deleted = await db.singularPlace.deleteMany({});
   for (const p of places) {
     await db.singularPlace.create({ data: p });
   }
-  console.log(`Seed OK: ${places.length} lugares singulares creados.`);
+  console.log(
+    `Seed OK: ${deleted.count} lugares previos eliminados y ${places.length} lugares de Manzanillo, Colima creados.`
+  );
 }
 
 main()
