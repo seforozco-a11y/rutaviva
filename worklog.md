@@ -293,3 +293,19 @@ Work Log:
 
 Stage Summary:
 - Todo automatizado salvo 2 clics del usuario (activar Railway y autorizar GitHub). Bloqueo único: tokens de cuentas del usuario. Play Console requiere acción humana en la consola (sin service account); se entregará AAB+assets+URL privacidad+checklist listos para subir.
+
+---
+Task ID: 11-b (pivote de hosting)
+Agent: Z.ai Code (main)
+Task: Railway bloqueado → pivote a Vercel + Neon
+
+Work Log:
+- Usuario autorizó GitHub (device flow) → repo creado y push OK: https://github.com/seforozco-a11y/rutaviva (público, rama main). gh CLI rechazó guardar el token por falta de scope read:org → solución: usar GH_TOKEN env + push con URL autenticada.
+- Railway: registro de cuentas nuevas PAUSADO oficialmente (incidente "station.railway.com unavailable" en status.railway.com desde 2026-10-23 22:03 UTC, sin ETA). Verificado por subagente: no hay ruta alternativa de signup; login GitHub/Google solo para cuentas existentes. Kit Docker/Railway queda intacto como plan B para cuando reabra.
+- Investigación alternativas (subagente): Vercel+Neon recomendado (signup GitHub verificado hoy, Next.js nativo, Neon Postgres free no expira). Render free DB expira en 30 días; Fly.io sin free tier.
+- Kit Vercel creado y pusheado (0b74395 + 7f93b8b): scripts/vercel-build.sh (switch temporal schema→postgresql en el contenedor de build, prisma generate + db push no destructivo + seed-if-empty + next build; desarrollo local sigue en SQLite), vercel.json (buildCommand + header privacidad), package.json +postinstall(prisma generate) +vercel-build. Sin escrituras a disco en runtime (fotos = data URLs en BD) → Vercel serverless compatible.
+- Verificado: Vercel CLI 65.2.0 instalado; device login activo (https://vercel.com/oauth/device?user_code=SHKK-RQNG).
+- CI GitHub Actions: primer run falló en android-actions/setup-android@v3 (paquete SDK obsoleto 'tools' con runner nuevo). Fix: eliminado el paso (SDK ya preinstalado en ubuntu-latest) → run 40062557509 en progreso con ci-watch en background.
+
+Stage Summary:
+- GitHub COMPLETADO. Hosting pivota a Vercel+Neon: falta 1 clic del usuario (device code Vercel) + crear la DB Neon (dashboard o CLI). El AAB espera a CAP_SERVER_URL real. PIN producción: RV669DD2 (keystore-backup/produccion-credenciales.txt).
