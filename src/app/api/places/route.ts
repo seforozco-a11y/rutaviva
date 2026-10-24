@@ -54,7 +54,9 @@ export async function GET(req: NextRequest) {
       take: 200,
       include: {
         reviews: {
-          where: { status: "APPROVED" },
+          // Igual que en el detalle: las reseñas reportadas (flagged) no
+          // cuentan para el rating público mientras el equipo las revisa.
+          where: { status: "APPROVED", flagged: false },
           select: { rating: true },
         },
       },

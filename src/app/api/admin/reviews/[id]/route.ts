@@ -6,8 +6,12 @@ export const dynamic = "force-dynamic";
 
 /**
  * PATCH /api/admin/reviews/[id]
- * action "approve" → publica la reseña y sus fotos en el lugar.
- * action "reject"  → la descarta (no se publica).
+ * action "approve"      → publica la reseña y sus fotos en el lugar.
+ * action "reject"       → la descarta (no se publica).
+ * action "dismiss-flag" → descarta el reporte de usuario: la reseña vuelve a
+ *                         ser visible (si estaba APPROVED).
+ * Nota: approve y reject también limpian el flag del reporte para que ninguna
+ * reseña validada quede oculta por un reporte ya resuelto (política UGC).
  */
 export async function PATCH(
   req: NextRequest,
@@ -20,7 +24,7 @@ export async function PATCH(
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
     const action = String(body?.action ?? "");
 
-    if (action !== "approve" && action !== "reject") {
+    if (action !== "approve" && action !== "reject" && action !== "dismiss-flag") {
       return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     }
 
@@ -29,8 +33,21 @@ export async function PATCH(
       return NextResponse.json({ error: "Reseña no encontrada" }, { status: 404 });
     }
 
+    if (action === "dismiss-flag") {
+      // El equipo decide que la reseña está bien: se quita el reporte y vuelve
+      // a ser visible para el público (si su status es APPROVED).
+      await db.review.update({
+        where: { id },
+        data: { flagged: false, flagReason: null, flaggedAt: null },
+      });
+      return NextResponse.json({ ok: true, action });
+    }
+
     const status = action === "approve" ? "APPROVED" : "REJECTED";
-    await db.review.update({ where: { id }, data: { status } });
+    await db.review.update({
+      where: { id },
+      data: { status, flagged: false, flagReason: null, flaggedAt: null },
+    });
     await db.photo.updateMany({ where: { reviewId: id }, data: { status } });
 
     return NextResponse.json({ ok: true, action });

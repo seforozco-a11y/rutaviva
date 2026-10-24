@@ -50,5 +50,18 @@ test
 prompt
 
 server.log
+
+# Android / Capacitor (builds y secretos locales; íconos y config SÍ se suben)
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+android/keystore.properties
+android/*.jks
+android/*.keystore
+android/.idea
+android/captures
+android/.cxx
+
 # Skills directory
 /skills/

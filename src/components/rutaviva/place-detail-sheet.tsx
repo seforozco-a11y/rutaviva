@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { es as esLocale } from "date-fns/locale";
 import {
   CheckCircle2,
+  Flag,
   Lightbulb,
   Loader2,
   MapPin,
@@ -24,6 +26,13 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -272,6 +281,10 @@ function ReviewsSection(props: {
 }) {
   const { reviews, loading, stage } = props;
   const setStage = props.onStageChange;
+  // Reseña a reportar (mecanismo "Reportar reseña" — política UGC de Google Play).
+  const [reportTarget, setReportTarget] = useState<PlaceDetailResponse["reviews"][number] | null>(
+    null
+  );
 
   return (
     <section aria-label="Reseñas de viajeros" className="space-y-3 rounded-2xl bg-stone-50 p-3">
@@ -343,6 +356,17 @@ function ReviewsSection(props: {
                   ))}
                 </div>
               )}
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setReportTarget(r)}
+                  aria-label={`Reportar la reseña de ${r.authorName}`}
+                  className="inline-flex h-8 min-w-[44px] items-center gap-1 rounded-lg px-2 text-xs font-medium text-stone-400 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-red-600"
+                >
+                  <Flag className="h-3 w-3" aria-hidden />
+                  Reportar
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -386,7 +410,127 @@ function ReviewsSection(props: {
           </Button>
         </div>
       )}
+
+      {reportTarget && (
+        <ReportReviewDialog
+          key={reportTarget.id}
+          review={reportTarget}
+          placeId={props.placeId}
+          onClose={() => setReportTarget(null)}
+        />
+      )}
     </section>
+  );
+}
+
+/* ==================== Reportar reseña (política UGC) ==================== */
+
+const MAX_REPORT_LENGTH = 300;
+
+function ReportReviewDialog(props: {
+  review: PlaceDetailResponse["reviews"][number];
+  placeId: string;
+  onClose: () => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [sending, setSending] = useState(false);
+  const queryClient = useQueryClient();
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      const res = await fetch(`/api/reviews/${props.review.id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+      const json = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        throw new Error(json?.error ?? "No se pudo enviar el reporte");
+      }
+      toast.success("Gracias, nuestro equipo revisará esta reseña");
+      // La reseña reportada se oculta al público de inmediato: refrescamos
+      // el detalle para reflejarlo.
+      void queryClient.invalidateQueries({ queryKey: ["place-detail", props.placeId] });
+      props.onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo enviar el reporte");
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o && !sending) props.onClose();
+      }}
+    >
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-2xl">
+        <form onSubmit={submit} className="space-y-4">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-lg font-black text-stone-800">
+              Reportar reseña
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed text-stone-500">
+              Nos ayudas a mantener RutaViva confiable. Nuestro equipo revisará este contenido.
+            </DialogDescription>
+          </DialogHeader>
+
+          <p className="rounded-xl bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-500">
+            <span className="font-semibold text-stone-700">Reseña de {props.review.authorName}:</span>{" "}
+            “{props.review.comment.length > 90 ? `${props.review.comment.slice(0, 90)}…` : props.review.comment}”
+          </p>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="rv-report-reason">Motivo (opcional)</Label>
+            <Textarea
+              id="rv-report-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ej. spam, contenido ofensivo, información falsa…"
+              className="min-h-20 rounded-xl"
+              maxLength={MAX_REPORT_LENGTH}
+            />
+            <p className="text-right text-[11px] text-stone-400" aria-live="polite">
+              {reason.length}/{MAX_REPORT_LENGTH}
+            </p>
+          </div>
+
+          <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-800">
+            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+            Tu reporte es anónimo: no necesitas cuenta para enviarlo.
+          </p>
+
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              disabled={sending}
+              className="h-11 flex-1 gap-2 rounded-xl bg-emerald-700 font-bold hover:bg-emerald-800"
+            >
+              {sending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Enviando…
+                </>
+              ) : (
+                "Enviar reporte"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={props.onClose}
+              disabled={sending}
+              className="h-11 rounded-xl border-stone-300"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

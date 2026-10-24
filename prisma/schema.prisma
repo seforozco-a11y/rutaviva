@@ -43,6 +43,10 @@ model SingularPlace {
 
 // Reseñas escritas por usuarios. Pasan por validación del admin antes de
 // publicarse (status PENDING → APPROVED / REJECTED).
+// Los campos flagged* alimentan el mecanismo "Reportar reseña" (requisito de
+// la política de contenido UGC de Google Play): cualquier visitante puede
+// reportar una reseña publicada; queda oculta para el público mientras el
+// equipo RutaViva la revisa (dismiss-flag la restaura, reject la descarta).
 model Review {
   id         String        @id @default(cuid())
   placeId    String
@@ -51,6 +55,9 @@ model Review {
   rating     Int // 1..5
   comment    String
   status     String        @default("PENDING") // PENDING | APPROVED | REJECTED
+  flagged    Boolean       @default(false) // marcada por un reporte de usuario
+  flagReason String? // motivo opcional del reporte (máx 300 caracteres)
+  flaggedAt  DateTime?
   createdAt  DateTime      @default(now())
 
   photos Photo[]

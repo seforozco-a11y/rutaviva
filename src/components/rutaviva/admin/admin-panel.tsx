@@ -8,6 +8,8 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  Flag,
+  FlagOff,
   Loader2,
   LogOut,
   MapPin,
@@ -95,6 +97,21 @@ type AdminPendingReview = {
   photos: AdminPhoto[];
 };
 
+/** Reseña reportada por un usuario (política UGC de Google Play). */
+type AdminFlaggedReview = {
+  id: string;
+  placeId: string;
+  placeName: string;
+  authorName: string;
+  rating: number;
+  comment: string;
+  status: string;
+  reason: string | null;
+  flaggedAt: string | null;
+  createdAt: string;
+  photos: AdminPhoto[];
+};
+
 type AdminPlaceRow = {
   id: string;
   name: string;
@@ -127,9 +144,11 @@ type AdminOverview = {
     pendingPlaces: number;
     pendingReviews: number;
     reviewsTotal: number;
+    flaggedReviews: number;
   };
   pendingPlaces: AdminPendingPlace[];
   pendingReviews: AdminPendingReview[];
+  flaggedReviews: AdminFlaggedReview[];
   allPlaces: AdminPlaceRow[];
 };
 
@@ -447,6 +466,33 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
     [toast, refresh, refreshPublic, queryClient]
   );
 
+  /** Acciones sobre reseñas reportadas (política UGC de Google Play). */
+  const flagAction = useCallback(
+    async (reviewId: string, placeId: string, action: "dismiss-flag" | "reject") => {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+        method: "PATCH",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error(await readError(res, "No se pudo actualizar la reseña"));
+      toast(
+        action === "dismiss-flag"
+          ? {
+              title: "Reporte descartado",
+              description: "La reseña vuelve a ser visible si estaba publicada.",
+            }
+          : {
+              title: "Reseña rechazada",
+              description: "No se volverá a mostrar en la app.",
+            }
+      );
+      refresh();
+      refreshPublic();
+      void queryClient.invalidateQueries({ queryKey: ["place-detail", placeId] });
+    },
+    [toast, refresh, refreshPublic, queryClient]
+  );
+
   const featurePlace = useCallback(
     async (row: AdminPlaceRow) => {
       const action = row.featured ? "unfeature" : "feature";
@@ -479,7 +525,8 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
 
   const pendingTotal =
     (overviewQuery.data?.stats.pendingPlaces ?? 0) +
-    (overviewQuery.data?.stats.pendingReviews ?? 0);
+    (overviewQuery.data?.stats.pendingReviews ?? 0) +
+    (overviewQuery.data?.stats.flaggedReviews ?? 0);
 
   return (
     <div className="mx-auto w-full max-w-md space-y-4 px-4 pb-24 pt-5">
@@ -578,10 +625,12 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
               <ReviewQueue
                 pendingPlaces={overviewQuery.data.pendingPlaces}
                 pendingReviews={overviewQuery.data.pendingReviews}
+                flaggedReviews={overviewQuery.data.flaggedReviews}
                 origin={origin}
                 onPublishValidated={publishValidated}
                 onRejectPlace={rejectPlace}
                 onReviewAction={reviewAction}
+                onFlagAction={flagAction}
               />
             </TabsContent>
 
@@ -625,10 +674,16 @@ function StatCard({ value, label, alert }: { value: number; label: string; alert
 function ReviewQueue(props: {
   pendingPlaces: AdminPendingPlace[];
   pendingReviews: AdminPendingReview[];
+  flaggedReviews: AdminFlaggedReview[];
   origin: Coordinates | null;
   onPublishValidated: (pendingId: string, values: PlaceFormValues) => Promise<void>;
   onRejectPlace: (pendingId: string) => Promise<void>;
   onReviewAction: (reviewId: string, placeId: string, action: "approve" | "reject") => Promise<void>;
+  onFlagAction: (
+    reviewId: string,
+    placeId: string,
+    action: "dismiss-flag" | "reject"
+  ) => Promise<void>;
 }) {
   const [validating, setValidating] = useState<AdminPendingPlace | null>(null);
   const [rejecting, setRejecting] = useState<AdminPendingPlace | null>(null);
@@ -668,8 +723,115 @@ function ReviewQueue(props: {
     }
   };
 
+  const handleFlagAction = async (
+    r: AdminFlaggedReview,
+    action: "dismiss-flag" | "reject"
+  ) => {
+    setBusyId(r.id);
+    try {
+      await props.onFlagAction(r.id, r.placeId, action);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "No se pudo actualizar la reseña",
+        description: err instanceof Error ? err.message : "Error inesperado",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* ---- Reseñas reportadas por usuarios (política UGC) ---- */}
+      {props.flaggedReviews.length > 0 && (
+        <section aria-label="Reseñas reportadas" className="space-y-3">
+          <h2 className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wide text-stone-500">
+            <Flag className="h-4 w-4 text-red-500" aria-hidden />
+            Reseñas reportadas ({props.flaggedReviews.length})
+          </h2>
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-800">
+            Estas reseñas fueron reportadas por usuarios y se ocultan al público hasta que las
+            revises: descarta el reporte si el contenido es válido o rechaza la reseña.
+          </p>
+          <ul className="space-y-3">
+            {props.flaggedReviews.map((r) => (
+              <li key={r.id}>
+                <article className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+                    Sobre {r.placeName}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center justify-between gap-1">
+                    <p className="text-sm font-bold text-stone-800">{r.authorName}</p>
+                    <span className="text-xs text-stone-400">
+                      Reportada {r.flaggedAt ? relativeDate(r.flaggedAt) : "recientemente"}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <Stars value={r.rating} />
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <p className="mt-1.5 text-sm leading-relaxed text-stone-600">{r.comment}</p>
+                  {r.reason && (
+                    <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-800">
+                      <Flag className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span>
+                        <strong className="font-semibold">Motivo del reporte:</strong> {r.reason}
+                      </span>
+                    </p>
+                  )}
+                  {r.photos.length > 0 && (
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                      {r.photos.map((ph) => (
+                        <button
+                          key={ph.id}
+                          type="button"
+                          onClick={() =>
+                            setLightbox({ url: ph.url, alt: `Foto de ${r.authorName}` })
+                          }
+                          className="aspect-square overflow-hidden rounded-lg border border-stone-200 transition hover:opacity-90"
+                          aria-label={`Ver foto de ${r.authorName}`}
+                        >
+                          <img
+                            src={ph.url}
+                            alt={`Foto de ${r.authorName}`}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      onClick={() => void handleFlagAction(r, "dismiss-flag")}
+                      disabled={busyId === r.id}
+                      className="h-11 flex-1 gap-1.5 border border-emerald-300 bg-white font-semibold text-emerald-800 hover:bg-emerald-50"
+                    >
+                      {busyId === r.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      ) : (
+                        <FlagOff className="h-4 w-4" aria-hidden />
+                      )}
+                      Descartar reporte
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => void handleFlagAction(r, "reject")}
+                      disabled={busyId === r.id}
+                      className="h-11 flex-1 gap-1.5 border-red-200 font-semibold text-red-700 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                      Rechazar reseña
+                    </Button>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* ---- Sugerencias de lugares ---- */}
       <section aria-label="Sugerencias de lugares" className="space-y-3">
         <h2 className="text-sm font-black uppercase tracking-wide text-stone-500">

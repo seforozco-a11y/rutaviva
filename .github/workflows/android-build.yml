@@ -1,0 +1,100 @@
+name: Android AAB (RutaViva)
+
+# Genera el AAB/APK firmado listo para Google Play.
+#
+# Secrets OPCIONALES:
+#   CAP_SERVER_URL            → URL https pública del backend desplegado (Next.js).
+#                               Sin ella, la app queda apuntando al emulador local (dev).
+#   ANDROID_KEYSTORE_B64      → keystore .jks en base64 (keytool -genkeypair ...; base64 -w0 rutaviva.jks)
+#   ANDROID_KEYSTORE_PASSWORD → contraseña del keystore
+#   ANDROID_KEY_ALIAS         → alias de la llave
+#   ANDROID_KEY_PASSWORD      → contraseña de la llave
+# Si no hay keystore en secrets, se genera uno TEMPORAL solo para pruebas
+# (NO sirve para Play Store: usa siempre el mismo keystore para publicar).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "android/**"
+      - "capacitor.config.ts"
+      - ".github/workflows/android-build.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Sync Capacitor (web assets + plugins + config)
+        run: bunx cap sync android
+        env:
+          CAP_SERVER_URL: ${{ secrets.CAP_SERVER_URL }}
+
+      - name: Prepare keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          if [ -n "$ANDROID_KEYSTORE_B64" ]; then
+            echo "Usando keystore de los secrets (producción)"
+            echo "$ANDROID_KEYSTORE_B64" | base64 -d > rutaviva-release.jks
+            cat > keystore.properties <<EOF
+          storeFile=rutaviva-release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+          else
+            echo "::warning::Sin ANDROID_KEYSTORE_B64: se genera keystore TEMPORAL de prueba (no subir este AAB a producción)"
+            keytool -genkeypair -v \
+              -keystore rutaviva-release.jks \
+              -alias rutaviva -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass rutaviva-temp -keypass rutaviva-temp \
+              -dname "CN=RutaViva, OU=Dev, O=RutaViva, L=Manzanillo, ST=Colima, C=MX"
+            cat > keystore.properties <<EOF
+          storeFile=rutaviva-release.jks
+          storePassword=rutaviva-temp
+          keyAlias=rutaviva
+          keyPassword=rutaviva-temp
+          EOF
+          fi
+
+      - name: Build AAB + APK (release firmado)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon bundleRelease assembleRelease
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rutaviva-android
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error

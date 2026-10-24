@@ -6,8 +6,10 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/places/[id] → detalle público de un lugar + reseñas APROBADAS
- * (con sus fotos aprobadas). Si el lugar está PENDING/REJECTED responde 404:
- * el público solo ve contenido validado por el equipo RutaViva.
+ * (con sus fotos aprobadas). Las reseñas reportadas por usuarios (flagged,
+ * mecanismo "Reportar reseña" de la política UGC de Google Play) se excluyen
+ * mientras el equipo las revisa. Si el lugar está PENDING/REJECTED responde
+ * 404: el público solo ve contenido validado por el equipo RutaViva.
  */
 export async function GET(
   _req: NextRequest,
@@ -20,7 +22,7 @@ export async function GET(
       where: { id },
       include: {
         reviews: {
-          where: { status: "APPROVED" },
+          where: { status: "APPROVED", flagged: false },
           orderBy: { createdAt: "desc" },
           take: 50,
           include: {

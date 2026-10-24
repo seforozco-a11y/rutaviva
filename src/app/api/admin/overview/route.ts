@@ -7,13 +7,14 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/admin/overview → todo lo que el equipo RutaViva necesita para
  * moderar: estadísticas, sugerencias de lugares PENDING, reseñas PENDING
- * (con fotos) y el catálogo completo con su estado.
+ * (con fotos), reseñas REPORTADAS por usuarios (flagged — política UGC de
+ * Google Play) y el catálogo completo con su estado.
  */
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return unauthorized();
 
   try {
-    const [placesTotal, placesPublished, pendingPlaces, pendingReviews, reviewsTotal] =
+    const [placesTotal, placesPublished, pendingPlaces, pendingReviews, reviewsTotal, flaggedReviews] =
       await Promise.all([
         db.singularPlace.count(),
         db.singularPlace.count({ where: { status: "APPROVED", active: true } }),
@@ -31,6 +32,16 @@ export async function GET(req: NextRequest) {
           },
         }),
         db.review.count(),
+        db.review.findMany({
+          // Reportes de usuarios (mecanismo UGC de Google Play): las reseñas
+          // marcadas quedan ocultas al público hasta que el equipo decide.
+          where: { flagged: true },
+          orderBy: { flaggedAt: "desc" },
+          include: {
+            photos: { orderBy: { createdAt: "asc" } },
+            place: { select: { id: true, name: true } },
+          },
+        }),
       ]);
 
     const allPlaces = await db.singularPlace.findMany({
@@ -82,6 +93,7 @@ export async function GET(req: NextRequest) {
         pendingPlaces: pendingPlaces.length,
         pendingReviews: pendingReviews.length,
         reviewsTotal,
+        flaggedReviews: flaggedReviews.length,
       },
       pendingPlaces: pendingPlaces.map((p) => ({
         id: p.id,
@@ -105,6 +117,19 @@ export async function GET(req: NextRequest) {
         authorName: r.authorName,
         rating: r.rating,
         comment: r.comment,
+        createdAt: r.createdAt.toISOString(),
+        photos: r.photos.map((ph) => ({ id: ph.id, url: ph.url, status: ph.status })),
+      })),
+      flaggedReviews: flaggedReviews.map((r) => ({
+        id: r.id,
+        placeId: r.placeId,
+        placeName: r.place.name,
+        authorName: r.authorName,
+        rating: r.rating,
+        comment: r.comment,
+        status: r.status,
+        reason: r.flagReason,
+        flaggedAt: r.flaggedAt ? r.flaggedAt.toISOString() : null,
         createdAt: r.createdAt.toISOString(),
         photos: r.photos.map((ph) => ({ id: ph.id, url: ph.url, status: ph.status })),
       })),
