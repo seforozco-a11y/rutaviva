@@ -31,10 +31,23 @@
 - **Guía** (panel "about"): stats reales, tarjeta "De Manzanillo a todo Colima" (roadmap de los 10 municipios), "¿Cómo funciona la publicación?" (3 pasos: viajero → equipo → app).
 - **PWA**: `manifest.webmanifest` standalone portrait, íconos 192/512/1024, tema esmeralda.
 
+### Empaquetado Android (Capacitor 8) + CI — NUEVO
+- **Proyecto `android/` completo** (`com.rutaviva.colima`, appName RutaViva, versionCode 1 / versionName 1.0.0, minSdk 24 / target+compile 36).
+- **Arquitectura**: la app nativa carga el backend Next.js desplegado (`server.url` desde env `CAP_SERVER_URL`; default dev = emulador `10.0.2.2:3000` con cleartext). Un solo backend = web + APK siempre sincronizados.
+- **Plugins**: `@capacitor/geolocation` (GPS de la portada; permisos ACCESS_FINE/COARSE ya en manifest) y `@capacitor/splash-screen` (splash esmeralda con ícono, 1.8s).
+- **Assets generados**: 100 recursos (íconos adaptativos + splash en todas las densidades) desde `assets/icon.png` y `assets/splash.png` (composición sharp en `scripts/cap-assets.ts`, comando `bun run cap:assets`).
+- **Firma release**: `android/app/build.gradle` lee `android/keystore.properties` (git-ignorado); sin él, artefacto sin firmar.
+- **CI GitHub Actions** (`.github/workflows/android-build.yml`): en cada push a main genera **AAB + APK firmados** con secrets (`CAP_SERVER_URL`, `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`); sin keystore secreto genera uno temporal SOLO de pruebas. Artefacto descargable: `rutaviva-android`.
+
+### Cumplimiento UGC para Play Store — NUEVO
+- **Botón "Reportar"** en cada reseña del detalle → dialog con motivo opcional (≤300) → `POST /api/reviews/[id]/report`.
+- Reseña reportada se **oculta del público inmediatamente** (listado y detalle) y aparece en **"Reseñas reportadas"** del panel admin con su motivo → admin puede **Descartar reporte** (vuelve a visible) o **Rechazar reseña**.
+- Respuesta de la política UGC de Play: moderación previa ✓ + reporte in-app ✓ + remoción por admin ✓ + reglas visibles ✓.
+
 ### Panel de administración (rol admin, en la barra inferior de la app)
 - **Login por PIN** (cookie httpOnly firmada con HMAC-SHA256, `timingSafeEqual`).
 - **Dashboard** con stats (publicados / por revisar / reseñas).
-- **Tab "Por revisar"**: sugerencias con **dialog "Validar y publicar"** + **checklist de formatos en vivo** (nombre, descripción ≥30, categoría, ubicación, foto); reseñas con aprobar/rechazar y visor de fotos.
+- **Tab "Por revisar"**: sugerencias con **dialog "Validar y publicar"** + **checklist de formatos en vivo** (nombre, descripción ≥30, categoría, ubicación, foto); reseñas con aprobar/rechazar y visor de fotos; **sección "Reseñas reportadas"** con motivo del reporte y acciones Descartar/Rechazar.
 - **Tab "Lugares"**: badges de estado, destacar (featured), editar, eliminar.
 - **Tab "Nuevo lugar"**: alta directa APPROVED.
 - Al aprobar una sugerencia con foto: se **publica y su foto se promueve a portada**.
@@ -44,13 +57,14 @@
 - `GET /api/places/[id]` — detalle + reseñas aprobadas con fotos.
 - `POST /api/places` — ya NO publica: crea **sugerencia PENDING** (source USER).
 - `POST /api/reviews` — reseña PENDING con hasta 3 fotos (máx 2.6MB c/u, validación).
+- `POST /api/reviews/[id]/report` — reporte público anónimo de una reseña (motivo opcional; requisito UGC de Play).
 - `GET /api/nearby` — proxy Overpass con caché en memoria 5 min (respaldo del cliente).
 - Admin (protegidos): `login|logout|session`, `overview` (stats + colas), `places` (alta directa), `places/[id]` (approve/reject/feature/update/delete), `reviews/[id]` (approve/reject).
 - Validadores compartidos en `src/lib/server/moderation.ts`.
 
 ### Modelo de datos (Prisma — `prisma/schema.prisma`)
 - `SingularPlace`: + `status` (PENDING/APPROVED/REJECTED), `source` (ADMIN/USER), `suggestedBy`, `city` (default "Manzanillo"), `state` (default "Colima").
-- `Review`: placeId, authorName, rating 1..5, comment, status.
+- `Review`: placeId, authorName, rating 1..5, comment, status, `flagged/flagReason/flaggedAt` (reporte UGC).
 - `Photo`: url (dataURL o /images/), placeId?, reviewId?, status.
 - Índices y cascadas listos para multi-municipio.
 
@@ -83,28 +97,34 @@
 
 ## 4. Pendiente — Ruta siguiente (orden sugerido)
 
-1. **Build Android → Google Play Store** (el paso pendiente #1):
-   - `PWA → Capacitor` (envolver la web app) → `npx cap add android` → AAB firmado → Play Console (ficha, capturas, política de contenido UGC: declarar moderación y reporte de contenido, ya implementada ✅).
-2. **Fotos en la nube**: hoy las fotos de usuarios viajan como dataURL en la BD (OK para demo). Para producción: Firebase Storage / Cloudinary / S3 + URL en `Photo.url`.
-3. **Overpass/Maps en producción**: validar servicios comunes con internet real; opcionalmente migrar a Google Places API si se quiere experiencia tipo Google Maps.
-4. **iOS**: misma base Capacitor → Xcode → App Store (después del lanzamiento Android).
-5. **Expansión Colima**: alta de lugares de otros municipios (city/state ya existen; agregar selector de municipio en filtros/admin).
-6. **Extras futuros**: roles múltiples admin, notificaciones de aprobación, modo offline, analytics.
+1. **Desplegar el backend en HTTPS público** (prerrequisito del APK): Vercel + Postgres/Supabase (migrar Prisma de sqlite a postgresql), Railway o VPS. Guía completa en `docs/PLAY-STORE.md` §3.
+2. **Subir el repo a GitHub y disparar el build**: crear repo → push → el workflow genera el AAB (con secret `CAP_SERVER_URL` = URL del backend). Descargar artefacto `rutaviva-android`.
+3. **Generar keystore de producción** (keytool, comando en la guía) y subirlo como secrets — el temporal del CI no sirve para publicar.
+4. **Alta en Google Play Console**: cuenta developer (US$25), ficha con textos ya redactados en la guía, formularios (Seguridad de datos, IARC), **cambiar el PIN admin por defecto** (`rutaviva2025` → `ADMIN_PIN`), subida del AAB a pruebas internas/cerradas (cuenta personal nueva: 12 testers × 14 días) → producción.
+5. **Fotos en la nube**: hoy las fotos de usuarios viajan como dataURL en la BD (OK para demo). Para producción: Firebase Storage / Cloudinary / S3 + URL en `Photo.url`.
+6. **iOS**: misma base Capacitor → `cap add ios` (requiere Mac con Xcode) después del lanzamiento Android.
+7. **Expansión Colima**: alta de lugares de otros municipios (city/state ya existen; agregar selector de municipio en filtros/admin).
+8. **Extras futuros**: roles múltiples admin, notificaciones de aprobación, modo offline, analytics.
 
 ## 5. Mapa rápido de archivos clave
 
 ```
+capacitor.config.ts        → config Capacitor 8 (appId com.rutaviva.colima, server.url)
+android/                   → proyecto Android nativo (firma en app/build.gradle)
+.github/workflows/         → android-build.yml (AAB firmado en CI)
+assets/ + scripts/cap-assets.ts → fuente de íconos/splash Android
 src/components/rutaviva/   → splash, map-canvas, map-view, places-list, place-detail-sheet,
                              add-place-form, photo-upload, photo-lightbox, bottom-nav,
                              about-panel, rutaviva-app (orquestador), admin/ (panel+formulario)
-src/app/api/               → places, reviews, nearby, admin/* (login/session/overview/places/reviews)
+src/app/api/               → places, reviews (+report), nearby, admin/* (login/session/overview/places/reviews)
 src/lib/                   → geo, place-types, admin-auth, image-client, nearby-client, db,
                              server/moderation (validadores de formatos)
-prisma/schema.prisma       → SingularPlace, Review, Photo
+prisma/schema.prisma       → SingularPlace, Review (+flagged), Photo
 prisma/seed.ts             → 13 lugares de Manzanillo + reseñas demo + cola pendiente
 public/                    → icon-*, hero-manzanillo.png, manifest.webmanifest, images/places|reviews
+docs/PLAY-STORE.md         → guía completa de publicación en Google Play
 scripts/daemon.py          → forma correcta de mantener procesos vivos en el sandbox
-worklog.md                 → bitácora técnica detallada por tarea (Tasks 1-5)
+worklog.md                 → bitácora técnica detallada por tarea
 ```
 
 ---

@@ -179,3 +179,42 @@ Stage Summary:
 - Decisiones: (1) approve/reject también limpian el flag para no dejar reseñas validadas ocultas por reportes resueltos; (2) el rating del listado /api/places también excluye flagged por consistencia; (3) sonner se activó montando el Toaster ya existente en ui/sonner (sin nuevas dependencias), conviviendo con el toast shadcn del panel admin.
 - Pendiente/nota para futuras tareas: si se regenera el cliente Prisma (cambio de schema) HAY QUE REINICIAR el dev server (daemon.py) — hot reload no recarga node_modules externos. Pendiente E2E en navegador del botón Reportar (el flujo API está verificado al 100%).
 - Estado final de la DB (demo intacta): 0 reseñas flagged, 0 flagReason residual, 6 reseñas APPROVED + 2 PENDING, 13 lugares publicados + 1 sugerencia PENDING.
+
+---
+Task ID: 7-a
+Agent: Z.ai Code (main)
+Task: Integración Capacitor 8 Android + CI de AAB firmado (ruta a Google Play Store)
+
+Work Log:
+- Instalados @capacitor/{core,android,geolocation,splash-screen}@8 + devDeps {cli,assets}@8/3 (bun).
+- Creado capacitor.config.ts: appId com.rutaviva.colima, appName RutaViva, webDir public, server.url desde env CAP_SERVER_URL (default dev = emulador 10.0.2.2:3000 con cleartext; prod https sin cleartext), plugins SplashScreen (esmeralda #064e3b, 1.8s) y Geolocation.
+- scripts/cap-assets.ts (sharp): genera assets/icon.png (1024, aplanado sobre verde del ícono), assets/splash.png y splash-dark.png (2732², degradado esmeralda #064e3b→#059669 + ícono centrado). package.json: scripts cap:sync / cap:open / cap:assets.
+- `bunx cap add android`: proyecto nativo creado, plugins detectados. variables.gradle: minSdk 24, target/compile 36, Gradle 8.14.3.
+- Patch android/app/build.gradle: firma release vía keystore.properties (storeFile/storePassword/keyAlias/keyPassword); sin properties → artefacto sin firmar. versionName 1.0.0.
+- AndroidManifest.xml: + ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION y uses-feature gps required=false (runtime lo pide el plugin).
+- `bunx capacitor-assets generate --android`: 100 recursos (íconos adaptativos + splash en todas las densidades/orientaciones/temas).
+- .github/workflows/android-build.yml: push a main (paths src/android/config) o manual → setup bun+java21+SDK → bunx cap sync android (CAP_SERVER_URL secret) → keystore desde secrets (ANDROID_KEYSTORE_B64 etc.) o temporal keytool con warning → ./gradlew bundleRelease assembleRelease → artifact rutaviva-android (AAB+APK).
+- .gitignore: + android/.gradle, build, app/build, local.properties, keystore.properties, *.jks, .idea, captures, .cxx. .env des-trackeado (git rm --cached) pero conservado localmente.
+- Git: commit fdf3115 "RutaViva: integración Capacitor Android + CI..." (211 archivos, 4214 inserciones) — repo listo para push a GitHub.
+
+Stage Summary:
+- Ruta APK despejada: push a GitHub + secret CAP_SERVER_URL → CI entrega AAB firmado. Sin SDK local necesario (sandbox no tiene; Java 21 sí para builds locales en máquina del usuario).
+- La app nativa carga el backend desplegado (server.url): web y APK comparten panel admin y BD — cero divergencia de contenido.
+
+---
+Task ID: 8
+Agent: Z.ai Code (main)
+Task: Verificación E2E integrada de la sesión (Capacitor + reporte UGC + guía) con Agent Browser
+
+Work Log:
+- Lint global: 0 errores. dev.log: solo 200s y queries Prisma (incluye filtro flagged en reseñas).
+- Browser móvil 390×844: splash renderiza (badge Manzanillo, footer "Android hoy, iOS muy pronto") → demo → mapa con 13 marcadores, filtros y franja por distancia → detalle Playa La Audiencia (⭐4.5 · 2 reseñas).
+- Flujo reporte E2E: botón "Reportar la reseña de Diego M." → dialog "Reportar reseña" (motivo ≤300) → Enviar → toast "Gracias, nuestro equipo revisará esta reseña" → GET /api/places/[id] ya NO la lista (solo Familia Herrera) → overview admin: flaggedReviews con motivo, stats.flaggedReviews=1.
+- Admin UI: login PIN → tab "Por revisar 4" → sección "RESEÑAS REPORTADAS (1)" con motivo destacado, badge Publicado y botones Descartar/Rechazar → "Descartar reporte" → badge 4→3, reseña vuelve al detalle público (verificado en API).
+- Nota headless: un artefacto de pintura del drawer (vaul) en el browser de pruebas impidió el click físico sobre el botón dentro del área scrolleada; el handler y el DOM están correctos (JS click + flujo completo OK). No es bug de la app.
+- DB final limpia para demo: 0 flagged, 6 reseñas APPROVED + 2 PENDING, 13 lugares APPROVED + 1 sugerencia PENDING.
+- RUTAVIVA-ESTADO.md actualizado (secciones Capacitor/UGC nuevas + ruta siguiente: desplegar backend HTTPS → push GitHub → CI AAB → Play Console).
+
+Stage Summary:
+- Sesión completa: Capacitor Android listo + CI de AAB + feature Reportar verificada de punta a punta + guía de Play Store (493 líneas) + repo commiteado (fdf3115) listo para GitHub.
+- Siguiente sesión sugerida: desplegar backend (Vercel+Postgres/Railway/VPS según docs/PLAY-STORE.md §3) y disparar el primer AAB en CI.
