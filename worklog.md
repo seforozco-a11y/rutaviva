@@ -309,3 +309,16 @@ Work Log:
 
 Stage Summary:
 - GitHub COMPLETADO. Hosting pivota a Vercel+Neon: falta 1 clic del usuario (device code Vercel) + crear la DB Neon (dashboard o CLI). El AAB espera a CAP_SERVER_URL real. PIN producción: RV669DD2 (keystore-backup/produccion-credenciales.txt).
+
+---
+Task ID: 12
+Agent: Z.ai Code (main)
+Task: Cierre de sesión — guarda todo y mañana continuamos
+
+Work Log:
+- CI run 2 (40062557509) falló: cap sync exige index.html en webDir. Fix: webDir "public"→"www" con www/index.html de respaldo (public/index.html NO: en Next sombrearía la ruta /). cap sync verificado localmente OK → commit 8242106.
+- CI run 3 (40064998672) llegó hasta Gradle y falló en :app:validateSigningRelease: "Keystore file .../android/app/rutaviva-release.jks not found" — storeFile se resuelve relativo al MÓDULO (android/app/), el workflow lo escribía en android/. Fix: workflow escribe el .jks en app/rutaviva-release.jks (ramas secrets y temporal) + .gitignore +android/app/*.jks → commit 3c8de47, run 40065285320 en curso.
+- RUTAVIVA-ESTADO.md actualizado: sección "Infraestructura de despliegue" (GitHub completado, CI con 2 fixes, Railway descartado por pausa oficial de registros, Vercel+Neon plan A con kit vercel-build.sh, credenciales de producción) y roadmap reordenado para mañana (7 pasos).
+
+Stage Summary:
+- Al cerrar: run 40065285320 verificado el último fix (keystore path). Todo documentado para retomar: autorizar Vercel → Neon → deploy → secrets CI → AAB firmado → Play Console.
