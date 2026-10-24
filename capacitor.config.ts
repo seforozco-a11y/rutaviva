@@ -18,9 +18,10 @@ const isProd = serverUrl.startsWith("https://");
 const config: CapacitorConfig = {
   appId: "com.rutaviva.colima",
   appName: "RutaViva",
-  // Contenido web de respaldo incluido en el APK (íconos/manifiesto); la app
-  // real se carga desde server.url.
-  webDir: "public",
+  // Contenido web de respaldo incluido en el APK. Es una carpeta propia (no
+  // public/) para que Next.js no la sirva en la ruta "/" — la app real se
+  // carga desde server.url. cap sync exige un index.html aquí.
+  webDir: "www",
   server: {
     url: serverUrl,
     cleartext: !isProd, // http solo en desarrollo
