@@ -13,7 +13,9 @@
     "db:reset": "prisma migrate reset",
     "cap:sync": "cap sync android",
     "cap:open": "cap open android",
-    "cap:assets": "bun scripts/cap-assets.ts && capacitor-assets generate --android"
+    "cap:assets": "bun scripts/cap-assets.ts && capacitor-assets generate --android",
+    "postinstall": "prisma generate",
+    "vercel-build": "bash scripts/vercel-build.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
