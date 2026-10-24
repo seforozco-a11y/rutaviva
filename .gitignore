@@ -65,3 +65,6 @@ android/.cxx
 
 # Skills directory
 /skills/
+# Resultados de herramientas y auth temporal
+/tool-results/
+/.tmp-auth/
