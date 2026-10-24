@@ -218,3 +218,60 @@ Work Log:
 Stage Summary:
 - Sesión completa: Capacitor Android listo + CI de AAB + feature Reportar verificada de punta a punta + guía de Play Store (493 líneas) + repo commiteado (fdf3115) listo para GitHub.
 - Siguiente sesión sugerida: desplegar backend (Vercel+Postgres/Railway/VPS según docs/PLAY-STORE.md §3) y disparar el primer AAB en CI.
+
+---
+Task ID: 9-c
+Agent: general-purpose (subagente)
+Task: Assets de Google Play Store (privacidad, feature graphic, ícono, checklist)
+
+Work Log:
+- Contexto leído: worklog.md, RUTAVIVA-ESTADO.md, docs/PLAY-STORE.md y scripts/gen-images.sh (referencia del SDK). Alcance respetado: NO se tocaron Dockerfile, scripts/start-railway.sh, scripts/seed-if-empty.ts, railway.toml, docs/RAILWAY.md ni scripts/gh-push.sh.
+- public/privacidad.html (18.0 KB) — política de privacidad pública completa, autocontenida (CSS inline en <style>, cero <script>/<link>/recursos externos), fondo blanco + acentos esmeralda #047857, fuente del sistema, título "Política de privacidad · RutaViva". Secciones 1–9: responsable con placeholders visibles [TU NOMBRE o razón social] / [correo@de-contacto]; GPS SOLO en tiempo real para lugares cercanos, NO se almacena en servidores; nombre mostrado opcional; reseñas y fotos voluntarias; cookie de sesión solo panel admin; moderación previa (validación del equipo antes de publicar + botón Reportar); no venta de datos ni publicidad; derechos y eliminación vía contacto; 13+; cambios y fecha de última actualización (24 de octubre de 2026). VALIDACIÓN: balance de etiquetas OK (14 checks de contenido ✓) y render real con agent-browser (title correcto, nav de 9 secciones, header/main/footer presentes).
+- scripts/gen-feature-bg.mjs — PASO A: imagen por IA DESDE BACKEND con z-ai-web-dev-sdk (import ZAI from 'z-ai-web-dev-sdk'; const zai = await ZAI.create(); zai.images.generations.create({ prompt, size })), prompt de la bahía de Manzanillo al atardecer (esmeralda/dorado, sin texto), 3 reintentos + fallback degradado esmeralda con texturas SVG (no llegó a usarse). Ajuste necesario: la API rechaza tamaños no múltiplos de 32 px (error 1214 con el '1440x720' sugerido) → se usa '1472x736' (~2:1 equivalente); anotado en el script. PASO B: sharp — resize cover a 1024×500 + overlay SVG compuesto en 2 etapas (composite → flatten) porque sharp aplica composite al final del pipeline y un flatten único dejaba canal alfa: degradado esmeralda #064e3b→transparente desde la izquierda, pin de ubicación con brújula (aguja N-S), "RutaViva" 96px blanco con sombra, "Tu guía turística de Manzanillo" y badge "Disponible hoy en Manzanillo, Colima"; texto 100% SVG/sharp (nítido, no IA).
+- Ejecución (bun scripts/gen-feature-bg.mjs): fondo IA generado → docs/store-assets/_bg.png (1472×736, 261 KB, temporal, el script lo reutiliza si existe). FINAL docs/store-assets/feature-graphic-1024x500.png → VERIFICADO con sharp metadata: 1024x500 · png · 3 canales · hasAlpha:false · 1.18 MB (<15 MB). QA visual con z-ai vision: lee exactamente "RutaViva", "Tu guía turística de Manzanillo", "Disponible hoy en Manzanillo, Colima"; texto nítido, sin cortes ni artefactos; fondo aéreo de bahía turquesa.
+- Ícono 512: public/icon-512.png existía y ya medía 512×512 PNG (verificado con sharp) → copiado a docs/store-assets/icon-512.png (512×512 PNG, 174 KB; 3 canales sin alfa, tal cual el original de la marca).
+- docs/store-assets/PLAY-CHECKLIST.md (6.2 KB) — checklist accionable fases A–E: A) crear app (nombre "RutaViva: Guía de Manzanillo", Español (México), Aplicación, Gratuita); B) ficha con textos de docs/PLAY-STORE.md §3 y rutas exactas de estos assets; C) formularios (política → https://TU-DOMINIO/privacidad.html, IARC con UGC moderado, Seguridad de datos mapeada a public/privacidad.html, 13+, anuncios: no); D) AAB pruebas internas → cerradas → producción (cuenta personal nueva = 12 testers × 14 días); E) antes de publicar: cambiar PIN por defecto rutaviva2025 vía ADMIN_PIN, backend Railway vivo, secret CAP_SERVER_URL en GitHub y re-generar AAB.
+
+Stage Summary:
+- Publicación en Play desbloqueada: política de privacidad renderizada y validada (placeholders por rellenar antes de subir), feature graphic 1024×500 verificado por metadatos y QA visual, ícono 512 listo y checklist de consola por fases con rutas exactas.
+- Pendientes humanos: sustituir placeholders de privacidad.html, capturas de pantalla (docs/PLAY-STORE.md §3.5), y fijar el dominio real en la URL de la política al registrarla.
+
+---
+Task ID: 9-a
+Agent: Z.ai Code (main)
+Task: Kit de despliegue en Railway (Dockerfile + arranque con migración y seed seguro)
+
+Work Log:
+- Dockerfile multi-stage (oven/bun:1): deps → builder (prisma generate + bun run build standalone, DATABASE_URL dummy para el build) → runner (node_modules con cliente Prisma generado + .next/standalone + prisma/ + scripts de arranque).
+- scripts/start-railway.sh: crea el directorio de la BD parseando DATABASE_URL (volumen /data), bunx prisma db push (no destructivo: falla a propósito en cambios peligrosos), seed-if-empty y exec del server standalone (respeta PORT de Railway).
+- scripts/seed-if-empty.ts: solo siembra si singularPlace.count()==0 (no destructivo, probado localmente: "BD ya contiene 14 lugares · seed omitido").
+- railway.toml: builder DOCKERFILE, startCommand, healthcheck "/" timeout 300, restart ON_FAILURE x3.
+
+Stage Summary:
+- Deploy en Railway = 4 comandos (railway init / volume add /data / variables / railway up). Guía completa en docs/RAILWAY.md. SQLite sobre volumen para lanzamiento; ruta a PostgreSQL documentada.
+
+---
+Task ID: 9-b
+Agent: Z.ai Code (main)
+Task: Kit GitHub + guía integrada
+
+Work Log:
+- scripts/gh-push.sh (executable): remote origin + push main + recordatorio de secrets (CAP_SERVER_URL) y del workflow Actions.
+- docs/RAILWAY.md: Fase 0 GitHub (opciones gh CLI y manual), Fase 1 Railway (init, volumen /data, variables DATABASE_URL/ADMIN_PIN/ADMIN_SECRET/NODE_ENV, railway up, railway domain, comprobaciones), Fase 2 CI del AAB (secrets + descarga del artefacto rutaviva-android), Fase 3 actualizaciones, notas de costos/PostgreSQL/dominio propio.
+
+Stage Summary:
+- Sin gh CLI en el sandbox: el push lo ejecuta el usuario con gh o con el script; repo local ya commiteado en main, listo.
+
+---
+Task ID: 10
+Agent: Z.ai Code (main) + general-purpose (subagente 9-c) + cierre
+Task: Verificación final de la sesión (Railway kit + Play assets) y commit
+
+Work Log:
+- Subagente 9-c creó: public/privacidad.html (autocontenida, placeholders [TU NOMBRE]/[correo@de-contacto]), docs/store-assets/feature-graphic-1024x500.png (1024×500 exactos, texto SVG nítido sobre imagen IA de la bahía), docs/store-assets/icon-512.png, docs/store-assets/PLAY-CHECKLIST.md, scripts/gen-feature-bg.mjs.
+- Capturas reales de la app a 1080×2340 en docs/store-assets/screenshots/: 01-portada.png, 02-mapa.png (bahía completa con filtros y franja), 03-detalle.png (Playa La Audiencia con rating 4.5, reseñas, botón Reportar, Escribir reseña, Cómo llegar), 04-guia.png (panel Guía).
+- seed-if-empty.ts probado (no destructivo). Lint y logs verificados (ver resultado más abajo si aplica). Commit final del repo.
+- Nota de entorno: el shell persistente principal murió tras las capturas (posible agotamiento por Chromium); el cierre se completó con sesión nueva de subagente.
+
+Stage Summary:
+- Todo listo para las 3 acciones del usuario: (1) railway up con la guía, (2) push a GitHub + secret CAP_SERVER_URL, (3) Play Console con PLAY-CHECKLIST.md y assets ya preparados.

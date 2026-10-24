@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de privacidad · RutaViva</title>
+<meta name="description" content="Política de privacidad de RutaViva, la guía turística de Manzanillo, Colima, México. Qué datos recopilamos, cómo los usamos y cómo solicitar su eliminación.">
+<style>
+  :root {
+    --emerald-700: #047857;
+    --emerald-800: #065f46;
+    --emerald-900: #064e3b;
+    --emerald-600: #059669;
+    --emerald-50: #ecfdf5;
+    --emerald-100: #d1fae5;
+    --gray-900: #111827;
+    --gray-700: #374151;
+    --gray-600: #4b5563;
+    --gray-200: #e5e7eb;
+    --gray-100: #f3f4f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #ffffff;
+    color: var(--gray-700);
+    line-height: 1.7;
+    font-size: 16px;
+  }
+  header {
+    background: linear-gradient(135deg, var(--emerald-900) 0%, var(--emerald-700) 100%);
+    color: #ffffff;
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+  header .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+  header .brand .pin {
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50% 50% 50% 4px;
+    transform: rotate(0deg);
+  }
+  header h1 {
+    margin-top: 14px;
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  header p.sub {
+    margin-top: 8px;
+    font-size: 15px;
+    opacity: 0.85;
+    max-width: 640px;
+    margin-left: auto; margin-right: auto;
+  }
+  .updated {
+    display: inline-block;
+    margin-top: 18px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 13.5px;
+    color: #ffffff;
+  }
+  main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+  }
+  nav.toc {
+    background: var(--emerald-50);
+    border: 1px solid var(--emerald-100);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 40px;
+  }
+  nav.toc strong {
+    color: var(--emerald-800);
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  nav.toc ol {
+    list-style: none;
+    columns: 2;
+    column-gap: 24px;
+    font-size: 14.5px;
+  }
+  nav.toc li { margin: 4px 0; break-inside: avoid; }
+  nav.toc a { color: var(--emerald-700); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { margin-bottom: 40px; }
+  h2 {
+    color: var(--gray-900);
+    font-size: 22px;
+    font-weight: 750;
+    margin-bottom: 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--emerald-600);
+    line-height: 1.35;
+  }
+  h3 {
+    color: var(--gray-900);
+    font-size: 17px;
+    font-weight: 700;
+    margin: 22px 0 8px;
+  }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--gray-900); }
+  a { color: var(--emerald-700); }
+  .placeholder {
+    background: #fef3c7;
+    border-bottom: 2px dashed #d97706;
+    color: #92400e;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .note {
+    background: var(--emerald-50);
+    border-left: 4px solid var(--emerald-600);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 15px;
+    color: var(--emerald-900);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 18px;
+    font-size: 14.5px;
+  }
+  th, td {
+    border: 1px solid var(--gray-200);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--emerald-50);
+    color: var(--emerald-900);
+    font-weight: 700;
+  }
+  tr:nth-child(even) td { background: #fafcfa; }
+  footer {
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-100);
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--gray-600);
+  }
+  footer .brand-line {
+    color: var(--emerald-800);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  @media (max-width: 560px) {
+    nav.toc ol { columns: 1; }
+    header { padding: 36px 18px 32px; }
+  }
+  @media print {
+    header { background: var(--emerald-900) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    nav.toc { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brand">
+    <span class="pin" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ffffff"/>
+        <circle cx="12" cy="9" r="2.6" fill="#047857"/>
+      </svg>
+    </span>
+    RutaViva
+  </span>
+  <h1>Política de privacidad</h1>
+  <p class="sub">RutaViva · Guía turística de Manzanillo, Colima, México</p>
+  <span class="updated">Última actualización: 24 de octubre de 2026</span>
+</header>
+
+<main>
+
+  <nav class="toc" aria-label="Contenido">
+    <strong>Contenido</strong>
+    <ol>
+      <li><a href="#responsable">1. Responsable del tratamiento</a></li>
+      <li><a href="#datos">2. Datos que recopilamos</a></li>
+      <li><a href="#uso">3. Cómo usamos tus datos</a></li>
+      <li><a href="#moderacion">4. Moderación de contenido</a></li>
+      <li><a href="#terceros">5. Terceros, publicidad y venta de datos</a></li>
+      <li><a href="#derechos">6. Tus derechos y eliminación de datos</a></li>
+      <li><a href="#menores">7. Menores de edad</a></li>
+      <li><a href="#cambios">8. Cambios a esta política</a></li>
+      <li><a href="#contacto">9. Contacto</a></li>
+    </ol>
+  </nav>
+
+  <section id="responsable">
+    <h2>1. Responsable del tratamiento</h2>
+    <p>
+      La aplicación móvil y web <strong>RutaViva</strong> (en adelante, «RutaViva» o «la App») es una guía turística
+      digital de <strong>Manzanillo, Colima, México</strong>, operada por:
+    </p>
+    <ul>
+      <li><strong>Responsable:</strong> <span class="placeholder">[TU NOMBRE o razón social]</span></li>
+      <li><strong>Correo de contacto:</strong> <span class="placeholder">[correo@de-contacto]</span></li>
+      <li><strong>Ubicación:</strong> Manzanillo, Colima, México</li>
+    </ul>
+    <p>
+      Este documento describe, de forma clara y sencilla, qué datos trata RutaViva, con qué finalidad y qué derechos
+      tienes como persona usuaria. Aplica tanto a la aplicación para Android (distribuida por Google Play) como a la
+      versión web de la App.
+    </p>
+  </section>
+
+  <section id="datos">
+    <h2>2. Datos que recopilamos</h2>
+
+    <h3>2.1 Ubicación GPS (en tiempo real, no almacenada)</h3>
+    <p>
+      RutaViva solicita el permiso de ubicación de tu dispositivo para <strong>mostrarte los lugares cercanos ordenados
+      por distancia real</strong>. Este es el único uso de la ubicación:
+    </p>
+    <ul>
+      <li>La ubicación se obtiene y se usa <strong>únicamente en tiempo real</strong>, durante tu sesión, para calcular distancias y ordenar resultados.</li>
+      <li><strong>No se guarda en servidores</strong>, no se asocia a tu identidad y no se registra en ninguna base de datos.</li>
+      <li><strong>No se comparte</strong> con terceros ni se usa para rastrear tus movimientos.</li>
+      <li>La ubicación es <strong>opcional</strong>: si niegas el permiso, la App funciona igual con una ubicación de referencia (Centro Histórico de Manzanillo) que puedes cambiar cuando quieras.</li>
+    </ul>
+    <div class="note">
+      En resumen: tu GPS se usa «en el momento» para decirte qué hay cerca de ti y se olvida de inmediato.
+      <strong>RutaViva no guarda tu ubicación.</strong>
+    </div>
+
+    <h3>2.2 Nombre mostrado (opcional)</h3>
+    <p>
+      Si envías una reseña o sugieres un lugar, puedes indicar un <strong>nombre para mostrar</strong> (por ejemplo,
+      «Ana G.») que aparecerá junto a tu aportación. Es un dato <strong>opcional y autodeclarado</strong>: no pedimos
+      tu nombre real, ni correo, ni teléfono, ni creamos cuentas de usuario con contraseñas. No validamos ni verificamos
+      este nombre.
+    </p>
+
+    <h3>2.3 Reseñas, comentarios y fotos que envías voluntariamente</h3>
+    <p>
+      Solo recopilamos contenido cuando tú decides enviarlo:
+    </p>
+    <ul>
+      <li><strong>Reseñas:</strong> calificación de estrellas (1–5) y comentario de texto sobre un lugar.</li>
+      <li><strong>Fotos:</strong> hasta 3 fotografías por reseña (o 1 al sugerir un lugar), tomadas o elegidas por ti.</li>
+      <li><strong>Sugerencias de lugares:</strong> nombre, descripción, categoría y ubicación de un lugar que propongas, junto con el nombre mostrado que elijas para recibir el crédito.</li>
+    </ul>
+    <p>
+      Este contenido se envía al servidor propio de RutaViva (una base de datos controlada por el responsable) y
+      <strong>queda sujeto a revisión antes de publicarse</strong> (ver sección 4).
+    </p>
+
+    <h3>2.4 Cookie de sesión del panel de administración</h3>
+    <p>
+      El <strong>panel de administración</strong> (de uso exclusivo del equipo editorial de RutaViva) utiliza
+      <strong>una sola cookie de sesión</strong>, protegida (httpOnly y firmada), que sirve únicamente para mantener la
+      sesión iniciada del administrador mientras modera contenido. Esta cookie:
+    </p>
+    <ul>
+      <li><strong>No</strong> se usa para rastrear a usuarios finales.</li>
+      <li><strong>No</strong> hay cookies publicitarias, de analítica de terceros ni de seguimiento de ningún tipo en la App.</li>
+      <li>Se elimina al cerrar la sesión del administrador.</li>
+    </ul>
+
+    <h3>2.5 Lo que NO recopilamos</h3>
+    <ul>
+      <li>Contraseñas de usuarios, correos electrónicos o cuentas de usuario.</li>
+      <li>Identificadores de dispositivo, dirección IP con fines de perfilado o listas de contactos.</li>
+      <li>Datos de pago (la App es gratuita y no tiene compras).</li>
+      <li>Historial de ubicaciones o datos de sensores no necesarios para la función de «lugares cercanos».</li>
+    </ul>
+
+    <h3>2.6 Servicios de mapas y datos abiertos</h3>
+    <p>
+      Para mostrar los <strong>servicios comunes</strong> (farmacias, gasolineras, cajeros, tiendas de conveniencia), la
+      App consulta en tu navegador la base de datos abierta de <strong>OpenStreetMap</strong> (a través de servicios
+      públicos como Overpass API) usando el área visible del mapa. La información que los mapas base muestran se rige
+      por las políticas de sus proveedores de mosaicos cartográficos. RutaViva no envía a esos servicios tu identidad.
+    </p>
+  </section>
+
+  <section id="uso">
+    <h2>3. Cómo usamos tus datos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dato</th>
+          <th>Finalidad</th>
+          <th>¿Se almacena?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Ubicación GPS</strong></td>
+          <td>Calcular distancias y mostrarte lugares y servicios cercanos, ordenados por proximidad.</td>
+          <td><strong>No.</strong> Solo en tiempo real, en memoria, durante tu sesión.</td>
+        </tr>
+        <tr>
+          <td><strong>Nombre mostrado</strong></td>
+          <td>Firmar tus reseñas y dar crédito por lugares sugeridos.</td>
+          <td>Sí (junto al contenido que enviaste).</td>
+        </tr>
+        <tr>
+          <td><strong>Reseñas y comentarios</strong></td>
+          <td>Publicar opiniones útiles para otros viajeros, tras su aprobación.</td>
+          <td>Sí (en el servidor de RutaViva).</td>
+        </tr>
+        <tr>
+          <td><strong>Fotos</strong></td>
+          <td>Ilustrar reseñas y lugares, tras su aprobación.</td>
+          <td>Sí (en el servidor de RutaViva).</td>
+        </tr>
+        <tr>
+          <td><strong>Cookie de sesión admin</strong></td>
+          <td>Mantener la sesión del equipo editorial dentro del panel de administración.</td>
+          <td>Solo mientras dure la sesión del administrador.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>No usamos tus datos para:</strong> publicidad ni marketing, venta de datos, perfiles de comportamiento,
+      entrenamiento de modelos de IA, ni comunicación con terceros con fines comerciales.
+    </p>
+  </section>
+
+  <section id="moderacion">
+    <h2>4. Moderación de contenido</h2>
+    <p>
+      RutaViva es una guía cuidada: todo el contenido enviado por usuarias y usuarios pasa por
+      <strong>validación previa del equipo de RutaViva antes de publicarse</strong>. En la práctica:
+    </p>
+    <ol>
+      <li>Cuando envías una reseña, foto o sugerencia, esta queda en estado <strong>«en revisión»</strong> y <strong>no es visible al público</strong>.</li>
+      <li>El equipo revisa que el contenido cumpla los <strong>formatos y principios editoriales</strong> de la App (veracidad, respeto, relevancia turística, calidad de la foto).</li>
+      <li>Si se aprueba, se publica; si no cumple, se rechaza y no se publica.</li>
+    </ol>
+    <p>
+      Además, cualquier persona puede usar el botón <strong>«Reportar»</strong> que aparece en cada reseña publicada
+      para avisar al equipo sobre contenido inapropiado. El contenido reportado se <strong>oculta de inmediato</strong>
+      mientras el equipo lo revisa, y puede restaurarse o eliminarse definitivamente. También puedes pedir la
+      eliminación de tu propio contenido por el canal de contacto (sección 6).
+    </p>
+  </section>
+
+  <section id="terceros">
+    <h2>5. Terceros, publicidad y venta de datos</h2>
+    <ul>
+      <li><strong>No vendemos, alquilamos ni cedemos</strong> tus datos personales a terceros, bajo ninguna circunstancia.</li>
+      <li><strong>No hay publicidad</strong> dentro de RutaViva ni SDKs de redes publicitarias ni de analítica de terceros.</li>
+      <li>Los datos que envías (reseñas, fotos, nombre mostrado) residen únicamente en el <strong>servidor propio de RutaViva</strong>.</li>
+      <li>Los únicos servicios externos que intervienen son los de <strong>infraestructura necesaria para operar</strong> (alojamiento del servidor y del mapa, como OpenStreetMap y su proveedor de mosaicos), los cuales procesan la información estrictamente para prestar ese servicio técnico.</li>
+      <li>Podríamos divulgar información solo si una ley o autoridad competente lo exige.</li>
+    </ul>
+  </section>
+
+  <section id="derechos">
+    <h2>6. Tus derechos y eliminación de datos</h2>
+    <p>
+      Como persona usuaria de RutaViva puedes, en cualquier momento y de forma gratuita:
+    </p>
+    <ul>
+      <li><strong>Solicitar la eliminación</strong> de tus reseñas, fotos, sugerencias y del nombre mostrado asociado. Escríbenos a <span class="placeholder">[correo@de-contacto]</span> indicando el contenido a eliminar (lugar, fecha o nombre mostrado usado). Atenderemos tu solicitud a la brevedad.</li>
+      <li><strong>Saber qué contenido tuyo está publicado</strong>: puedes identificarlo por el nombre mostrado que usaste; si nos escribes, te confirmamos qué sigue publicado de esa aportación.</li>
+      <li><strong>Reportar contenido</strong> de terceros con el botón «Reportar» dentro de la App o por el mismo correo.</li>
+      <li><strong>Retirar el permiso de ubicación</strong> cuando quieras desde los ajustes de tu dispositivo; la App seguirá funcionando con la ubicación de referencia.</li>
+    </ul>
+    <div class="note">
+      La ubicación GPS <strong>no necesita solicitud de borrado</strong>, porque nunca se almacena: se procesa en
+      tiempo real y se descarta.
+    </div>
+    <p>
+      Si tienes su domicilio en México, puedes conocer más sobre tus derechos de protección de datos personales en la
+      Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados y, para particulares, en los
+      lineamientos del INAI. Este aviso se ofrece además en cumplimiento de las Políticas de Datos de Usuario y la
+      Política de Contenido de Usuarios de <strong>Google Play</strong>.
+    </p>
+  </section>
+
+  <section id="menores">
+    <h2>7. Menores de edad</h2>
+    <p>
+      RutaViva está dirigida a un público general de <strong>13 años o más</strong> y no recopilamos de forma
+      deliberada datos de menores de 13 años. La App no contiene contenido restringido, pero al ser una guía con
+      contenido generado por usuarios (bajo moderación), recomendamos el acompañamiento de un adulto para usuarias y
+      usuarios menores. Si crees que un menor de 13 años nos envió datos personales, contáctanos en
+      <span class="placeholder">[correo@de-contacto]</span> y los eliminaremos de inmediato.
+    </p>
+  </section>
+
+  <section id="cambios">
+    <h2>8. Cambios a esta política</h2>
+    <p>
+      Podemos actualizar esta política para reflejar mejoras en la App o cambios en la normativa. Publicaremos siempre
+      la versión vigente en esta misma página, con la <strong>fecha de última actualización</strong> al inicio del
+      documento. Si el cambio fuera importante (por ejemplo, tratar un tipo de dato nuevo), lo destacaremos dentro de
+      la App o en la ficha de la tienda. Te recomendamos revisar esta página ocasionalmente.
+    </p>
+    <p><strong>Historial de versiones:</strong></p>
+    <ul>
+      <li><strong>24 de octubre de 2026</strong> — Primera publicación de la política de privacidad de RutaViva.</li>
+    </ul>
+  </section>
+
+  <section id="contacto">
+    <h2>9. Contacto</h2>
+    <p>
+      Para cualquier duda, solicitud de eliminación de datos, reporte o aclaración sobre esta política:
+    </p>
+    <ul>
+      <li><strong>Correo:</strong> <span class="placeholder">[correo@de-contacto]</span></li>
+      <li><strong>Responsable:</strong> <span class="placeholder">[TU NOMBRE o razón social]</span></li>
+      <li><strong>App:</strong> RutaViva · <span class="placeholder">[sitio web o dominio]</span></li>
+    </ul>
+    <p>Gracias por viajar y compartir Manzanillo con respeto. 🧭</p>
+  </section>
+
+</main>
+
+<footer>
+  <p class="brand-line">RutaViva · Guía turística de Manzanillo, Colima, México</p>
+  <p>© 2026 RutaViva. Documento de política de privacidad — versión 1.0.</p>
+</footer>
+
+</body>
+</html>

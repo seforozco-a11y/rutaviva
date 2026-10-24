@@ -1,0 +1,13 @@
+# Configuración de Railway para RutaViva
+# Docs: https://docs.railway.app/guides/build-definitions
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "bash scripts/start-railway.sh"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
