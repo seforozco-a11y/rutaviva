@@ -57,9 +57,11 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
+          # storeFile se resuelve relativo al módulo (android/app/), así que el
+          # .jks debe vivir en android/app/ (keystore.properties sí va en android/).
           if [ -n "$ANDROID_KEYSTORE_B64" ]; then
             echo "Usando keystore de los secrets (producción)"
-            echo "$ANDROID_KEYSTORE_B64" | base64 -d > rutaviva-release.jks
+            echo "$ANDROID_KEYSTORE_B64" | base64 -d > app/rutaviva-release.jks
             cat > keystore.properties <<EOF
           storeFile=rutaviva-release.jks
           storePassword=$ANDROID_KEYSTORE_PASSWORD
@@ -69,7 +71,7 @@ jobs:
           else
             echo "::warning::Sin ANDROID_KEYSTORE_B64: se genera keystore TEMPORAL de prueba (no subir este AAB a producción)"
             keytool -genkeypair -v \
-              -keystore rutaviva-release.jks \
+              -keystore app/rutaviva-release.jks \
               -alias rutaviva -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass rutaviva-temp -keypass rutaviva-temp \
               -dname "CN=RutaViva, OU=Dev, O=RutaViva, L=Manzanillo, ST=Colima, C=MX"

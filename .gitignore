@@ -58,6 +58,7 @@ android/app/build
 android/local.properties
 android/keystore.properties
 android/*.jks
+android/app/*.jks
 android/*.keystore
 android/.idea
 android/captures
