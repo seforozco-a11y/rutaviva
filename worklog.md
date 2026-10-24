@@ -322,3 +322,15 @@ Work Log:
 
 Stage Summary:
 - Al cerrar: run 40065285320 verificado el último fix (keystore path). Todo documentado para retomar: autorizar Vercel → Neon → deploy → secrets CI → AAB firmado → Play Console.
+
+---
+Task ID: 12-b
+Agent: Z.ai Code (main)
+Task: Resultado final del CI al cerrar
+
+Work Log:
+- Run 40065285320 (fix keystore en android/app/): **success**. Artefacto rutaviva-android 13 MB (AAB+APK firmado con keystore temporal de prueba).
+- Pipeline completo validado: checkout → bun → cap sync (www/) → keystore temporal → bundleRelease + assembleRelease → artifact.
+
+Stage Summary:
+- CI Android 100% operativo. Pendiente solo de CAP_SERVER_URL (Vercel) + keystore de producción en secrets para generar el AAB publicable.

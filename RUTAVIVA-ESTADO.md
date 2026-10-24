@@ -3,7 +3,7 @@
 > **Guardado el:** fin de sesión de despliegue — *"guarda todo y mañana continuamos"*
 > **Objetivo de este documento:** que cualquier sesión futura retome el proyecto exactamente donde quedó, sin rehacer trabajo.
 >
-> **⚡ SITUACIÓN ACTUAL (guardado de esta sesión):** repo en GitHub ✓ · CI del AAB en marcha (fallo de cap sync ya corregido, run de verificación activo) · hosting pivota a **Vercel + Neon** (Railway tiene registros pausados oficialmente) · falta autorizar Vercel (device code nuevo al retomar) + crear DB Neon + secrets CI + Play Console. Detalle en §4.
+> **⚡ SITUACIÓN ACTUAL (guardado de esta sesión):** repo en GitHub ✓ · **CI del AAB VERDE** (run 40065285320 `success`, artefacto `rutaviva-android` 13 MB con AAB+APK de prueba) · hosting pivota a **Vercel + Neon** (Railway tiene registros pausados oficialmente) · falta autorizar Vercel (device code nuevo al retomar) + crear DB Neon + secrets CI (CAP_SERVER_URL + keystore de producción) + Play Console. Detalle en §4.
 
 ---
 
