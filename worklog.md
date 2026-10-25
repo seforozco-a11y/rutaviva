@@ -334,3 +334,25 @@ Work Log:
 
 Stage Summary:
 - CI Android 100% operativo. Pendiente solo de CAP_SERVER_URL (Vercel) + keystore de producción en secrets para generar el AAB publicable.
+
+---
+Task ID: 13
+Agent: Z.ai Code (sesión nocturna deploy)
+Task: Deploy producción Vercel+Neon, secrets CI y AAB de producción (roadmap pasos 2-5)
+
+Work Log:
+- Confirmada autorización Vercel del usuario (auth.json válido hasta 11:29; usuario seforozco-a11y, plan Hobby).
+- Neon: CLI no soporta marketplace; API /v1/storage/stores/integration requiere integrationConfigurationId; neonctl usa callback 127.0.0.1 (inviable en sandbox) → el usuario creó la base desde el dashboard (store neon-charcoal-prism, conectada a prj_XbO1kRv2IGWGp5BPG0fRLPaOlRzf, inyecta DATABASE_URL/POSTGRES_URL_NON_POOLING en production+preview).
+- vercel link --project rutaviva (orgId team_kHOKJaxDF4lHveDDN7pZvho6). Conexión Git de Vercel con GitHub falló (no instalada la app; no bloquea: deploy por CLI y AAB por Actions).
+- Env production agregadas via CLI: ADMIN_PIN, ADMIN_SECRET (tipo Secret).
+- Keystore de producción generado: ~/keystore-backup/rutaviva-release.jks (alias rutaviva, RSA 2048, 10950 días, válido hasta 2056-10-17; SHA-256 C6:4B:2C:D2:...:0A:D4:A6; pass en produccion-credenciales.txt).
+- Deploy 1: ✓ Ready (https://rutaviva-seven.vercel.app) pero /api/places vacío.
+- BUG raíz: prisma/seed.ts lanza main() como promesa flotante al importarse; seed-if-empty hacía await import() (solo espera el módulo) y su process.exit(0) mataba el seed → "Seed completado · 0 lugares".
+- FIX: scripts/seed-if-empty.ts ahora ejecuta prisma/seed.ts como SUBPROCESO (bun o npx tsx) y valida after>0. Probado con BD temporal SQLite: 1ª corrida siembra 14 registros, 2ª omite (idempotente).
+- Deploy 2: ✓ Ready 46s; seed sembró 13 lugares + reseñas; GET /api/places → total 13 ✓; / y /privacidad.html → 200 ✓.
+- GitHub re-autorizado vía device flow (watcher setsid con regeneración automática de código; token en .tmp-auth/gh-token, chmod 600).
+- Secrets CI subidos (gh secret set): ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS=rutaviva, ANDROID_KEY_PASSWORD, CAP_SERVER_URL=https://rutaviva-seven.vercel.app.
+
+Stage Summary:
+- Producción: https://rutaviva-seven.vercel.app (Next 16.1.3, Prisma+PostgreSQL Neon iad1, catálogo 13 lugares).
+- Pendiente: push del fix (dispara AAB producción), descargar artefacto a ~/play-release/, Play Console con el usuario.
