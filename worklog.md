@@ -288,7 +288,7 @@ Work Log:
 - Limpieza repo: git rm --cached tool-results/ + .gitignore (tool-results/, .tmp-auth/) → commit aedc757.
 - Investigado mecanismo de muerte de procesos en background del sandbox: nohup simple muere entre tool calls; la técnica que sobrevive es `setsid --fork nohup cmd < /dev/null > log 2>&1 &` (verificado 147s+).
 - Flujos de autorización lanzados (resilientes): railway login --browserless (código DDGC-CQDK) y OAuth device flow GitHub con client_id público de gh CLI (user_code 4849-E3D6, device_code persistido en /tmp/gh-device-init.json para recuperación manual).
-- Credenciales de producción generadas y guardadas en /home/z/keystore-backup/produccion-credenciales.txt: ADMIN_PIN=RV669DD2, ADMIN_SECRET (64 hex), KEYSTORE_PASSWORD (keytool).
+- Credenciales de producción generadas y guardadas en /home/z/keystore-backup/produccion-credenciales.txt: ADMIN_PIN=RV•••••• (rotado; ver keystore-backup local), ADMIN_SECRET (64 hex), KEYSTORE_PASSWORD (keytool).
 - Orquestador .tmp-auth/orchestrator.sh corriendo (PID 8047, estado en /tmp/orchestrator-status.json): al autorizarse ejecuta solo → Railway (init, up, domain, volume /data, variables DATABASE_URL/NODE_ENV/ADMIN_PIN/ADMIN_SECRET, redeploy, healthcheck + verificación /api/places) → GitHub (gh repo create rutaviva --public + push) → secrets (CAP_SERVER_URL + keystore keytool 2048 RSA + 4 secrets) → gh workflow run + download AAB a /home/z/play-release/.
 
 Stage Summary:
@@ -308,7 +308,7 @@ Work Log:
 - CI GitHub Actions: primer run falló en android-actions/setup-android@v3 (paquete SDK obsoleto 'tools' con runner nuevo). Fix: eliminado el paso (SDK ya preinstalado en ubuntu-latest) → run 40062557509 en progreso con ci-watch en background.
 
 Stage Summary:
-- GitHub COMPLETADO. Hosting pivota a Vercel+Neon: falta 1 clic del usuario (device code Vercel) + crear la DB Neon (dashboard o CLI). El AAB espera a CAP_SERVER_URL real. PIN producción: RV669DD2 (keystore-backup/produccion-credenciales.txt).
+- GitHub COMPLETADO. Hosting pivota a Vercel+Neon: falta 1 clic del usuario (device code Vercel) + crear la DB Neon (dashboard o CLI). El AAB espera a CAP_SERVER_URL real. PIN producción: RV•••••• (rotado; ver keystore-backup local) (keystore-backup/produccion-credenciales.txt).
 
 ---
 Task ID: 12

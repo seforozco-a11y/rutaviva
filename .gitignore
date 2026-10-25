@@ -69,3 +69,5 @@ android/.cxx
 # Resultados de herramientas y auth temporal
 /tool-results/
 /.tmp-auth/
+
+/.tmp-auth/
