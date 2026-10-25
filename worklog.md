@@ -372,3 +372,23 @@ Work Log:
 
 Stage Summary:
 - Entregado para Play Console: URL prod https://rutaviva-seven.vercel.app · AAB firmado (descarga: Actions run 40160381094 → artifact rutaviva-android) · privacidad sin placeholders · PIN prod en keystore-backup · checklist C/D/E mayormente precumplido.
+
+---
+Task ID: 14
+Agent: Z.ai Code (sesión nocturna deploy)
+Task: Demo en vivo del flujo UGC completo sobre PRODUCCIÓN (viajero → moderación → publicación)
+
+Work Log:
+- Agent Browser (viewport móvil 390×844) sobre https://rutaviva-seven.vercel.app: splash → demo → mapa con 13 marcadores y franja por distancia real.
+- Detalle Mercado Municipal (5.0★, reseña TacosLover19 + botón Reportar visible).
+- Reseña "Marisol T." (5★): primer intento NO persistió — causa: fill de agent-browser no dispara onChange de React en inputs controlados (texto fijo "pasa por revisión" del formulario confundió la lectura); el API vía curl persiste bien (HTTP 201). Reintento con native value setter + evento input: éxito ("¡Gracias, Marisol T.!", pendingReviews 3→4). NO es bug de la app.
+- Sugerencia "Mirador La Pozahualca" (credito Colectivo Fotógrafos de Manzanillo) → PENDING.
+- Admin con PIN producción: cola "Por revisar 5". Diálogo "Validar y publicar" con checklist en vivo 5 ítems; el botón permanece deshabilitado sin foto (formatos exigentes ✓; el validador rechazó correctamente un blob no-imagen con alert "El archivo no es una imagen"). Foto inyectada vía DataTransfer (fetch /images/places/mirador.png real) → checklist 5/5 → "Aprobar y publicar" → lugares publicados 13→14 ✓.
+- Admin: Marisol APROBADA, "Prueba Curl" RECHAZADA → cola limpia.
+- Público final: GET /api/places/[id] → reseñas "Marisol T., TacosLover19" rating 5; en UI la reseña de Marisol VISIBLE con su comentario. Ciclo UGC completo verificado en producción.
+- 13 capturas en /tmp/demo/01..13*.png (splash, mapa, detalle, formularios, checklist, éxito).
+
+Stage Summary:
+- Flujo UGC end-to-end demostrado en producción: viajero propone/modera → admin valida con checklist → publicado al instante. Reporte de reseñas visible en detalle. Estadísticas admin (overview) coherentes (15 lugares totales, 14 publicados, reseñas 9 con la de Marisol aprobada).
+- Datos demo quedados en prod (borrables desde admin si se desea): lugar "Mirador La Pozahualca" (APPROVED), reseña "Marisol T." (APPROVED), "Prueba Curl" (REJECTED, invisible).
+- Lección técnica: para automatizar forms React usar native setter + input event; el texto "pasa por revisión" es helper fijo del formulario, el éxito real es "¡Gracias, <nombre>!".
