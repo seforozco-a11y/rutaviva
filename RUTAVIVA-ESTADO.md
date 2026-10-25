@@ -3,7 +3,7 @@
 > **Guardado el:** fin de sesión de despliegue — *"guarda todo y mañana continuamos"*
 > **Objetivo de este documento:** que cualquier sesión futura retome el proyecto exactamente donde quedó, sin rehacer trabajo.
 >
-> **⚡ SITUACIÓN ACTUAL (sesión nocturna 2026-10-25):** **PRODUCCIÓN EN LÍNEA** → https://rutaviva-seven.vercel.app (Next 16.1.3 + Prisma/PostgreSQL en Neon iad1; 13 lugares sembrados; `/privacidad.html` sin placeholders; admin con PIN de producción). **AAB DE PRODUCCIÓN VERIFICADO** (run 40160381094 success, firmado con keystore real SHA-256 C6:4B:2C:D2:…:A6, válido a 2056; descargado a ~/play-release/rutaviva-android/bundle/release/app-release.aab). Solo queda **Google Play Console** (acción humana del usuario) — guía en §4 paso 6 y docs/store-assets/PLAY-CHECKLIST.md.
+> **⚡ SITUACIÓN ACTUAL (cierre nocturno 2026-10-25 ~04:45):** **PRODUCCIÓN EN LÍNEA** → https://rutaviva-seven.vercel.app (Next 16.1.3 + Neon Postgres iad1 · **14 lugares publicados** · privacidad sin placeholders · admin PIN en envs de Vercel). **AAB DE PRODUCCIÓN VERIFICADO** (run 40160381094, firmado con keystore real válido a 2056, en `~/play-release/rutaviva-android/bundle/release/app-release.aab`). **Demo UGC completa ejecutada en vivo** (Task 14: viajero → moderación → publicación ✓). **Solo queda Google Play Console** (clics del usuario) + probar el panel personalmente. Guía en §4 paso 6.
 
 ---
 
@@ -115,7 +115,8 @@
 4. ~~Deploy producción~~ ✓ **https://rutaviva-seven.vercel.app** — envs ADMIN_PIN/ADMIN_SECRET; seed corregido (bug: `await import()` no esperaba la promesa flotante del seed → ahora subproceso; validado con BD temporal); `/api/places` = 13 lugares; admin login 200
 5. ~~Secrets CI + keystore~~ ✓ keytool RSA 2048 válido a 2056 (huellas en keystore-backup); secrets `ANDROID_KEYSTORE_B64/PASSWORD`, `ANDROID_KEY_ALIAS=rutaviva`, `ANDROID_KEY_PASSWORD`, `CAP_SERVER_URL=https://rutaviva-seven.vercel.app`; AAB firmado y descargado a `~/play-release/`
 6. **Google Play Console** (requiere al usuario): seguir `docs/store-assets/PLAY-CHECKLIST.md` — crear app "RutaViva: Guía de Manzanillo", AAB desde Actions run 40160381094 (artefacto `rutaviva-android`, usar `bundle/release/app-release.aab`), privacidad `https://rutaviva-seven.vercel.app/privacidad.html` (YA sin placeholders), pruebas internas (cuenta personal nueva = 12 testers × 14 días), IARC/Seguridad de datos con las respuestas del checklist §C.
-7. **Después del lanzamiento:** fotos en la nube (hoy dataURLs), expansión Colima, iOS, extras.
+7. **Primera tarea de mañana (5 min):** probar el panel admin personalmente (app → Admin → PIN en keystore-backup) y **limpiar los 3 registros de demo** del Task 14 si se desea catálogo puro: lugar *"Mirador La Pozahualca"* (APPROVED, ubicación inventada), reseña *"Marisol T."* en Mercado Municipal (APPROVED), *"Prueba Curl"* (REJECTED, ya invisible — solo aparece si se filtra por estado). Todo borrable desde Admin → Lugares (eliminar) y reseñas no aparecen al público.
+8. **Después del lanzamiento:** fotos en la nube (hoy dataURLs), expansión Colima, iOS, extras.
 
 > **Notas de sesión (sandbox):** tokens de auth NO persisten entre días — regenerar device codes al retomar. Procesos background sobreviven con `setsid --fork nohup cmd < /dev/null > log 2>&1 &` (nohup simple muere). Flujos OAuth device de GitHub se bloquean con `slow_down` si se encuesta demasiado seguido (usar interval ≥8s y backoff).
 

@@ -392,3 +392,17 @@ Stage Summary:
 - Flujo UGC end-to-end demostrado en producción: viajero propone/modera → admin valida con checklist → publicado al instante. Reporte de reseñas visible en detalle. Estadísticas admin (overview) coherentes (15 lugares totales, 14 publicados, reseñas 9 con la de Marisol aprobada).
 - Datos demo quedados en prod (borrables desde admin si se desea): lugar "Mirador La Pozahualca" (APPROVED), reseña "Marisol T." (APPROVED), "Prueba Curl" (REJECTED, invisible).
 - Lección técnica: para automatizar forms React usar native setter + input event; el texto "pasa por revisión" es helper fijo del formulario, el éxito real es "¡Gracias, <nombre>!".
+
+---
+Task ID: 14-cierre
+Agent: Z.ai Code (sesión nocturna deploy)
+Task: Cierre de sesión — guardar todo para continuar mañana con Play Console
+
+Work Log:
+- RUTAVIVA-ESTADO.md actualizado: cabecera de situación (prod viva, 14 lugares, AAB verificado, demo UGC ✓) y §4 reordenado (paso 7 nuevo: probar panel + limpiar 3 registros demo; paso 8 post-lanzamiento).
+- Recordatorios para mañana: AAB ya descargado en ~/play-release/ (no hace falta re-descargar si se usa ese; alternativa fresca: Actions run 40160381094 → artifact). PIN admin en ~/keystore-backup/produccion-credenciales.txt.
+- Sandbox: Vercel CLI en ~/.npm-global/bin (añadir al PATH); token GitHub en .tmp-auth/gh-token (si expira, device flow con watcher setsid); auth Vercel en auth.json (expira 11:29 hoy — si se necesita re-deploy mañana, verificar whoami).
+- Sin procesos background pendientes (deploy terminados, watcher GitHub ya se auto-cerró tras guardar token).
+
+Stage Summary:
+- TODO GUARDADO. Mañana: ① usuario prueba panel admin y limpia demo (opcional) → ② Play Console paso a paso (crear app, ficha con assets listos, formularios, AAB a pruebas internas 12×14 días) → ③ producción con fases.
