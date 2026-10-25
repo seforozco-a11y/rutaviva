@@ -3,7 +3,7 @@
 > **Guardado el:** fin de sesión de despliegue — *"guarda todo y mañana continuamos"*
 > **Objetivo de este documento:** que cualquier sesión futura retome el proyecto exactamente donde quedó, sin rehacer trabajo.
 >
-> **⚡ SITUACIÓN ACTUAL (guardado de esta sesión):** repo en GitHub ✓ · **CI del AAB VERDE** (run 40065285320 `success`, artefacto `rutaviva-android` 13 MB con AAB+APK de prueba) · hosting pivota a **Vercel + Neon** (Railway tiene registros pausados oficialmente) · falta autorizar Vercel (device code nuevo al retomar) + crear DB Neon + secrets CI (CAP_SERVER_URL + keystore de producción) + Play Console. Detalle en §4.
+> **⚡ SITUACIÓN ACTUAL (sesión nocturna 2026-10-25):** **PRODUCCIÓN EN LÍNEA** → https://rutaviva-seven.vercel.app (Next 16.1.3 + Prisma/PostgreSQL en Neon iad1; 13 lugares sembrados; `/privacidad.html` sin placeholders; admin con PIN de producción). **AAB DE PRODUCCIÓN VERIFICADO** (run 40160381094 success, firmado con keystore real SHA-256 C6:4B:2C:D2:…:A6, válido a 2056; descargado a ~/play-release/rutaviva-android/bundle/release/app-release.aab). Solo queda **Google Play Console** (acción humana del usuario) — guía en §4 paso 6 y docs/store-assets/PLAY-CHECKLIST.md.
 
 ---
 
@@ -89,8 +89,10 @@
 - **GitHub: COMPLETADO.** Repo público `seforozco-a11y/rutaviva` (rama main). Autorización vía OAuth device flow con el client_id público de gh CLI (scopes repo+workflow; gh CLI no almacena el token por falta de read:org → usar `GH_TOKEN` env o URL autenticada para push).
 - **CI del AAB:** tres fallos diagnosticados y corregidos en cadena: ① `android-actions/setup-android@v3` usaba el paquete SDK obsoleto `tools` → paso eliminado (SDK ya viene preinstalado en ubuntu-latest); ② `cap sync` exige `index.html` en webDir → **`webDir: "www"`** con `www/index.html` de respaldo (NO usar public/index.html: sombrearía la ruta `/` de Next); ③ `:app:validateSigningRelease` no hallaba el keystore → **`storeFile` resuelve relativo a `android/app/`**, no a la raíz `android/` → el workflow ahora escribe el .jks en `app/rutaviva-release.jks`. Run de verificación final: 40065285320 (resultado en /tmp/ci-run3.log o en la pestaña Actions).
 - **Railway: DESCARTADO por ahora.** Registro de cuentas nuevas pausado oficialmente (incidente en status.railway.com desde 2026-10-23, sin ETA). El kit completo (Dockerfile, railway.toml, scripts/start-railway.sh, docs/RAILWAY.md) queda intacto como plan B cuando reabran.
-- **Vercel + Neon: PLAN A.** Kit pusheado: `scripts/vercel-build.sh` (reescribe datasource a postgresql SOLO en el contenedor de build, prisma generate + db push no destructivo + seed-if-empty + next build; el desarrollo local sigue en SQLite), `vercel.json` (buildCommand + header privacidad), `package.json` con postinstall `prisma generate` + script `vercel-build`. Sin escrituras a disco en runtime (fotos = data URLs en BD) → serverless compatible. Vercel CLI 65.2.0 instalado en el sandbox.
-- **Credenciales de producción generadas** (archivo `~/keystore-backup/produccion-credenciales.txt`): `ADMIN_PIN=RV•••••• (rotado; ver keystore-backup local)`, `ADMIN_SECRET` (64 hex) y `KEYSTORE_PASSWORD`. El keystore .jks aún no se genera (se genera al configurar secrets CI).
+- **Vercel + Neon: ACTIVO (prod).** Kit pusheado: `scripts/vercel-build.sh` (reescribe datasource a postgresql SOLO en el contenedor de build, prisma generate + db push no destructivo + seed-if-empty + next build; el desarrollo local sigue en SQLite), `vercel.json` (buildCommand + header privacidad), `package.json` con postinstall `prisma generate` + script `vercel-build`. Sin escrituras a disco en runtime (fotos = data URLs en BD) → serverless compatible. Vercel CLI 65.2.0 en el sandbox. Binarios npm globales en `~/.npm-global/bin` (añadir al PATH).
+- **Deploy producción (2026-10-25):** https://rutaviva-seven.vercel.app · proyecto Vercel `oroxco/rutaviva` (prj_XbO1kRv2IGWGp5BPG0fRLPaOlRzf) · Neon `neon-charcoal-prism` (iad1) · 3 deploys (el 3° con privacidad real) · seed-if-empty corregido (subproceso) · login admin verificado 200.
+- **Keystore producción:** `~/keystore-backup/rutaviva-release.jks` alias `rutaviva`, RSA 2048, 2026→2056 · SHA-1 `80:5C:6A:26:E5:2B:62:79:3B:CB:76:BF:81:CC:11:89:45:33:EC:63` · SHA-256 `C6:4B:2C:D2:0D:1C:05:F6:45:10:E4:2F:AD:49:8A:01:A4:4B:9D:AB:D3:78:48:3C:00:66:9B:B3:FA:0A:D4:A6`. En CI como secrets (B64). Copia local ÚNICA: hacer backup externo del .jks.
+- **Credenciales de producción** (archivo `~/keystore-backup/produccion-credenciales.txt`): `ADMIN_PIN=RV•••••• (rotado; ver keystore-backup local)`, `ADMIN_SECRET` (64 hex) y `KEYSTORE_PASSWORD`. Keystore .jks YA GENERADO (ver línea anterior) y configurado en secrets CI.
 
 ---
 
@@ -106,16 +108,14 @@
 
 ## 4. Pendiente — Ruta siguiente (orden actualizado tras esta sesión)
 
-**✅ Hecho esta sesión:** GitHub repo + push completo · CI reparado (2 fallos: SDK obsoleto y webDir) · kit Vercel+Neon pusheado · credenciales de producción generadas.
-
-**Mañana, en orden:**
-1. **Verificar el run CI 40064998672** (verificación del fix webDir): debe terminar en `success` y producir AAB de prueba (sin firmar de producción aún). Si falla, leer `/tmp/ci-run2.log`.
-2. **Autorizar Vercel (device flow):** `vercel login` en background → `https://vercel.com/oauth/device?user_code=XXXX` (el código de hoy expiró; generar nuevo). Necesita un clic del usuario con "Continue with GitHub".
-3. **Crear la base Neon Postgres:** probar `vercel storage create neon` con el CLI; si no existe ese comando, crearla desde el dashboard (Vercel → Storage → Neon free) y conectarla al proyecto. Inyecta `DATABASE_URL` (pooler) y `POSTGRES_URL_NON_POOLING`.
-4. **Deploy:** `vercel link` + `vercel env add ADMIN_PIN` (= RV•••••• (rotado; ver keystore-backup local)) + `ADMIN_SECRET` + `vercel --prod`. Verificar `/` y `/api/places` con el catálogo sembrado y `/privacidad.html`.
-5. **Secrets CI + keystore:** generar keystore con keytool (pass en keystore-backup) → `gh secret set` de `CAP_SERVER_URL` (URL de Vercel), `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS=rutaviva`, `ANDROID_KEY_PASSWORD` → re-disparar workflow → descargar AAB firmado a `~/play-release/`.
-6. **Google Play Console** (requiere al usuario): seguir `docs/store-assets/PLAY-CHECKLIST.md` con los assets de `docs/store-assets/` — crear app "RutaViva: Guía de Manzanillo", subir AAB a pruebas internas (cuenta nueva = 12 testers × 14 días), formularios IARC/Seguridad de datos, URL de privacidad (la servirá Vercel en /privacidad.html; aún tiene placeholders `[TU NOMBRE]`/`[correo@de-contacto]` por editar).
-7. **Después del lanzamiento:** fotos en la nube (hoy dataURLs), expansión Colima, iOS, extras (ver lista completa en la versión anterior de este roadmap).
+**✅ Completado (GitHub + CI + Deploy + AAB):**
+1. ~~Repo GitHub + CI AAB~~ ✓ (verde, artefacto con keystore real)
+2. ~~Autorizar Vercel~~ ✓ (usuario seforozco-a11y; re-autorizar GitHub vía device flow watcher cuando el token expire)
+3. ~~Base Neon~~ ✓ store `neon-charcoal-prism` creada desde el dashboard por el usuario, conectada al proyecto (inyecta DATABASE_URL pooler + POSTGRES_URL_NON_POOLING; CLI/API no lo permiten headless: callback 127.0.0.1)
+4. ~~Deploy producción~~ ✓ **https://rutaviva-seven.vercel.app** — envs ADMIN_PIN/ADMIN_SECRET; seed corregido (bug: `await import()` no esperaba la promesa flotante del seed → ahora subproceso; validado con BD temporal); `/api/places` = 13 lugares; admin login 200
+5. ~~Secrets CI + keystore~~ ✓ keytool RSA 2048 válido a 2056 (huellas en keystore-backup); secrets `ANDROID_KEYSTORE_B64/PASSWORD`, `ANDROID_KEY_ALIAS=rutaviva`, `ANDROID_KEY_PASSWORD`, `CAP_SERVER_URL=https://rutaviva-seven.vercel.app`; AAB firmado y descargado a `~/play-release/`
+6. **Google Play Console** (requiere al usuario): seguir `docs/store-assets/PLAY-CHECKLIST.md` — crear app "RutaViva: Guía de Manzanillo", AAB desde Actions run 40160381094 (artefacto `rutaviva-android`, usar `bundle/release/app-release.aab`), privacidad `https://rutaviva-seven.vercel.app/privacidad.html` (YA sin placeholders), pruebas internas (cuenta personal nueva = 12 testers × 14 días), IARC/Seguridad de datos con las respuestas del checklist §C.
+7. **Después del lanzamiento:** fotos en la nube (hoy dataURLs), expansión Colima, iOS, extras.
 
 > **Notas de sesión (sandbox):** tokens de auth NO persisten entre días — regenerar device codes al retomar. Procesos background sobreviven con `setsid --fork nohup cmd < /dev/null > log 2>&1 &` (nohup simple muere). Flujos OAuth device de GitHub se bloquean con `slow_down` si se encuesta demasiado seguido (usar interval ≥8s y backoff).
 

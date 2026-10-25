@@ -356,3 +356,19 @@ Work Log:
 Stage Summary:
 - Producción: https://rutaviva-seven.vercel.app (Next 16.1.3, Prisma+PostgreSQL Neon iad1, catálogo 13 lugares).
 - Pendiente: push del fix (dispara AAB producción), descargar artefacto a ~/play-release/, Play Console con el usuario.
+
+---
+Task ID: 13-cierre
+Agent: Z.ai Code (sesión nocturna deploy)
+Task: Cierre de la etapa deploy: AAB producción descargado y verificado, privacidad real, docs actualizadas
+
+Work Log:
+- Run CI 40160381094 (push 70286e0): success 2m36s con keystore de producción + CAP_SERVER_URL.
+- Artefacto descargado a ~/play-release/rutaviva-android/: bundle/release/app-release.aab (7.0 MB) + apk/release/app-release.apk (7.3 MB).
+- Firma verificada con keytool -printcert: Owner CN=RutaViva..., válido 2026-10-25 → 2056-10-17, SHA-256 coincide con el keystore (C6:4B:2C:D2:...:0A:D4:A6). ✓
+- privacidad.html: placeholders sustituidos (Responsable "Sefo Rozco — RutaViva", correo seforozco@gmail.com, dominio https://rutaviva-seven.vercel.app). Commit 4fb033a + deploy 3 (✓ Ready 1m). Verificado en prod y admin login {"ok":true} 200.
+- RUTAVIVA-ESTADO.md actualizado (§3 infra prod + §4 pasos 1-5 completados; solo falta Play Console).
+- Assets de ficha confirmados: icon-512, feature-graphic, 4 capturas en docs/store-assets/screenshots/.
+
+Stage Summary:
+- Entregado para Play Console: URL prod https://rutaviva-seven.vercel.app · AAB firmado (descarga: Actions run 40160381094 → artifact rutaviva-android) · privacidad sin placeholders · PIN prod en keystore-backup · checklist C/D/E mayormente precumplido.
