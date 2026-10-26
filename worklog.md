@@ -426,3 +426,20 @@ Stage Summary:
 - APK firmado de producción disponible en public/rutaviva.apk para prueba sideload en el celular del usuario.
 - Tres vías de prueba entregadas al usuario: PWA (1 min), sideload APK (5 min), pruebas internas Play (paso 6 del plan).
 - Pendiente intacto: paso 7 (usuario prueba admin + limpia demo records) y paso 6 (Play Console).
+
+---
+Task ID: 15-cierre
+Agent: Z.ai Code (principal)
+Task: Cierre nocturno — "gracias, buenas noches mañana pruebo la apk. guarda todo y mañana continuamos"
+
+Work Log:
+- Entregadas instrucciones de descarga por USB (paso A: bajar <URL-preview>/rutaviva.apk en la PC; paso B: MTP Windows / Android File Transfer Mac; paso C: instalar desde Archivos con aviso Play Protect documentado). Verificado que /rutaviva.apk sigue sirviéndose (HTTP 200, 7,321,057 bytes).
+- Escaneo de secretos en archivos tracked del repo PÚBLICO: el VALOR del PIN RV7D4C22 NO aparece en ningún archivo (solo nombres de env vars, correcto). Modelo de auth verificado en src/lib/admin-auth.ts: PIN contra env en servidor (timingSafeEqual) + cookie HMAC con ADMIN_SECRET.
+- Detectados 2 auto-commits del sandbox (ed47ca7 incluye el .gitignore con /public/rutaviva.apk); main quedó ahead de origin/main.
+- RUTAVIVA-ESTADO.md actualizado: cabecera 26-oct (APK lista para celular), keystore (copia local perdida en reinicio; vive solo en secrets GH — nunca exportar por repo público; Play App Signing como red de seguridad), pendientes renumerados (6: probar APK → 7: admin+limpieza demo → 8: Play Console → 9: post-launch), nota de reinicio del sandbox con comando de re-descarga del artefacto 12586187151, mapa de archivos corregido (.tmp-auth + public/rutaviva.apk).
+- Commit + push de todo a origin/main.
+
+Stage Summary:
+- Todo guardado y pusheado: estado documentado para retomar mañana sin fricción.
+- Agenda confirmada para el 26-oct: ① usuario prueba APK en celular (PWA o sideload), ② prueba panel admin y limpia 3 demo records, ③ Play Console paso a paso.
+- Riesgos anotados: si el sandbox se reinicia de noche, se repite la re-descarga del APK (comando documentado en RUTAVIVA-ESTADO.md §4); keystore seguro en secrets CI.
