@@ -70,4 +70,5 @@ android/.cxx
 /tool-results/
 /.tmp-auth/
 
-/.tmp-auth/
+# Binarios locales para prueba (descargables pero nunca en git)
+/public/rutaviva.apk

@@ -406,3 +406,23 @@ Work Log:
 
 Stage Summary:
 - TODO GUARDADO. Mañana: ① usuario prueba panel admin y limpia demo (opcional) → ② Play Console paso a paso (crear app, ficha con assets listos, formularios, AAB a pruebas internas 12×14 días) → ③ producción con fases.
+
+---
+Task ID: 15
+Agent: Z.ai Code (principal)
+Task: Respuesta a "¿puedo probar la APK en mi celular antes de subirla a Play?" — recuperar APK del CI y ponerla descargable.
+
+Work Log:
+- Sandbox se reinició entre días: se perdieron ~/play-release y ~/keystore-backup (solo archivos de home). Proyecto, repo, CI y prod intactos (prod HTTP 200).
+- Validado GH_TOKEN (.tmp-auth/gh-token) vía API — sigue vigente (gh CLI no está instalado en la nueva sandbox; se usa curl + REST).
+- Descargado artefacto 12586187151 (run 40160381094, el build de producción verificado el 25-oct) → bundle/release/app-release.aab + apk/release/app-release.apk restaurados en ~/play-release/.
+- keytool no lee firma v2/v3 ("Not a signed jar file") — esperado; la firma ya se verificó con apksigner en el mismo artefacto el 25-oct.
+- APK copiado a public/rutaviva.apk (7,321,057 bytes); servido OK (HTTP 200, content-type application/vnd.android.package-archive) → descargable desde el preview del celular.
+- .gitignore: añadido /public/rutaviva.apk (no committear binario).
+- Repo verificado PÚBLICO → decisión: jamás exportar keystore como artefacto de CI; keystore vive solo en GH secrets (no exportable por diseño). Seguridad neta: Play App Signing al primer upload hace la upload key reseteable.
+- Recreado .tmp-auth/produccion-credenciales.txt (ADMIN_PIN + notas de keystore) chmod 600.
+
+Stage Summary:
+- APK firmado de producción disponible en public/rutaviva.apk para prueba sideload en el celular del usuario.
+- Tres vías de prueba entregadas al usuario: PWA (1 min), sideload APK (5 min), pruebas internas Play (paso 6 del plan).
+- Pendiente intacto: paso 7 (usuario prueba admin + limpia demo records) y paso 6 (Play Console).
