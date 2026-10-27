@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
-import { App as CapApp } from "@capacitor/app";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { es as esLocale } from "date-fns/locale";
@@ -81,20 +80,18 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
   const isNative = Capacitor.isNativePlatform();
 
   /** Abre la ruta hacia este lugar en Google Maps. */
-  const openRoute = async () => {
+  const openRoute = () => {
     const url = directionsUrl({ lat: detail.lat, lng: detail.lng }, detail.name);
     if (!isNative) {
       window.open(url, "_blank", "noopener,noreferrer");
       return;
     }
-    try {
-      const { value } = await CapApp.launcher({ url });
-      if (!value) {
-        toast.error("No encontramos una app de mapas en este dispositivo");
-      }
-    } catch {
-      toast.error("No se pudo abrir Google Maps");
-    }
+    // Dentro de la APK: el WebView de Capacitor entrega al sistema cualquier
+    // host externo con ACTION_VIEW (Bridge.launchIntent); la app de Google
+    // Maps captura esas URLs por App Links verificados y muestra la ruta
+    // directamente. No depende de plugins nativos (App.launcher ya no existe
+    // en @capacitor/app v8) así que funciona en TODAS las versiones de la APK.
+    window.location.assign(url);
   };
   // "idle" = botón | "form" = formulario | "done" = panel de éxito.
   // Vive aquí arriba para que "sé el primero" también pueda abrir el formulario.
