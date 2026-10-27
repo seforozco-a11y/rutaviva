@@ -577,3 +577,18 @@ Stage Summary:
 - "Cómo llegar" arreglado para la APK: el JS nuevo llega solo al recargar la app (carga web remota). Si el usuario aún ve el toast de error, cerrar y reabrir la app.
 - APK v6 (1.0.5) disponible en public/rutaviva.apk para subir a Play Console cuando toque.
 - Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
+
+---
+Task ID: 20-cierre
+Agent: Z.ai Code (principal)
+Task: Cierre de sesión — estado guardado para continuar mañana
+
+Work Log:
+- Verificado: git clean, main sincronizada con origin (HEAD 230d7ca). Deploy Vercel --prod vigente (rutaviva-pneznr2tv-oroxco, Ready). CI run 40442992276 success.
+- APK v6 (versionCode 6 / versionName 1.0.5) restaurada en public/rutaviva.apk (7,321,225 bytes, servida OK en /rutaviva.apk).
+
+Stage Summary (estado al cierre, para retomar):
+- Entregado hoy: iconos/colores por categoría (Task 19), fuera estrella destacado en tarjetas (19-b), gesto swipe-up en tarjetas emergentes (19-c), fix "Cómo llegar" a Google Maps en APK (Task 20) — todo verificado en producción.
+- PENDIENTE 1: guía paso a paso de Google Play Console (ficha de la app, cuestionario IARC, pruebas internas 12 testers × 14 días; APK/AAB v6 ya lista para subir).
+- PENDIENTE 2: limpieza de registros demo desde el panel Admin (PIN RV7D4C22, credenciales en .tmp-auth/produccion-credenciales.txt): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+- APK del usuario recibe los fixes sola al recargar (carga web remota); la reinstalación de v6 solo es necesaria para subir a Play Console.
