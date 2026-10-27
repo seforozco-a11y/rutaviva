@@ -541,3 +541,21 @@ Stage Summary:
 - Tarjetas emergentes y tarjetas de lista sin estrella de destacado; identidad visual por categoría intacta (círculo con icono en tarjeta, pin, lista y hoja de detalle).
 - Fix activo en https://rutaviva-seven.vercel.app → la APK instalada lo recibe sola al recargar (carga web remota); no requiere reinstalar ni bump de versión.
 - Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
+
+---
+Task ID: 19-c
+Agent: Z.ai Code (principal)
+Task: Desplegar la hoja de detalle deslizando el dedo hacia arriba sobre las tarjetas emergentes del mapa
+
+Work Log:
+- map-view.tsx: nuevo helper swipeUpHandlers(onOpen) — registra touchstart/touchend por tarjeta; si el arrastre es predominantemente vertical hacia arriba (dy>48px y dy>dx*1.3) despliega la hoja de detalle. Touchcancel resetea. lastSwipeOpenAt (700ms) evita el "click fantasma" tras el arrastre.
+- openSingular/openNearby extraídos como funciones compartidas por tap y gesto. El tap normal sigue funcionando con guardia swipeJustOpened().
+- Franjas de tarjetas (singulares, skeleton y servicios) con [touch-action:pan-x]: el gesto vertical no compite con el carrusel horizontal.
+- Verificado local con eventos Touch sintéticos: swipe-up 120px sobre "Monumento al Pescador" → drawer abre con título y "Cómo llegar"; tap sobre "Mercado Municipal" → abre igual. Farmacias sin datos en sandbox = limitación Overpass ya conocida (no del cambio).
+- Commit 6b15a3b → push main. Deploy Vercel --prod Ready.
+- Verificado en PRODUCCIÓN: swipe-up abre "Monumento al Pescador" (con Cómo llegar), tap abre "Playa Santiago", 0 errores de página.
+
+Stage Summary:
+- Las ventanas emergentes del mapa (singulares y servicios) se despliegan con dedo hacia arriba y/o tap; compatible con el carrusel horizontal y el gesto del Drawer (vaul).
+- Activo en producción; la APK lo recibe sola al recargar (carga web remota), sin reinstalar.
+- Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
