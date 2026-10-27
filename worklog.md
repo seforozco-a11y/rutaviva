@@ -443,3 +443,20 @@ Stage Summary:
 - Todo guardado y pusheado: estado documentado para retomar mañana sin fricción.
 - Agenda confirmada para el 26-oct: ① usuario prueba APK en celular (PWA o sideload), ② prueba panel admin y limpia 3 demo records, ③ Play Console paso a paso.
 - Riesgos anotados: si el sandbox se reinicia de noche, se repite la re-descarga del APK (comando documentado en RUTAVIVA-ESTADO.md §4); keystore seguro en secrets CI.
+
+---
+Task ID: 16
+Agent: Z.ai Code (principal)
+Task: Cambios pre-Play Console solicitados por el usuario (3) + despliegue a producción.
+
+Work Log:
+- ①"Cómo llegar" anidado: places-list.tsx — tarjeta con un solo botón "Ver en mapa" (w-full); el "Cómo llegar" vive en la hoja de detalle que ese botón abre (ya existía). Limpieza de imports (Navigation, directionsUrl). commit 623129d.
+- ②Botón atrás Android: instalado @capacitor/app@8.1.2; rutaviva-app.tsx — listener backButton solo con Capacitor.isNativePlatform(); jerarquía: cierra hoja de detalle → pop de historial de vistas (ref stack, max 24) → desde splash/map exitApp(); icono + rotate al abrir form no aplicado aquí. versionCode 1→2, versionName 1.0.1. commit 365db73.
+- ③FAB central: bottom-nav.tsx — píldora flotante absolute bottom-[3.5rem] con leyenda "Sugiere un lugar singular" (14px extrabold) + icono Plus h-6; activo = gradiente más oscuro y Plus rotado 45° (×). Verificado en 390×844 que no tapa Lugares/Guía. commit dbcd146.
+- Vercel: sesión perdida por reinicio del sandbox → re-login device flow (código 1 expiró; 2° BFQK-QXHG autorizado por el usuario); vercel link --yes --project rutaviva (creó .env.local con VERCEL_OIDC_TOKEN → eliminado para no sombrear .env del dev); deploy --prod OK → rutaviva-r2il6wsa8-oroxco.vercel.app alias a prod.
+- Verificación E2E en PRODUCCIÓN (agent-browser 390×844): tarjeta botón único ✓, FAB "Sugiere un lugar singular" ✓, 0 errores consola ✓.
+- APK v2: run CI 40425899572 success; artefacto 12698679666 descargado; SHA-256 32c71656…1ffc0c8; restaurado ~/play-release + servido en /rutaviva.apk (HTTP 200).
+
+Stage Summary:
+- Producción con los 3 cambios; APK v2 (mismo keystore, versionCode 2) lista para instalar encima de la v1.
+- Pendiente: usuario prueba los cambios en su celular → luego Play Console (paso 6 del plan).
