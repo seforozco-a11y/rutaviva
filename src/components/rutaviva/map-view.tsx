@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, Plus, RotateCcw, Star } from "lucide-react";
+import { Loader2, MapPin, RotateCcw, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { COMMON_TYPES, commonTypeById, formatDistance } from "@/lib/geo";
@@ -40,7 +40,6 @@ type MapViewProps = {
   focus: MapFocus | null;
   onFilterChange: (f: MapFilter) => void;
   onSelect: (d: PlaceDetail) => void;
-  onGoAdd: () => void;
   onRequestGps: () => void;
   onRetryNearby: () => void;
 };
@@ -56,7 +55,6 @@ export function MapView({
   focus,
   onFilterChange,
   onSelect,
-  onGoAdd,
   onRequestGps,
   onRetryNearby,
 }: MapViewProps) {
@@ -125,17 +123,6 @@ export function MapView({
           ))}
         </div>
       </div>
-
-      {/* Botón: agregar lugar singular */}
-      <Button
-        onClick={onGoAdd}
-        size="lg"
-        aria-label="Agregar lugar singular"
-        className="absolute bottom-[9.5rem] right-3 z-[900] h-12 gap-1.5 rounded-2xl bg-emerald-700 px-4 font-bold text-white shadow-xl shadow-emerald-900/30 transition hover:bg-emerald-800 active:scale-95"
-      >
-        <Plus className="h-5 w-5" aria-hidden />
-        <span className="hidden sm:inline">Agregar</span>
-      </Button>
 
       {/* Franja inferior: resultados según filtro */}
       <div className="absolute inset-x-0 bottom-0 z-[880] p-3">

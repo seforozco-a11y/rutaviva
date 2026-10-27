@@ -9,7 +9,6 @@ import { BottomNav, type AppView } from "./bottom-nav";
 import { MapView, type MapFilter } from "./map-view";
 import { PlacesList } from "./places-list";
 import { AddPlaceForm } from "./add-place-form";
-import { AboutPanel } from "./about-panel";
 import { PlaceDetailSheet } from "./place-detail-sheet";
 import { AdminPanel } from "./admin/admin-panel";
 import { fetchNearbyPlaces, clearNearbyCache } from "@/lib/nearby-client";
@@ -249,15 +248,6 @@ export function RutavivaApp() {
     focusOn(DEMO_POINT, 14);
   }, [finishOnboarding, focusOn]);
 
-  const handleShowSplash = useCallback(() => {
-    try {
-      localStorage.removeItem(ONBOARD_KEY);
-    } catch {
-      /* noop */
-    }
-    setView("splash");
-  }, []);
-
   // ---- Sugerencia de lugar (entra PENDING a la cola del admin) ----
   const handleSuggested = useCallback(() => {
     toast({
@@ -304,7 +294,6 @@ export function RutavivaApp() {
                 focus={focus}
                 onFilterChange={setFilter}
                 onSelect={openDetail}
-                onGoAdd={() => setView("add")}
                 onRequestGps={() => requestGps()}
                 onRetryNearby={handleRetryNearby}
               />
@@ -340,11 +329,6 @@ export function RutavivaApp() {
             {view === "admin" && (
               <div className="rv-scroll absolute inset-0 overflow-y-auto bg-gradient-to-b from-stone-50 to-background">
                 <AdminPanel origin={origin} />
-              </div>
-            )}
-            {view === "about" && (
-              <div className="rv-scroll absolute inset-0 overflow-y-auto">
-                <AboutPanel places={places} onShowSplash={handleShowSplash} />
               </div>
             )}
           </main>
