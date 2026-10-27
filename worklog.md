@@ -480,3 +480,23 @@ Stage Summary:
 - Fix desplegado en producción: reseñas con scroll propio (ya no se cortan) y "Cómo llegar" siempre visible en pie fijo.
 - La APK del usuario (v2) carga la web desde el server → el fix llega SIN reinstalar; APK v3 disponible por si quiere binario actualizado.
 - Pendiente intacto: Play Console paso a paso (paso 8 del plan) y limpieza de registros demo desde admin (PIN en .tmp-auth/produccion-credenciales.txt).
+
+---
+Task ID: 18
+Agent: Z.ai Code (principal)
+Task: Navegación — botón ámbar a la barra inferior, eliminar menú "Guía" y botón verde "Agregar"
+
+Work Log:
+- bottom-nav.tsx reescrito: píldora ámbar "Sugiere un lugar singular" ahora INLINE en la barra (grid-cols-[1fr_1fr_1.5fr_1fr], h-11, leyenda 2 líneas 10px, "+" rota a "×" activo). Ya no flota en absolute bottom-[3.5rem] → las tarjetas de lugares singulares del mapa quedan despejadas. AppView sin "about"; items = map/list/admin.
+- Menú "Guía" eliminado por completo: nav item, vista "about" en rutaviva-app, import de AboutPanel, handleShowSplash (solo lo usaba el panel) y archivo about-panel.tsx borrado (contenido solo informativo, sin política/legales).
+- Botón verde "Agregar" (map-view.tsx, bottom-[9.5rem] right-3) eliminado + prop onGoAdd removida de MapView/rutaviva-app. Import Plus limpiado (Button/Badge siguen en uso).
+- Nota de proceso: un MultiEdit con old_str duplicado dejó el archivo a medio aplicar (handleSuggestionDone duplicado + bloque about huérfano); corregido con edits de precisión leyendo el estado real. Lección: verificar tras cada MultiEdit fallido, no asumir atomicidad.
+- Verificado local (390×844 y 360×740): 4 menús, leyenda cabe, formulario de sugerencia abre desde la barra, "+"→"×", 0 errores consola.
+- Commit 29c03c8 → push main (CI run 40432786956 success). versionCode 4 / versionName 1.0.3.
+- Deploy Vercel --prod OK. Verificado en producción: guia=false, agregarVerde=false, sugiere=true; tarjetas visibles.
+- APK v4 (artefacto del run) restaurada en public/rutaviva.apk (7,321,225 bytes).
+
+Stage Summary:
+- Navegación final: Explorar · Lugares · [Sugiere un lugar singular] · Admin. Sin Guía, sin botón verde duplicado.
+- Producción actualizada; APK v4 lista (el fix llega a la APK instalada por sí solo al recargar, carga web remota).
+- Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
