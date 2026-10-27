@@ -460,3 +460,23 @@ Work Log:
 Stage Summary:
 - Producción con los 3 cambios; APK v2 (mismo keystore, versionCode 2) lista para instalar encima de la v1.
 - Pendiente: usuario prueba los cambios en su celular → luego Play Console (paso 6 del plan).
+
+---
+Task ID: 17
+Agent: Z.ai Code (principal)
+Task: Fix APK móvil — reseñas cortadas en la hoja de detalle + botón "Cómo llegar" visible que abra Google Maps
+
+Work Log:
+- Diagnóstico: la hoja de detalle usaba overflow-y:auto sobre el DrawerContent completo → el scroll táctil competía con el gesto de arrastre de vaul en Android y el pie (Cómo llegar/Cerrar) vivía al final de TODO el contenido, fuera de vista.
+- place-detail-sheet.tsx reestructurado en 3 bandas: DrawerHeader shrink-0 + div central flex-1 min-h-0 overflow-y-auto overscroll-contain (clase rv-scroll) con descripción/fotos/reseñas + DrawerFooter fijo con "Cómo llegar" (flex-[2], emerald) y "Cerrar".
+- globals.css: .rv-drawer-max → max-height 88dvh !important (vence al max-h-[80vh] del base por especificidad de data-attr); overflow eliminado del contenedor.
+- "Cómo llegar" nativo: Capacitor.isNativePlatform() → CapApp.launcher({ url: directionsUrl(...) }) abre la app de Google Maps con la ruta; en web window.open pestaña nueva. Errores con toast (sin app de mapas / fallo de launcher).
+- Verificado E2E en local (390×844): La Boquita → pie visible (getBoundingClientRect dentro del viewport), scroll interno 671/519px, reseña completa + "Escribir reseña" alcanzables; clic "Cómo llegar" abre pestaña con google.com/maps/dir/?api=1&destination=19.057,-104.352(Playa La Boquita). Mirador (contenido corto) → hoja encoge, pie intacto. 0 errores consola.
+- versionCode 2→3, versionName 1.0.1→1.0.2 (android/app/build.gradle). Commit dfc876f push a main (remote re-configurado con token de .tmp-auth/gh-token).
+- Deploy Vercel --prod OK (sesión seforozco-a11y vigente). Producción verificada con browser: footerVisible true, scroll interno funcional, reseña Ana & Leo completa.
+- CI run 40430179105 success; artefacto 12700589954 → APK v3 restaurada en ~/play-release + public/rutaviva.apk (7,321,221 bytes, servida OK).
+
+Stage Summary:
+- Fix desplegado en producción: reseñas con scroll propio (ya no se cortan) y "Cómo llegar" siempre visible en pie fijo.
+- La APK del usuario (v2) carga la web desde el server → el fix llega SIN reinstalar; APK v3 disponible por si quiere binario actualizado.
+- Pendiente intacto: Play Console paso a paso (paso 8 del plan) y limpieza de registros demo desde admin (PIN en .tmp-auth/produccion-credenciales.txt).
