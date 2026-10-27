@@ -500,3 +500,25 @@ Stage Summary:
 - Navegación final: Explorar · Lugares · [Sugiere un lugar singular] · Admin. Sin Guía, sin botón verde duplicado.
 - Producción actualizada; APK v4 lista (el fix llega a la APK instalada por sí solo al recargar, carga web remota).
 - Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
+
+---
+Task ID: 19
+Agent: Z.ai Code (principal)
+Task: Iconos y colores por categoría de lugares singulares (pines del mapa + tarjetas + hoja de detalle)
+
+Work Log:
+- Nuevo src/lib/category-visual.ts: fuente única con 10 categorías (icono SVG de lucide v0.525 extraído de node_modules + paleta): playa→Umbrella cian #0e7490, naturaleza→Trees verde #15803d, mirador→Mountain violeta #6d28d9, monumento→Landmark ámbar #b45309, plaza→Flower2 rosa #be185d, gastronomia→UtensilsCrossed naranja #ea580c, museo→Building2 pizarra #334155, parque→TreePine lima #4d7c0f, cultura→Palette fucsia #a21caf, otro→Sparkles piedra #57534e. categorySvg() emite string SVG para DivIcon de Leaflet.
+- Nuevo componente category-icon.tsx (CategoryIcon, color por currentColor, <g dangerouslySetInnerHTML>).
+- map-canvas.tsx: singularIcon(category, featured) → pin con color de categoría + icono blanco (14px) + insignia estrella ámbar en destacados (antes el pin completo era ámbar). toDetail pasa category.
+- map-view.tsx (tarjeta emergente): icono circular de categoría arriba-derecha (el círculo de la captura del usuario) + estrella solo si destacado + badge de categoría teñido con icono; onSelect pasa category.
+- place-detail-sheet.tsx: badge con icono y colores de categoría (comunes OSM mantienen su color). places-list.tsx: badges teñidos con icono. place-types.ts: PlaceDetail.category?: string.
+- globals.css: .rv-pin-ico (14px) y .rv-pin-badge (insignia destacado 15px).
+- Notas: lucide 0.525 no tiene Monument/Fountain/Bench; columns.js es alias de columns-2 (layout). MultiEdit parcial en places-list requirió cerrar el bloque map(() => {…}).
+- Limpieza: upload/ (captura WhatsApp del usuario) quitada del repo público + .gitignore /upload/.
+- Lint OK, 0 errores consola. Verificado local y en PRODUCCIÓN (pines rosa/naranja/ámbar con iconos visibles, insignia destacado, badges en tarjeta/lista/hoja).
+- Commit 6332eca (+872faba limpieza) → CI run 40436822185 success → APK v5 (versionCode 5 / 1.0.4) en public/rutaviva.apk. Deploy Vercel --prod OK.
+
+Stage Summary:
+- Categorías con identidad visual completa: mismo icono+color en pin de mapa, tarjeta emergente, hoja de detalle y lista.
+- El fix llega a la APK instalada sola (carga web remota); APK v5 binario disponible.
+- Pendiente intacto: Play Console (paso 8) y limpieza de registros demo.
