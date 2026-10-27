@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MapPin, Navigation, RotateCcw, Search, Star } from "lucide-react";
+import { MapPin, RotateCcw, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import {
   COMMON_TYPES,
   SINGULAR_CATEGORIES,
   commonTypeById,
-  directionsUrl,
   formatDistance,
 } from "@/lib/geo";
 import type {
@@ -196,46 +195,29 @@ export function PlacesList({
                     <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-stone-500">
                       {p.description}
                     </p>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          onFlyTo({ lat: p.lat, lng: p.lng });
-                          onSelect({
-                            kind: "singular",
-                            id: p.id,
-                            name: p.name,
-                            lat: p.lat,
-                            lng: p.lng,
-                            distanceKm: p.distanceKm,
-                            categoryLabel: p.categoryLabel,
-                            description: p.description,
-                            address: p.address,
-                            tips: p.tips,
-                            imageUrl: p.imageUrl,
-                          });
-                        }}
-                        className="h-9 gap-1.5 bg-emerald-700 hover:bg-emerald-800"
-                      >
-                        <MapPin className="h-3.5 w-3.5" aria-hidden />
-                        Ver en mapa
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                        className="h-9 gap-1.5 border-emerald-300 text-emerald-800 hover:bg-emerald-50"
-                      >
-                        <a
-                          href={directionsUrl({ lat: p.lat, lng: p.lng }, p.name)}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <Navigation className="h-3.5 w-3.5" aria-hidden />
-                          Cómo llegar
-                        </a>
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        onFlyTo({ lat: p.lat, lng: p.lng });
+                        onSelect({
+                          kind: "singular",
+                          id: p.id,
+                          name: p.name,
+                          lat: p.lat,
+                          lng: p.lng,
+                          distanceKm: p.distanceKm,
+                          categoryLabel: p.categoryLabel,
+                          description: p.description,
+                          address: p.address,
+                          tips: p.tips,
+                          imageUrl: p.imageUrl,
+                        });
+                      }}
+                      className="mt-3 h-9 w-full gap-1.5 bg-emerald-700 hover:bg-emerald-800"
+                    >
+                      <MapPin className="h-3.5 w-3.5" aria-hidden />
+                      Ver en mapa
+                    </Button>
                   </article>
                 </li>
               ))}
