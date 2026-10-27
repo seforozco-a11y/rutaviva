@@ -72,3 +72,6 @@ android/.cxx
 
 # Binarios locales para prueba (descargables pero nunca en git)
 /public/rutaviva.apk
+
+# Capturas/imágenes subidas por el usuario (no van al repo)
+/upload/
