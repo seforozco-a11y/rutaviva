@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
 import { Splash } from "./splash";
 import { BottomNav, type AppView } from "./bottom-nav";
 import { MapView, type MapFilter } from "./map-view";
@@ -109,6 +111,57 @@ export function RutavivaApp() {
   const openDetail = useCallback((d: PlaceDetail) => {
     setDetail(d);
     setSheetOpen(true);
+  }, []);
+
+  // ---- Botón atrás de Android (solo dentro de la APK con puente nativo) ----
+  // Jerarquía: cierra la hoja de detalle → regresa al menú anterior →
+  // desde el menú principal (mapa) sale de la app (comportamiento estándar).
+  const viewRef = useRef(view);
+  const sheetOpenRef = useRef(sheetOpen);
+  const viewHistoryRef = useRef<Array<"splash" | AppView>>([]);
+
+  useEffect(() => {
+    if (viewRef.current !== view) {
+      viewHistoryRef.current.push(viewRef.current);
+      if (viewHistoryRef.current.length > 24) viewHistoryRef.current.shift();
+      viewRef.current = view;
+    }
+  }, [view]);
+
+  useEffect(() => {
+    sheetOpenRef.current = sheetOpen;
+  }, [sheetOpen]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return; // en navegador/PWA no interviene
+    let disposed = false;
+    let removeListener: (() => void) | undefined;
+
+    void CapApp.addListener("backButton", () => {
+      // 1) Hoja de detalle abierta → solo cerrarla
+      if (sheetOpenRef.current) {
+        setSheetOpen(false);
+        return;
+      }
+      const current = viewRef.current;
+      // 2) Menú principal o portada → salir de la app
+      if (current === "splash" || current === "map") {
+        void CapApp.exitApp();
+        return;
+      }
+      // 3) Vista secundaria → regresar a la anterior; si no hay, al mapa
+      let prev = viewHistoryRef.current.pop();
+      while (prev === current) prev = viewHistoryRef.current.pop();
+      setView(prev && prev !== "splash" ? prev : "map");
+    }).then((handle) => {
+      if (disposed) handle.remove();
+      else removeListener = () => handle.remove();
+    });
+
+    return () => {
+      disposed = true;
+      removeListener?.();
+    };
   }, []);
 
   // ---- Arranque: saltar portada si ya vio la intro (evita mismatch de hidratación) ----
