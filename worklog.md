@@ -559,3 +559,21 @@ Stage Summary:
 - Las ventanas emergentes del mapa (singulares y servicios) se despliegan con dedo hacia arriba y/o tap; compatible con el carrusel horizontal y el gesto del Drawer (vaul).
 - Activo en producción; la APK lo recibe sola al recargar (carga web remota), sin reinstalar.
 - Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
+
+---
+Task ID: 20
+Agent: Z.ai Code (principal)
+Task: "Cómo llegar" no conectaba a Google Maps en la APK — fix en capas
+
+Work Log:
+- Causa raíz: @capacitor/app v8.1.2 ELIMINÓ el método App.launcher (definitions.d.ts sin launcher/canLaunchUrl/openUrl). La llamada CapApp.launcher({url}) rechazaba con "not implemented" → catch → toast "No se pudo abrir Google Maps". Nunca abría Maps en ninguna versión de la APK. El type error pasó desapercibo por ignoreBuildErrors:true en next.config.ts y porque el lint es eslint sin type-check.
+- Hallazgo clave en el código nativo de Capacitor 8.5.3 (Bridge.java launchIntent): el WebView abre CUALQUIER host externo con Intent ACTION_VIEW. Google Maps captura https://www.google.com/maps/dir/?api=1&... por App Links verificados → abre la app nativa con la ruta. No requiere plugins.
+- Fix (place-detail-sheet.tsx): openRoute nativa ahora es window.location.assign(url) — el WebView la entrega al sistema; funciona en TODAS las versiones de APK (incluida la instalada del usuario, via carga web remota, sin reinstalar). Web (no nativo) mantiene window.open pestaña nueva. Import de @capacitor/app eliminado de la hoja (rutaviva-app conserva backButton/exitApp, que sí existen en v8).
+- versionCode 5→6, versionName 1.0.4→1.0.5. Commit c1497cb → push main → CI run 40442992276 success → APK v6 restaurada en public/rutaviva.apk (7,321,225 bytes, servida OK). NOTA: cap sync en CI ya registra :capacitor-app nativamente (settings.gradle local quedaba desactualizado; no afecta porque el fix no usa plugins).
+- Deploy Vercel --prod Ready. Verificado en PRODUCCIÓN: "Cómo llegar" en Playa La Boquita abre pestaña google.com/maps/dir/?api=1&destination=19.057,-104.352(Playa La Boquita); 0 errores.
+- Limitación honesta: la ruta nativa (ACTION_VIEW→Maps) no es ejecutable en este sandbox (no hay dispositivo Android); se validó leyendo el fuente nativo de Capacitor y por la vía documentada de App Links.
+
+Stage Summary:
+- "Cómo llegar" arreglado para la APK: el JS nuevo llega solo al recargar la app (carga web remota). Si el usuario aún ve el toast de error, cerrar y reabrir la app.
+- APK v6 (1.0.5) disponible en public/rutaviva.apk para subir a Play Console cuando toque.
+- Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
