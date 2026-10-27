@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { LocateFixed, Minus, Plus } from "lucide-react";
 import { commonTypeById, categoryLabel } from "@/lib/geo";
+import { categorySvg, categoryVisual } from "@/lib/category-visual";
 import type {
   Coordinates,
   NearbyPlaceDTO,
@@ -27,10 +28,21 @@ type MapCanvasProps = {
 const STAR_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#ffffff" stroke="none" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
 
-function singularIcon(featured: boolean): L.DivIcon {
+/**
+ * Pin de lugar singular: color e icono según la categoría (playa, mirador,
+ * monumento…). Los destacados llevan una estrella ámbar como insignia.
+ */
+function singularIcon(categoryId: string, featured: boolean): L.DivIcon {
+  const v = categoryVisual(categoryId);
+  const badge = featured
+    ? `<div class="rv-pin-badge" aria-hidden="true">${STAR_SVG}</div>`
+    : "";
   return L.divIcon({
     className: "rv-icon",
-    html: `<div class="rv-pin" style="background:${featured ? "#f59e0b" : "#059669"}">${STAR_SVG}</div>`,
+    html:
+      `<div class="rv-pin" style="background:${v.fg}">` +
+      categorySvg(categoryId, { className: "rv-pin-ico", style: "color:#fff" }) +
+      `</div>${badge}`,
     iconSize: [30, 30],
     iconAnchor: [15, 27],
   });
@@ -148,7 +160,7 @@ export function MapCanvas({
             <Marker
               key={p.id}
               position={[p.lat, p.lng]}
-              icon={singularIcon(p.featured)}
+              icon={singularIcon(p.category, p.featured)}
               eventHandlers={{ click: () => toDetail(p, onSelect) }}
             />
           ))
@@ -172,6 +184,7 @@ function toDetail(p: SingularPlaceDTO, onSelect: (d: PlaceDetail) => void) {
     lat: p.lat,
     lng: p.lng,
     distanceKm: p.distanceKm,
+    category: p.category,
     categoryLabel: p.categoryLabel || categoryLabel(p.category),
     description: p.description,
     address: p.address,

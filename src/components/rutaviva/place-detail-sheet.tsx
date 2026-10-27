@@ -42,6 +42,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoUpload } from "./photo-upload";
 import { PhotoLightbox } from "./photo-lightbox";
 import { directionsUrl, formatDistance } from "@/lib/geo";
+import { categoryVisual } from "@/lib/category-visual";
+import { CategoryIcon } from "./category-icon";
 import type { PlaceDetail, PlaceDetailResponse } from "@/lib/place-types";
 
 type PlaceDetailSheetProps = {
@@ -69,6 +71,11 @@ export function PlaceDetailSheet({ detail, open, onOpenChange }: PlaceDetailShee
 
 function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => void }) {
   const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
+  // Visual de la categoría (icono + colores); para comunes (OSM) manda su color.
+  const cat =
+    detail.kind === "singular"
+      ? categoryVisual(detail.category)
+      : categoryVisual(null);
   // En la APK (Capacitor) abrimos la app de Google Maps nativa; en navegador/PWA,
   // la ruta en una pestaña nueva.
   const isNative = Capacitor.isNativePlatform();
@@ -113,13 +120,16 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
       <DrawerHeader className="shrink-0 pb-2 text-left">
         <div className="flex flex-wrap items-center gap-2">
           <Badge
-            className="border-0 hover:opacity-90"
+            className="gap-1.5 border-0 hover:opacity-90"
             style={
               detail.kind === "common" && detail.color
                 ? { background: `${detail.color}1a`, color: detail.color }
-                : { background: "#d1fae5", color: "#065f46" }
+                : { background: cat.bg, color: cat.fg }
             }
           >
+            {detail.kind === "singular" && (
+              <CategoryIcon category={detail.category} className="h-3.5 w-3.5" />
+            )}
             {detail.categoryLabel}
           </Badge>
           {detail.distanceKm != null && (

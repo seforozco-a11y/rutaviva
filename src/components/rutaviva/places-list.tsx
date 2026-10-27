@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { categoryVisual } from "@/lib/category-visual";
+import { CategoryIcon } from "./category-icon";
 import {
   COMMON_TYPES,
   SINGULAR_CATEGORIES,
@@ -159,7 +161,9 @@ export function PlacesList({
             />
           ) : (
             <ul className="space-y-3">
-              {filtered.map((p) => (
+              {filtered.map((p) => {
+                const cat = categoryVisual(p.category);
+                return (
                 <li key={p.id}>
                   <article className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
                     <div className="flex items-start justify-between gap-2">
@@ -174,7 +178,11 @@ export function PlacesList({
                       )}
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                      <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                      <Badge
+                        className="gap-1 border-0 hover:opacity-90"
+                        style={{ background: cat.bg, color: cat.fg }}
+                      >
+                        <CategoryIcon category={p.category} className="h-3 w-3" />
                         {p.categoryLabel}
                       </Badge>
                       {p.ratingCount > 0 && (
@@ -206,6 +214,7 @@ export function PlacesList({
                           lat: p.lat,
                           lng: p.lng,
                           distanceKm: p.distanceKm,
+                          category: p.category,
                           categoryLabel: p.categoryLabel,
                           description: p.description,
                           address: p.address,
@@ -220,7 +229,8 @@ export function PlacesList({
                     </Button>
                   </article>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </>

@@ -6,6 +6,8 @@ import { Loader2, MapPin, RotateCcw, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { COMMON_TYPES, commonTypeById, formatDistance } from "@/lib/geo";
+import { categoryVisual } from "@/lib/category-visual";
+import { CategoryIcon } from "./category-icon";
 import type {
   Coordinates,
   NearbyPlaceDTO,
@@ -128,7 +130,9 @@ export function MapView({
       <div className="absolute inset-x-0 bottom-0 z-[880] p-3">
         {showSingulars ? (
           <div className="rv-scroll flex gap-3 overflow-x-auto pb-1">
-            {stripSingulars.map((p) => (
+            {stripSingulars.map((p) => {
+              const cat = categoryVisual(p.category);
+              return (
               <button
                 key={p.id}
                 type="button"
@@ -140,6 +144,7 @@ export function MapView({
                     lat: p.lat,
                     lng: p.lng,
                     distanceKm: p.distanceKm,
+                    category: p.category,
                     categoryLabel: p.categoryLabel,
                     description: p.description,
                     address: p.address,
@@ -151,13 +156,29 @@ export function MapView({
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="line-clamp-1 text-sm font-bold text-stone-800">{p.name}</p>
-                  {p.featured && <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-label="Destacado" />}
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    {p.featured && (
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-label="Destacado" />
+                    )}
+                    <span
+                      className="flex h-7 w-7 items-center justify-center rounded-full"
+                      style={{ background: cat.bg, color: cat.fg }}
+                      role="img"
+                      aria-label={`Categoría: ${p.categoryLabel}`}
+                    >
+                      <CategoryIcon category={p.category} className="h-4 w-4" />
+                    </span>
+                  </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-xs leading-snug text-stone-500">
                   {p.description}
                 </p>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                  <Badge
+                    className="gap-1 border-0 hover:opacity-90"
+                    style={{ background: cat.bg, color: cat.fg }}
+                  >
+                    <CategoryIcon category={p.category} className="h-3 w-3" />
                     {p.categoryLabel}
                   </Badge>
                   {p.distanceKm != null && (
@@ -167,7 +188,8 @@ export function MapView({
                   )}
                 </div>
               </button>
-            ))}
+              );
+            })}
             {stripSingulars.length === 0 && !origin && (
               <div className="w-full rounded-2xl bg-white/95 p-4 text-center text-sm text-stone-500 shadow-lg">
                 Esperando tu ubicación…

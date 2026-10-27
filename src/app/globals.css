@@ -180,6 +180,30 @@
 .rv-pin > svg {
   transform: rotate(45deg);
 }
+/* Icono de categoría dentro del pin (tamaño fijo; el color va inline) */
+.rv-pin > svg.rv-pin-ico {
+  width: 14px;
+  height: 14px;
+}
+/* Insignia de "destacado" en la esquina del pin de lugar singular */
+.rv-pin-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 9999px;
+  background: #f59e0b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.rv-pin-badge svg {
+  width: 7px;
+  height: 7px;
+}
 
 /* Punto de color para lugares comunes (OSM) */
 .rv-dot {

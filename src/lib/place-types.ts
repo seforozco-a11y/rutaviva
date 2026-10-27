@@ -69,6 +69,8 @@ export type PlaceDetail = {
   lat: number;
   lng: number;
   distanceKm: number | null;
+  /** Id de categoría (solo singular): playa, mirador… — para icono/color. */
+  category?: string;
   categoryLabel: string;
   color?: string;
   description?: string;
