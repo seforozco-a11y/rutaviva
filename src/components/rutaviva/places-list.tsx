@@ -170,12 +170,6 @@ export function PlacesList({
                       <h2 className="text-base font-bold leading-snug text-stone-800">
                         {p.name}
                       </h2>
-                      {p.featured && (
-                        <Star
-                          className="mt-0.5 h-4 w-4 shrink-0 fill-amber-400 text-amber-400"
-                          aria-label="Lugar destacado"
-                        />
-                      )}
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                       <Badge

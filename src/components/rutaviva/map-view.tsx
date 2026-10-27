@@ -156,18 +156,13 @@ export function MapView({
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="line-clamp-1 text-sm font-bold text-stone-800">{p.name}</p>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    {p.featured && (
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-label="Destacado" />
-                    )}
-                    <span
-                      className="flex h-7 w-7 items-center justify-center rounded-full"
-                      style={{ background: cat.bg, color: cat.fg }}
-                      role="img"
-                      aria-label={`Categoría: ${p.categoryLabel}`}
-                    >
-                      <CategoryIcon category={p.category} className="h-4 w-4" />
-                    </span>
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: cat.bg, color: cat.fg }}
+                    role="img"
+                    aria-label={`Categoría: ${p.categoryLabel}`}
+                  >
+                    <CategoryIcon category={p.category} className="h-4 w-4" />
                   </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-xs leading-snug text-stone-500">
