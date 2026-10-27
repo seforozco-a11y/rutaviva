@@ -40,19 +40,29 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
             </NavButton>
           </li>
         ))}
-        {/* Botón central destacado */}
-        <li className="flex justify-center">
+        {/* Botón central destacado: píldora flotante con leyenda visible */}
+        <li className="relative flex justify-center">
           <button
             type="button"
             onClick={() => onChange("add")}
-            aria-label="Agregar lugar singular"
+            aria-label="Sugiere un lugar singular"
             aria-current={view === "add" ? "page" : undefined}
             className={cn(
-              "-mt-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-emerald-950 shadow-lg shadow-amber-500/40 ring-4 ring-white transition-transform hover:scale-105 active:scale-95",
-              view === "add" && "rotate-90"
+              "absolute bottom-[3.5rem] left-1/2 z-10 flex h-12 -translate-x-1/2 items-center gap-2 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 px-5 text-emerald-950 shadow-lg shadow-amber-500/40 ring-4 ring-white transition-transform hover:scale-[1.03] active:scale-95",
+              view === "add" && "from-amber-500 to-amber-600"
             )}
           >
-            <Plus className="h-7 w-7" strokeWidth={2.6} aria-hidden />
+            <Plus
+              className={cn(
+                "h-6 w-6 transition-transform",
+                view === "add" && "rotate-45"
+              )}
+              strokeWidth={2.6}
+              aria-hidden
+            />
+            <span className="whitespace-nowrap text-[14px] font-extrabold leading-none tracking-tight">
+              Sugiere un lugar singular
+            </span>
           </button>
         </li>
         {/* El FAB cubre "add"; aquí van solo las vistas restantes (2 + FAB + 2 = 5). */}
