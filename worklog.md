@@ -522,3 +522,22 @@ Stage Summary:
 - Categorías con identidad visual completa: mismo icono+color en pin de mapa, tarjeta emergente, hoja de detalle y lista.
 - El fix llega a la APK instalada sola (carga web remota); APK v5 binario disponible.
 - Pendiente intacto: Play Console (paso 8) y limpieza de registros demo.
+
+---
+Task ID: 19-b
+Agent: Z.ai Code (principal)
+Task: Quitar la estrella ámbar de "destacado" en las tarjetas emergentes del mapa (y lista Lugares)
+
+Work Log:
+- Diagnóstico de la captura: los "círculos verdes" eran anotaciones dibujadas a mano por el usuario (como en Tarea 19) señalando la estrella ámbar de destacado (p.featured) en la esquina de las tarjetas emergentes — quedó redundante junto al nuevo círculo de categoría.
+- map-view.tsx: eliminado {p.featured && <Star/>} de la franja de tarjetas; simplificado el contenedor (el círculo de categoría pasa a shrink-0 directo). Import Star se conserva (chip "Singulares").
+- places-list.tsx: eliminada la misma estrella de destacado junto al título por consistencia; se conservan las estrellas de calificación (promedio + count) que son información de reseñas.
+- El distintivo de destacado sigue existiendo SOLO como insignia en los pines del mapa (rv-pin-badge), que el usuario no pidió tocar.
+- Lint OK, 0 errores consola. Verificado local (390×844): strip con 10 tarjetas → starInCards:0, 10 círculos de categoría intactos; Monumento al Pescador muestra solo su landmark ámbar; lista 13 tarjetas → estrellas solo en las 5 con reseña.
+- Commit 118041b → push main. Deploy Vercel --prod Ready (rutaviva-pz6gyc5r0-oroxco.vercel.app).
+- Verificado en PRODUCCIÓN: strip 10 tarjetas / 0 estrellas / 10 círculos; lista 14 tarjetas, estrellas solo en las 7 con calificación, featuredStarAlone:0. Sin errores de página.
+
+Stage Summary:
+- Tarjetas emergentes y tarjetas de lista sin estrella de destacado; identidad visual por categoría intacta (círculo con icono en tarjeta, pin, lista y hoja de detalle).
+- Fix activo en https://rutaviva-seven.vercel.app → la APK instalada lo recibe sola al recargar (carga web remota); no requiere reinstalar ni bump de versión.
+- Pendiente intacto: Play Console (paso 8) y limpieza de registros demo desde admin.
