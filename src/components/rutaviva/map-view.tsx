@@ -31,6 +31,87 @@ const MapCanvas = dynamic(() => import("./map-canvas").then((m) => m.MapCanvas),
 
 export type MapFilter = "singulares" | (typeof COMMON_TYPES)[number]["id"];
 
+/* ==================== Apertura de tarjetas: tap y gesto ==================== */
+
+function openSingular(p: SingularPlaceDTO, onSelect: (d: PlaceDetail) => void) {
+  onSelect({
+    kind: "singular",
+    id: p.id,
+    name: p.name,
+    lat: p.lat,
+    lng: p.lng,
+    distanceKm: p.distanceKm,
+    category: p.category,
+    categoryLabel: p.categoryLabel,
+    description: p.description,
+    address: p.address,
+    tips: p.tips,
+    imageUrl: p.imageUrl,
+  });
+}
+
+function openNearby(
+  n: NearbyPlaceDTO,
+  onSelect: (d: PlaceDetail) => void,
+  label: string,
+  color: string,
+) {
+  onSelect({
+    kind: "common",
+    id: n.id,
+    name: n.name,
+    lat: n.lat,
+    lng: n.lng,
+    distanceKm: n.distanceKm,
+    categoryLabel: label,
+    color,
+  });
+}
+
+/** Marca de tiempo del último despliegue por gesto; evita un "click fantasma" tras el arrastre. */
+let lastSwipeOpenAt = 0;
+
+function swipeJustOpened() {
+  return Date.now() - lastSwipeOpenAt < 700;
+}
+
+/**
+ * Gesto "dedo hacia arriba" sobre una tarjeta emergente: si el arrastre es
+ * predominantemente vertical hacia arriba (>=48px), despliega la hoja de
+ * detalle. El tap normal sigue funcionando y el scroll horizontal de la
+ * franja no se ve afectado (con touch-action pan-x el gesto vertical no
+ * compite con el carrusel).
+ */
+function swipeUpHandlers(onOpen: () => void) {
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+  return {
+    onTouchStart: (e: React.TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      tracking = true;
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      if (!tracking) return;
+      tracking = false;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dy = startY - t.clientY; // positivo = arrastre hacia arriba
+      const dx = Math.abs(startX - t.clientX);
+      if (dy > 48 && dy > dx * 1.3) {
+        lastSwipeOpenAt = Date.now();
+        onOpen();
+      }
+    },
+    onTouchCancel: () => {
+      tracking = false;
+    },
+  };
+}
+
 type MapViewProps = {
   origin: Coordinates | null;
   originSource: "gps" | "demo" | null;
@@ -129,29 +210,18 @@ export function MapView({
       {/* Franja inferior: resultados según filtro */}
       <div className="absolute inset-x-0 bottom-0 z-[880] p-3">
         {showSingulars ? (
-          <div className="rv-scroll flex gap-3 overflow-x-auto pb-1">
+          <div className="rv-scroll flex gap-3 overflow-x-auto pb-1 [touch-action:pan-x]">
             {stripSingulars.map((p) => {
               const cat = categoryVisual(p.category);
               return (
               <button
                 key={p.id}
                 type="button"
-                onClick={() =>
-                  onSelect({
-                    kind: "singular",
-                    id: p.id,
-                    name: p.name,
-                    lat: p.lat,
-                    lng: p.lng,
-                    distanceKm: p.distanceKm,
-                    category: p.category,
-                    categoryLabel: p.categoryLabel,
-                    description: p.description,
-                    address: p.address,
-                    tips: p.tips,
-                    imageUrl: p.imageUrl,
-                  })
-                }
+                onClick={() => {
+                  if (swipeJustOpened()) return;
+                  openSingular(p, onSelect);
+                }}
+                {...swipeUpHandlers(() => openSingular(p, onSelect))}
                 className="w-60 shrink-0 rounded-2xl border border-emerald-900/10 bg-white/97 p-3 text-left shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -268,7 +338,7 @@ function NearbyStrip({
 }) {
   if (loading) {
     return (
-      <div className="rv-scroll flex gap-3 overflow-x-auto pb-1">
+      <div className="rv-scroll flex gap-3 overflow-x-auto pb-1 [touch-action:pan-x]">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="h-[104px] w-60 shrink-0 animate-pulse rounded-2xl bg-white/80" />
         ))}
@@ -286,23 +356,16 @@ function NearbyStrip({
     );
   }
   return (
-    <div className="rv-scroll flex gap-3 overflow-x-auto pb-1">
+    <div className="rv-scroll flex gap-3 overflow-x-auto pb-1 [touch-action:pan-x]">
       {nearby.map((n) => (
         <button
           key={n.id}
           type="button"
-          onClick={() =>
-            onSelect({
-              kind: "common",
-              id: n.id,
-              name: n.name,
-              lat: n.lat,
-              lng: n.lng,
-              distanceKm: n.distanceKm,
-              categoryLabel: label,
-              color,
-            })
-          }
+          onClick={() => {
+            if (swipeJustOpened()) return;
+            openNearby(n, onSelect, label, color);
+          }}
+          {...swipeUpHandlers(() => openNearby(n, onSelect, label, color))}
           className="w-52 shrink-0 rounded-2xl border border-emerald-900/10 bg-white/97 p-3 text-left shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl"
         >
           <div className="flex items-center gap-2">
