@@ -225,10 +225,13 @@
   background: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Ajuste de la altura del drawer para móvil */
+/* Hoja de detalle de lugar: más alta en móvil (88dvh). El !important vence al
+   max-h-[80vh] del componente base (especificidad del data-attr). El scroll de
+   reseñas vive en un div interno (place-detail-sheet.tsx), no aquí, para que el
+   gesto de arrastre de vaul no compita con el scroll táctil y el pie con
+   "Cómo llegar" quede siempre visible. */
 .rv-drawer-max {
-  max-height: 82dvh;
-  overflow-y: auto;
+  max-height: 88dvh !important;
 }
 
 /* Drawer y toasts por encima de los overlays del mapa (chips z-850, nav z-1000) */

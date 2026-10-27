@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { es as esLocale } from "date-fns/locale";
@@ -67,6 +69,26 @@ export function PlaceDetailSheet({ detail, open, onOpenChange }: PlaceDetailShee
 
 function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => void }) {
   const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
+  // En la APK (Capacitor) abrimos la app de Google Maps nativa; en navegador/PWA,
+  // la ruta en una pestaña nueva.
+  const isNative = Capacitor.isNativePlatform();
+
+  /** Abre la ruta hacia este lugar en Google Maps. */
+  const openRoute = async () => {
+    const url = directionsUrl({ lat: detail.lat, lng: detail.lng }, detail.name);
+    if (!isNative) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      const { value } = await CapApp.launcher({ url });
+      if (!value) {
+        toast.error("No encontramos una app de mapas en este dispositivo");
+      }
+    } catch {
+      toast.error("No se pudo abrir Google Maps");
+    }
+  };
   // "idle" = botón | "form" = formulario | "done" = panel de éxito.
   // Vive aquí arriba para que "sé el primero" también pueda abrir el formulario.
   const [reviewStage, setReviewStage] = useState<"idle" | "form" | "done">("idle");
@@ -85,8 +107,10 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
   });
 
   return (
-    <div className="mx-auto w-full max-w-md pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <DrawerHeader className="pb-2 text-left">
+    // flex-1 + min-h-0: la hoja ocupa hasta su alto máximo y la zona central
+    // (reseñas) hace scroll por sí sola — el pie con "Cómo llegar" siempre es visible.
+    <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
+      <DrawerHeader className="shrink-0 pb-2 text-left">
         <div className="flex flex-wrap items-center gap-2">
           <Badge
             className="border-0 hover:opacity-90"
@@ -112,7 +136,8 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
         </DrawerDescription>
       </DrawerHeader>
 
-      <div className="space-y-3 px-4 pb-2">
+      {/* Zona con scroll propio: descripción, fotos y reseñas nunca tapan el pie */}
+      <div className="rv-scroll min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-2">
         {detail.kind === "singular" && (
           <RatingSummary
             state={detailQuery.status}
@@ -174,16 +199,14 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
         )}
       </div>
 
-      <DrawerFooter className="flex-row gap-2 pt-2">
-        <Button asChild className="h-12 flex-1 gap-2 bg-emerald-700 font-bold hover:bg-emerald-800">
-          <a
-            href={directionsUrl({ lat: detail.lat, lng: detail.lng }, detail.name)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Navigation className="h-4 w-4" aria-hidden />
-            Cómo llegar
-          </a>
+      {/* Pie fijo: siempre visible sin depender del scroll de las reseñas */}
+      <DrawerFooter className="flex-row gap-2 border-t border-stone-100 bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        <Button
+          onClick={openRoute}
+          className="h-12 flex-[2] gap-2 bg-emerald-700 font-bold hover:bg-emerald-800"
+        >
+          <Navigation className="h-4 w-4" aria-hidden />
+          Cómo llegar
         </Button>
         <Button
           variant="outline"
