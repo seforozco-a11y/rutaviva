@@ -649,3 +649,20 @@ Work Log:
 Stage Summary:
 - PhotoUpload con doble fuente (Cámara + Galería) verificado E2E en local; formulario "Sugiere un lugar" vuelve a ofrecer las 2 opciones compartiendo el límite de 5 fotos.
 - Siguiente: push a origin/main y deploy a producción vía bun .tmp-auth/deploy-api.ts (auto-deploys GitHub→Vercel siguen muertos).
+
+---
+Task ID: 22-deploy (bloqueado)
+Agent: Z.ai Code (principal)
+Task: Deploy a producción del fix Tarea 22 — BLOQUEADO por token sin acceso al scope "oroxco"
+
+Work Log:
+- bun .tmp-auth/deploy-api.ts → 403 "Not authorized: Trying to access resource under scope \"oroxco\". You must re-authenticate to this scope or use a token with access to this scope." (saml:true).
+- Diagnóstico: GET /v9/projects (con y sin teamId), /v2/teams, /v2/teams/{id}, POST /v13/deployments → mismo 403; /v2/user → "User not found"; SOLO GET /v13/deployments/{id} responde 200 (lectura sin enforcement).
+- El deployment de Task 21 (dpl_64x3arTb...) vive bajo scope "oroxco" (URL interna rutaviva-h507o842c-oroxco.vercel.app; creator seforozco-a11y; aliases rutaviva-seven.vercel.app + rutaviva-oroxco.vercel.app).
+- Conclusión: el token vcp_... quedó sin permisos sobre el scope dueño del proyecto (SAML/SSO o cambio de team habilitado ENTRE sesiones; a las 02:36 UTC de hoy el deploy con este token funcionaba). No es reparable desde la API.
+- Producción verificada: sitio UP (200). Chunks de prod NO contienen "Tomar foto"/"Elegir de la galer" (marcadores del fix) y SÍ contienen "Agregar foto" (versión vieja) → el fix Tarea 22 aún no está en producción. Falsos positivos descartados: "environment" genérico y "capture" (captureException) en chunks no relacionados.
+- vercel CLI no está instalado en PATH (device-login requiere npx/bunx; requiere aprobación del usuario igual que un token nuevo).
+
+Stage Summary:
+- Código Tarea 22 listo y verificado en local + pushed (7fab178 + 23d3f4d). ÚNICO pendiente: re-autenticación del usuario (nuevo token de dashboard o desactivar SAML si se activó sin querer) → reintentar bun .tmp-auth/deploy-api.ts.
+- La APK no requiere regeneración: carga el sitio remoto vía server.url.
