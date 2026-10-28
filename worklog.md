@@ -745,3 +745,19 @@ Work Log:
 
 Stage Summary:
 - Admin muestra todas las fotos sugeridas en carrusel de swipe sin auto-avance; detalle público conserva su autoplay. Siguiente: deploy + verificación en producción (crear sugerencia de prueba, validar carrusel en admin y ELIMINARLA para no dejar basura).
+
+---
+Task ID: 24-deploy
+Agent: Z.ai Code (principal)
+Task: Deploy y verificación en producción de la Task 24 (carrusel de fotos en moderación) — COMPLETADO
+
+Work Log:
+- La limpieza del sandbox borró .tmp-auth/ y .vercel/ entre sesiones: recreados project.json, token (vcp_6xxP...) y deploy-api.ts completo (sin teamId, nota del 28/oct). Deploy OK: READY en ~1 min (https://rutaviva-7xtairedm-oroxco.vercel.app).
+- Verificación de chunks: "Fotos enviadas de" (marcador del código nuevo) presente en producción.
+- E2E producción (browser 414x896): sugerencia de prueba "QA carrusel admin (se elimina)" con 3 fotos vía formulario público → tarjeta en Admin "Por revisar" muestra carrusel (3 slides, 3 dots, contador 1/3); tras 5 s sigue 1/3 (SIN auto-avance ✅); swipe → 2/3 ✅. La sugerencia real "trabajo" del usuario quedó intacta en la cola.
+- Limpieza: Rechazar (diálogo confirmado) → Lugares → menú Acciones → Eliminar → "Sí, eliminar". Verificado: QA desaparecida de la cola y de la pestaña Lugares (0 filas Rechazado; 18 publicados). Producción queda sin basura de prueba.
+- Lecciones Radix: click() programático NO abre DropdownMenu ni Tabs — usar clicks reales de agent-browser (find role ...). El botón de confirmación es "Sí, eliminar" (regex /Eliminar/ con mayúscula no coincide).
+
+Stage Summary:
+- TAREA 24 EN PRODUCCIÓN ✅: la tarjeta de "Sugerencias por revisar" muestra TODAS las fotos del usuario en carrusel que avanza SOLO con el dedo (sin auto-avance); una sola foto sigue como imagen única. APK sin cambios (site remoto) — cerrar y reabrir la app.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
