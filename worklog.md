@@ -612,3 +612,23 @@ Stage Summary:
 - Tarea 21 COMPLETA y verificada localmente en su totalidad; código ya en origin/main (7e9c635). Solo falta `vercel deploy --prod` cuando el usuario autorice el código FKTH-QNNG (o pegue un token).
 - Lección de infraestructura: para procesos de fondo persistentes en este sandbox usar SIEMPRE doble fork.
 - Pendientes intactos: deploy de la Tarea 21, Play Console (paso 8), limpieza de registros demo en PROD desde Admin (PIN RV7D4C22).
+
+---
+Task ID: 21-deploy
+Agent: Z.ai Code (principal)
+Task: Deploy de la Tarea 21 a producción de Vercel con token de acceso del usuario (vcp_...)
+
+Work Log:
+- El token vcp_... (60 chars) pertenece al TEAM team_kHOKJaxDF4lHveDDN7pZvho6 (proyecto rutaviva, prj_XbO1kRv2IGWGp5BPG0fRLPaOlRzf): /v2/user responde 404 "User not found" (por eso `vercel whoami --token` falla) pero /v6/deployments y /v9/projects SÍ funcionan.
+- Descubierto: los auto-deploys de GitHub→Vercel se DETUVIERON el Oct 27 03:13 (último dpl de Task 20) — los commits del Oct 28 (7e9c635 feat fotos, 124a82c worklog) nunca dispararon build. Causa no confirmada (integración Git del team fantasma); el deploy por API la evita.
+- CLI imposible: `vercel deploy --token` exige /v2/user → "Not able to load user". Solución: script propio .tmp-auth/deploy-api.ts replicando el flujo del CLI: POST /v13/deployments (files con sha1+size) → 400 missing_files (el array viene en error.missing) → POST /v2/files?filename&sha&size con header x-vercel-digest (¡sin él responde "File digest missing"!) → re-POST /v13/deployments → poll /v13/deployments/{id} + /v2/deployments/{id}/events.
+- Exclusiones del upload (build no las necesita): skills/ (61MB), android/, docs/, www/, download/, examples/, tests/, assets/, agent-ctx/, .github/, Dockerfile, Caddyfile, railway.toml. Se incluyeron: src (90), public (18, incluye rutaviva.apk 7MB), prisma, scripts (vercel-build.sh + seed-if-empty.ts), configs, bun.lock → 130 archivos / 10MB; 13 subidos, 117 ya estaban en el caché sha1 de Vercel.
+- Build remoto OK: prisma generate → schema→postgresql → db push → seed-if-empty → next build (Next 16.1.3, cache restaurado). READY en ~2 min: dpl_64x3arTbYCTJiqXQdV1AVbbJeYEW → alias rutaviva-seven.vercel.app + rutaviva-oroxco.vercel.app (target production).
+- Verificación en producción (browser 414x896): chunks del dominio contienen el carrusel ("Ir a la foto"; ojo: "galería" aparece unicode-escapado, greps previos con acentos eran falsos negativos). Hoja La Audiencia: 1 foto → botón individual + lightbox OK (en PROD ese lugar no tiene fotos extra; el carrusel se activa con ≥2 fotos aprobadas). Formulario sugerencia: "Fotos del lugar (opcional) 0/5", input multiple SIN capture → Android ofrecerá Cámara o Archivos. Captura /tmp/rv-prod-form.png.
+- Token guardado en .tmp-auth/vercel-token (gitignored, chmod 600) junto con deploy-api.ts reutilizable para próximos deploys.
+
+Stage Summary:
+- TAREA 21 EN PRODUCCIÓN ✅: subida de hasta 5 fotos (cámara o galería del dispositivo) + carrusel táctil con autoplay 3s/2s en bucle en la hoja de detalle. Verificado en rutaviva-seven.vercel.app.
+- El carrusel público se activará cuando exista un lugar con ≥2 fotos aprobadas (p. ej. la próxima sugerencia de usuario con varias fotos aprobada desde Admin).
+- Lecciones: (1) deploys vía API con token de team funcionan aunque /v2/user falle; (2) x-vercel-digest obligatorio en /v2/files; (3) greps de chunks con texto acentuado → usar ASCII puro o forma \uXXXX.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
