@@ -25,24 +25,19 @@ type MapCanvasProps = {
   onSelect: (detail: PlaceDetail) => void;
 };
 
-const STAR_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#ffffff" stroke="none" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-
 /**
  * Pin de lugar singular: color e icono según la categoría (playa, mirador,
- * monumento…). Los destacados llevan una estrella ámbar como insignia.
+ * monumento…). Sin estrellas: la calificación de los usuarios solo se muestra
+ * en la hoja de detalle del lugar.
  */
-function singularIcon(categoryId: string, featured: boolean): L.DivIcon {
+function singularIcon(categoryId: string): L.DivIcon {
   const v = categoryVisual(categoryId);
-  const badge = featured
-    ? `<div class="rv-pin-badge" aria-hidden="true">${STAR_SVG}</div>`
-    : "";
   return L.divIcon({
     className: "rv-icon",
     html:
       `<div class="rv-pin" style="background:${v.fg}">` +
       categorySvg(categoryId, { className: "rv-pin-ico", style: "color:#fff" }) +
-      `</div>${badge}`,
+      `</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 27],
   });
@@ -160,7 +155,7 @@ export function MapCanvas({
             <Marker
               key={p.id}
               position={[p.lat, p.lng]}
-              icon={singularIcon(p.category, p.featured)}
+              icon={singularIcon(p.category)}
               eventHandlers={{ click: () => toDetail(p, onSelect) }}
             />
           ))

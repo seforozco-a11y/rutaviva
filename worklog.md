@@ -684,3 +684,18 @@ Stage Summary:
 - TAREA 22 EN PRODUCCIÓN ✅: el formulario "Sugiere un lugar" ofrece Cámara y Galería como dos botones explícitos compartiendo el tope de 5 fotos. La APK no requiere regeneración (server.url remoto): cerrar y reabrir la app.
 - Deploy-api.ts corregido para el token actual (sin teamId) — reutilizable en próximos deploys.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD desde Admin (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: 23
+Agent: Z.ai Code (principal)
+Task: Quitar la insignia de estrella de los pines del mapa; las estrellas de calificación solo en la hoja de detalle (petición del usuario con capturas)
+
+Work Log:
+- El badge de estrella en los pines era la insignia de "destacado" (STAR_SVG + rv-pin-badge en map-canvas.tsx, ámbar con borde blanco, esquina inferior derecha). El usuario la percibe como calificación y la quiere fuera del mapa.
+- map-canvas.tsx: eliminados STAR_SVG y el badge; singularIcon(categoryId) ya no recibe featured; JSDoc actualizado ("sin estrellas: la calificación solo se muestra en la hoja de detalle").
+- globals.css: eliminado el bloque .rv-pin-badge / .rv-pin-badge svg.
+- Revisado y NO tocado: Star del chip "Singulares" (map-view.tsx, es ícono del filtro); estrellas de la lista de lugares (places-list.tsx, otra pantalla, no señalada por el usuario); estrellas de reseñas/rating en place-detail-sheet.tsx (se conservan — imagen 2 del usuario).
+- Lint limpio. E2E local (414x896): mapa con 13 pines y 0 .rv-pin-badge ✅; hoja de detalle conserva estrellas (23 svg.lucide-star, sección RESEÑAS visible) ✅. Capturas: /tmp/rv23-mapa-sin-estrellas.png, /tmp/rv23-detalle-estrellas.png.
+
+Stage Summary:
+- Pines del mapa sin estrellas; calificaciones visibles únicamente en la ventana de detalle. Siguiente: deploy + verificación en producción (grep CSS chunk sin rv-pin-badge) + worklog final.
