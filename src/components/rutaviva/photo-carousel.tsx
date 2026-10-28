@@ -9,19 +9,24 @@ type PhotoCarouselProps = {
   alt: string;
   /** Se ejecuta al tocar una foto (visor a pantalla completa). */
   onOpenPhoto?: (url: string, alt: string) => void;
+  /** Auto-avance en bucle (por defecto true). En moderación se usa false:
+   * las fotos solo avanzan cuando el usuario desliza el dedo. */
+  autoplay?: boolean;
 };
 
 /**
  * Carrusel de fotos del lugar para la hoja de detalle:
  *  - Swipe táctil horizontal con scroll-snap nativo (el dedo arrastra la foto,
  *    sin afectar el scroll vertical de la hoja).
- *  - Auto-avance en bucle mientras la ventana esté abierta: la primera foto
- *    3 segundos y las demás 2 segundos; al llegar a la última reinicia.
- *  - Se pausa mientras el usuario explora con el dedo y retoma desde la foto
- *    visible al soltar.
+ *  - Con `autoplay` (por defecto): auto-avance en bucle mientras la ventana
+ *    esté abierta — la primera foto 3 segundos y las demás 2; al llegar a la
+ *    última reinicia. Se pausa mientras el usuario explora con el dedo y
+ *    retoma desde la foto visible al soltar.
+ *  - Con `autoplay={false}`: NO se mueve solo; avanza únicamente con el
+ *    deslizamiento del dedo (usado en moderación de Admin).
  *  - Puntos indicadores, contador y botones prev/next (accesible).
  */
-export function PhotoCarousel({ images, alt, onOpenPhoto }: PhotoCarouselProps) {
+export function PhotoCarousel({ images, alt, onOpenPhoto, autoplay = true }: PhotoCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
   const dragging = useRef(false);
@@ -45,9 +50,10 @@ export function PhotoCarousel({ images, alt, onOpenPhoto }: PhotoCarouselProps) 
     [images.length]
   );
 
-  // Auto-avance: portada 3 s, resto 2 s. `index`/`tick` reagendan el ciclo.
+  // Auto-avance (solo con autoplay): portada 3 s, resto 2 s. `index`/`tick`
+  // reagendan el ciclo tras cada interacción manual.
   useEffect(() => {
-    if (images.length <= 1) return;
+    if (!autoplay || images.length <= 1) return;
     const t = setTimeout(
       () => {
         if (!dragging.current) goTo(index + 1);

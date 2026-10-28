@@ -53,6 +53,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PhotoLightbox } from "@/components/rutaviva/photo-lightbox";
+import { PhotoCarousel } from "@/components/rutaviva/photo-carousel";
 import { useToast } from "@/hooks/use-toast";
 import { categoryLabel, SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { Coordinates } from "@/lib/place-types";
@@ -844,7 +845,16 @@ function ReviewQueue(props: {
             {props.pendingPlaces.map((p) => (
               <li key={p.id}>
                 <article className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-                  {p.photos.length > 0 && (
+                  {p.photos.length > 1 ? (
+                    // Todas las fotos sugeridas: avanzan SOLO con el dedo
+                    // (sin auto-avance) y se abren a pantalla completa al tocar.
+                    <PhotoCarousel
+                      images={p.photos.map((ph) => ph.url)}
+                      alt={`Fotos enviadas de ${p.name}`}
+                      autoplay={false}
+                      onOpenPhoto={(url, alt) => setLightbox({ url, alt })}
+                    />
+                  ) : p.photos.length === 1 ? (
                     <button
                       type="button"
                       onClick={() =>
@@ -856,11 +866,11 @@ function ReviewQueue(props: {
                       <img
                         src={p.photos[0].url}
                         alt={`Foto enviada de ${p.name}`}
-                        className="h-40 w-full rounded-xl object-cover"
+                        className="h-44 w-full rounded-2xl object-cover"
                         loading="lazy"
                       />
                     </button>
-                  )}
+                  ) : null}
                   <h3 className="mt-1 text-base font-bold leading-snug text-stone-800">
                     {p.name}
                   </h3>

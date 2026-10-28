@@ -730,3 +730,18 @@ Stage Summary:
   3. Si el usuario pide: quitar calificaciones también de la lista de lugares (places-list.tsx) — hoy solo las quitamos del mapa.
   4. Opcional: decidir si se muestra "Destacado" en otro lugar de la UI (la insignia de estrella se quitó de los pines; el campo featured sigue en BD y Admin).
 - La APK NO requiere regeneración por los cambios de hoy (carga el sitio remoto vía server.url): el usuario solo cierra y reabre la app.
+
+---
+Task ID: 24
+Agent: Z.ai Code (principal)
+Task: Admin "Sugerencias por revisar" — carrusel con TODAS las fotos sugeridas, avance SOLO con swipe táctil, sin auto-avance (petición del usuario con captura)
+
+Work Log:
+- La API /api/admin/overview ya devolvía pendingPlaces con todas sus fotos; el límite estaba en la tarjeta (solo photos[0]).
+- photo-carousel.tsx: nueva prop `autoplay?: boolean` (default true) — el efecto de auto-avance se omite con false; el swipe scroll-snap y los dots quedan intactos. La hoja de detalle no cambia (autoplay por defecto).
+- admin-panel.tsx (sección Sugerencias de lugares): si ≥2 fotos → PhotoCarousel autoplay={false} con todas las fotos (onOpenPhoto → lightbox existente); si 1 foto → botón único como antes (ahora h-44 para igualar altura); si 0 → nada.
+- Verificado el flujo de aprobación: PATCH approve ya marca todas las fotos PENDING como APPROVED y usa la primera como portada — el carrusel público funcionará al publicar.
+- Lint limpio. E2E local (414x896, PIN local rutaviva2025): lugar de prueba con 3 fotos PENDING → tarjeta admin muestra carrusel 3 slides, contador 1/3; tras 4.5 s sigue 1/3 (SIN auto-avance ✅); swipe → 2/3 → 3/3 ✅. Regresión: hoja de detalle de Playa La Audiencia (5 fotos) sigue con autoplay (1/5 → 3/5 → 4/5 con el tiempo esperado) ✅. Captura /tmp/rv24-admin-carrusel.png. Lugar de prueba eliminado de la BD local.
+
+Stage Summary:
+- Admin muestra todas las fotos sugeridas en carrusel de swipe sin auto-avance; detalle público conserva su autoplay. Siguiente: deploy + verificación en producción (crear sugerencia de prueba, validar carrusel en admin y ELIMINARLA para no dejar basura).
