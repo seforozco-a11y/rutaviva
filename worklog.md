@@ -712,3 +712,21 @@ Work Log:
 Stage Summary:
 - TAREA 23 EN PRODUCCIÓN ✅: pines del mapa sin estrellas; calificaciones solo en la ventana de detalle. APK sin cambios (site remoto) — cerrar y reabrir la app.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: cierre-sesion-28oct
+Agent: Z.ai Code (principal)
+Task: Cierre de sesión del 28/oct — guardar todo y dejar pendientes para mañana
+
+Work Log:
+- Árbol git limpio; todo commiteado y pushed a origin/main (último: 7f1cdb1). Producción en rutaviva-seven.vercel.app sirviendo el build de la Task 23 (READY).
+- Sesión de hoy logró: (22) PhotoUpload con dos fuentes explícitas Cámara + Galería (tope 5 fotos), verificado E2E local y producción; (23) pines del mapa sin insignia de estrella, calificaciones solo en la hoja de detalle, verificado en producción (16 pines / 0 badges).
+
+Stage Summary:
+- Infra de deploy establecida: bun .tmp-auth/deploy-api.ts SIN teamId forzado + token vcp_6xxP... (28/oct, chmod 600, gitignored). El teamId=team_kHOK... viejo provocaba 403 scope "oroxco". Nota: rutaviva-oroxco.vercel.app quedó tras Vercel Authentication (302); el dominio de la app (rutaviva-seven.vercel.app) es público.
+- PENDIENTES PARA MAÑANA:
+  1. Play Console paso 8 (guía de publicación de la APK).
+  2. Limpieza de registros demo en PROD desde Admin (PIN RV7D4C22): lugar "Mirador La Pozahualca", reseña "Marisol T.", lugar "Prueba Curl".
+  3. Si el usuario pide: quitar calificaciones también de la lista de lugares (places-list.tsx) — hoy solo las quitamos del mapa.
+  4. Opcional: decidir si se muestra "Destacado" en otro lugar de la UI (la insignia de estrella se quitó de los pines; el campo featured sigue en BD y Admin).
+- La APK NO requiere regeneración por los cambios de hoy (carga el sitio remoto vía server.url): el usuario solo cierra y reabre la app.
