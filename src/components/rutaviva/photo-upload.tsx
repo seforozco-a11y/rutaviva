@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { Camera, ImagePlus, Loader2, X } from "lucide-react";
 import { fileToDataUrl } from "@/lib/image-client";
 import { cn } from "@/lib/utils";
 
@@ -13,18 +13,25 @@ type PhotoUploadProps = {
 };
 
 /**
- * Subida de fotos reutilizable: miniaturas con quitar + botón para añadir
- * (cámara en móvil). Comprime con fileToDataUrl antes de emitir el cambio.
+ * Subida de fotos reutilizable con DOS fuentes explícitas:
+ *  - "Cámara" → input con capture="environment" (en la APK/WebView abre la
+ *    cámara directamente; sin este atributo el WebView de Capacitor solo
+ *    ofrece archivos y la cámara desaparece).
+ *  - "Galería" → input sin capture (en Android ofrece Archivos/Imágenes; en
+ *    navegador también permite elegir cámara).
+ * Comprime con fileToDataUrl antes de emitir el cambio.
  */
 export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
+  const galRef = useRef<HTMLInputElement>(null);
   const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const full = photos.length >= max;
 
   const handleFiles = async (files: FileList | null) => {
     const list = files ? Array.from(files) : [];
-    if (inputRef.current) inputRef.current.value = "";
+    if (camRef.current) camRef.current.value = "";
+    if (galRef.current) galRef.current.value = "";
     if (list.length === 0) return;
     setError(null);
     setConverting(true);
@@ -54,6 +61,11 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
     onChange(photos.filter((_, i) => i !== index));
     setError(null);
   };
+
+  const btnClass = cn(
+    "flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 text-sm font-semibold text-stone-600 transition hover:border-emerald-400 hover:bg-emerald-50/40 hover:text-emerald-700 active:scale-[0.98]",
+    converting && "pointer-events-none opacity-60"
+  );
 
   return (
     <div className="space-y-1.5">
@@ -92,35 +104,56 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
             </button>
           </div>
         ))}
-
-        {!full && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={converting}
-            aria-label="Agregar foto"
-            className={cn(
-              "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 text-stone-500 transition hover:border-emerald-400 hover:text-emerald-700",
-              converting && "opacity-70"
-            )}
-          >
-            {converting ? (
-              <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-            ) : (
-              <ImagePlus className="h-5 w-5" aria-hidden />
-            )}
-            <span className="text-[11px] font-semibold">
-              {converting ? "Procesando…" : "Agregar"}
-            </span>
-            {max > 1 && !converting && (
-              <span className="text-[10px] text-stone-400">cámara o galería</span>
-            )}
-          </button>
-        )}
       </div>
 
+      {!full && (
+        // Fila de fuentes: cámara y galería con acceso directo de un toque.
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => camRef.current?.click()}
+            disabled={converting}
+            aria-label="Tomar foto con la cámara"
+            className={btnClass}
+          >
+            {converting ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Camera className="h-4 w-4" aria-hidden />
+            )}
+            {converting ? "Procesando…" : "Cámara"}
+          </button>
+          <button
+            type="button"
+            onClick={() => galRef.current?.click()}
+            disabled={converting}
+            aria-label="Elegir de la galería"
+            className={btnClass}
+          >
+            {converting ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <ImagePlus className="h-4 w-4" aria-hidden />
+            )}
+            {converting ? "Procesando…" : "Galería"}
+          </button>
+        </div>
+      )}
+
+      {/* Cámara: captura directa en WebView/navegador móvil. */}
       <input
-        ref={inputRef}
+        ref={camRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        aria-hidden
+        tabIndex={-1}
+        onChange={(e) => void handleFiles(e.target.files)}
+      />
+      {/* Galería: sin capture; permite selección múltiple hasta llenar el máximo. */}
+      <input
+        ref={galRef}
         type="file"
         accept="image/*"
         multiple={max > 1}
