@@ -666,3 +666,21 @@ Work Log:
 Stage Summary:
 - Código Tarea 22 listo y verificado en local + pushed (7fab178 + 23d3f4d). ÚNICO pendiente: re-autenticación del usuario (nuevo token de dashboard o desactivar SAML si se activó sin querer) → reintentar bun .tmp-auth/deploy-api.ts.
 - La APK no requiere regeneración: carga el sitio remoto vía server.url.
+
+---
+Task ID: 22-deploy
+Agent: Z.ai Code (principal)
+Task: Deploy a producción del fix Tarea 22 (cámara + galería) con el NUEVO token del usuario — COMPLETADO
+
+Work Log:
+- Token nuevo vcp_6xxP... guardado en .tmp-auth/vercel-token (chmod 600). Sondeo: /v9/projects SIN teamId → ve rutaviva (prj_XbO1...); /v2/user → "User not found" (token team-scoped); /v2/teams → sin permiso de listar (irrelevante).
+- Ajustado deploy-api.ts: QUITADO teamId=team_kHOK... forzado (era lo que disparaba el 403 oroxco con el token nuevo); mensajes meta actualizados a Task 22.
+- Deploy OK: 131 archivos/10.1MB, caché reutilizada, build remoto prisma generate → postgresql → next build 16.1.3 → READY en ~1 min (https://rutaviva-a2kx2wwic-oroxco.vercel.app).
+- Verificación producción: chunks de rutaviva-seven.vercel.app contienen "Tomar foto"/"Elegir de la galer" y ya NO contienen "Agregar foto" (versión vieja eliminada).
+- E2E en producción (browser 414x896, sin submit para no escribir en BD de prod): botones "Cámara" y "Galería" presentes; inputs: {capture:environment, multiple:false} y {capture:null, multiple:true}; contador 0/5 → cámara 1/5 (1 miniatura) → galería 2/5 (2 miniaturas) ✅. Captura /tmp/rv22-prod-form.png.
+- Descubierto: rutaviva-oroxco.vercel.app responde 302 "Protected by Vercel Authentication" (Deployment Protection sobre el alias automático *.vercel.app); rutaviva-seven.vercel.app sigue público (200) y es el dominio que usa la APK.
+
+Stage Summary:
+- TAREA 22 EN PRODUCCIÓN ✅: el formulario "Sugiere un lugar" ofrece Cámara y Galería como dos botones explícitos compartiendo el tope de 5 fotos. La APK no requiere regeneración (server.url remoto): cerrar y reabrir la app.
+- Deploy-api.ts corregido para el token actual (sin teamId) — reutilizable en próximos deploys.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD desde Admin (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
