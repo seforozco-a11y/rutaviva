@@ -632,3 +632,20 @@ Stage Summary:
 - El carrusel público se activará cuando exista un lugar con ≥2 fotos aprobadas (p. ej. la próxima sugerencia de usuario con varias fotos aprobada desde Admin).
 - Lecciones: (1) deploys vía API con token de team funcionan aunque /v2/user falle; (2) x-vercel-digest obligatorio en /v2/files; (3) greps de chunks con texto acentuado → usar ASCII puro o forma \uXXXX.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: 22
+Agent: Z.ai Code (principal)
+Task: Tarea 22 — restaurar la opción de CÁMARA junto a la de GALERÍA en el formulario "Sugiere un lugar singular" (dos fuentes explícitas de fotos)
+
+Work Log:
+- Contexto: para habilitar galería (Tarea 21) se quitó `capture` del input file único; en la WebView del usuario eso eliminó la opción Cámara. Fix: PhotoUpload con DOS inputs ocultos y DOS botones.
+- El código ya estaba escrito en local (commit 7fab178, sesión anterior cortada antes de verificar/desplegar). Revisado: src/components/rutaviva/photo-upload.tsx.
+- Implementación verificada: input cámara `capture="environment"` + `multiple=false`; input galería sin capture + `multiple={max>1}`; botones "Cámara" (aria "Tomar foto con la cámara") y "Galería" (aria "Elegir de la galería"); ambos alimentan el mismo estado con tope `max` y mensaje "Máximo N fotos. Se agregaron las primeras."; al llenarse se ocultan ambos botones; botones reaparecen al quitar una foto.
+- Los 3 usos del componente quedan cubiertos: add-place-form (max 5), place-detail-sheet reseña (max 3), admin place-fields-form portada (max 1, sin multiple).
+- Lint limpio. E2E local (agent-browser 414x896): inputs inspeccionados (capture env / multiple true) ✅; inyección por input cámara → contador 1/5 ✅; por galería 2 fotos → 3/5 ✅; 4 más → cap 5/5 + role=alert "Máximo 5 fotos..." ✅; quitar foto 5 → 4/5 y botones reaparecen ✅; submit completo → "¡Sugerencia enviada!" y BD: lugar PENDING source USER con 4 fotos PENDING ✅. Lugar de prueba "Prueba Doble Fuente 22" eliminado de la BD local.
+- Clave para APK: capacitor.config.ts usa server.url (la APK carga el sitio remoto) → el deploy del sitio basta; NO hace falta regenerar APK.
+
+Stage Summary:
+- PhotoUpload con doble fuente (Cámara + Galería) verificado E2E en local; formulario "Sugiere un lugar" vuelve a ofrecer las 2 opciones compartiendo el límite de 5 fotos.
+- Siguiente: push a origin/main y deploy a producción vía bun .tmp-auth/deploy-api.ts (auto-deploys GitHub→Vercel siguen muertos).
