@@ -51,6 +51,8 @@ export type PlaceDetailResponse = {
     lng: number;
     address: string | null;
     imageUrl: string | null;
+    /** Galería pública (portada + fotos aprobadas). */
+    photos: Array<{ id: string; url: string }>;
     tips: string | null;
     featured: boolean;
     city: string;

@@ -78,9 +78,12 @@ export async function PATCH(
       }
       const featured =
         typeof body?.featured === "boolean" ? body.featured : place.featured;
+      // `photos` no es columna de SingularPlace (es la relación Photo): la
+      // edición de campos conserva la galería existente.
+      const { photos: _photos, ...placeFields } = parsed.data;
       await db.singularPlace.update({
         where: { id },
-        data: { ...parsed.data, featured },
+        data: { ...placeFields, featured },
       });
       return NextResponse.json({ ok: true, action });
     }

@@ -124,14 +124,22 @@ export async function POST(req: NextRequest) {
         : "";
     const suggestedBy = suggestedByRaw ? suggestedByRaw.slice(0, 40) : null;
 
+    const { photos, ...placeData } = parsed.data;
+
     const created = await db.singularPlace.create({
       data: {
-        ...parsed.data,
+        ...placeData,
         status: "PENDING",
         source: "USER",
         suggestedBy,
-        ...(parsed.data.imageUrl
-          ? { photos: { create: { url: parsed.data.imageUrl, status: "PENDING" } } }
+        // Galería completa: cada foto entra con status PENDING y se aprueba
+        // junto con el lugar desde el panel de administración.
+        ...(photos.length > 0
+          ? {
+              photos: {
+                create: photos.map((url) => ({ url, status: "PENDING" })),
+              },
+            }
           : {}),
       },
     });

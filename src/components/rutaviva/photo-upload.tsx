@@ -23,20 +23,28 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
   const full = photos.length >= max;
 
   const handleFiles = async (files: FileList | null) => {
-    const file = files?.[0];
+    const list = files ? Array.from(files) : [];
     if (inputRef.current) inputRef.current.value = "";
-    if (!file) return;
+    if (list.length === 0) return;
     setError(null);
     setConverting(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
-      if (photos.length >= max) {
-        setError(`Máximo ${max} ${max === 1 ? "foto" : "fotos"}. Quita una para agregar otra.`);
-      } else {
-        onChange([...photos, dataUrl]);
+      const added: string[] = [];
+      let skipped = false;
+      for (const file of list) {
+        if (photos.length + added.length >= max) {
+          skipped = true;
+          break;
+        }
+        added.push(await fileToDataUrl(file));
+      }
+      if (added.length > 0) onChange([...photos, ...added]);
+      if (skipped) {
+        setError(`Máximo ${max} ${max === 1 ? "foto" : "fotos"}. Se agregaron las primeras.`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo procesar la imagen.");
+      if (photos.length > 0) onChange(photos);
     } finally {
       setConverting(false);
     }
@@ -104,6 +112,9 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
             <span className="text-[11px] font-semibold">
               {converting ? "Procesando…" : "Agregar"}
             </span>
+            {max > 1 && !converting && (
+              <span className="text-[10px] text-stone-400">cámara o galería</span>
+            )}
           </button>
         )}
       </div>
@@ -112,7 +123,7 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        multiple={max > 1}
         className="sr-only"
         aria-hidden
         tabIndex={-1}

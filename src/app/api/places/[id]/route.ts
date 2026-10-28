@@ -21,6 +21,12 @@ export async function GET(
     const place = await db.singularPlace.findUnique({
       where: { id },
       include: {
+        // Galería pública del lugar (fotos aprobadas, portada primero).
+        photos: {
+          where: { status: "APPROVED" },
+          orderBy: { createdAt: "asc" },
+          select: { id: true, url: true },
+        },
         reviews: {
           where: { status: "APPROVED", flagged: false },
           orderBy: { createdAt: "desc" },
@@ -58,6 +64,14 @@ export async function GET(
         lng: place.lng,
         address: place.address,
         imageUrl: place.imageUrl,
+        // Galería: portada (imageUrl) primero, luego las fotos aprobadas que
+        // no la dupliquen (p. ej. sugerencias de usuarios con 5 fotos).
+        photos: [
+          ...(place.imageUrl && !place.photos.some((p) => p.url === place.imageUrl)
+            ? [{ id: "cover", url: place.imageUrl }]
+            : []),
+          ...place.photos.map((p) => ({ id: p.id, url: p.url })),
+        ],
         tips: place.tips,
         featured: place.featured,
         city: place.city,

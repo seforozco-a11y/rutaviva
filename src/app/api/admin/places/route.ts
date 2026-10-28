@@ -22,14 +22,17 @@ export async function POST(req: NextRequest) {
 
     const featured = Boolean((body as Record<string, unknown>)?.featured);
 
+    const { photos, ...placeData } = parsed.data;
+
     const created = await db.singularPlace.create({
       data: {
-        ...parsed.data,
+        ...placeData,
         featured,
         status: "APPROVED",
         source: "ADMIN",
-        ...(parsed.data.imageUrl
-          ? { photos: { create: { url: parsed.data.imageUrl, status: "APPROVED" } } }
+        // Galería completa; los lugares creados por admin nacen aprobados.
+        ...(photos.length > 0
+          ? { photos: { create: photos.map((url) => ({ url, status: "APPROVED" })) } }
           : {}),
       },
     });

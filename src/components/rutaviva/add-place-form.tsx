@@ -87,6 +87,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
           lng: nLng,
           address: values.address.trim() || null,
           imageUrl: values.photos[0] ?? null,
+          photos: values.photos,
           tips: values.tips.trim() || null,
           suggestedBy: values.suggestedBy.trim() || null,
         }),
@@ -249,8 +250,8 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
       <PhotoUpload
         photos={values.photos}
         onChange={(photos) => patch({ photos })}
-        max={1}
-        label="Foto del lugar (opcional)"
+        max={5}
+        label="Fotos del lugar (opcional)"
       />
 
       <div className="space-y-1.5">

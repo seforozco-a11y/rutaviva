@@ -6,6 +6,7 @@ import { SINGULAR_CATEGORIES } from "@/lib/geo";
 
 export const MAX_PHOTO_CHARS = 2_600_000; // ~1.9 MB binarios en base64
 export const MAX_PHOTOS_PER_REVIEW = 3;
+export const MAX_PHOTOS_PER_PLACE = 5; // galería de un lugar singular
 
 export type PlaceInput = {
   name: string;
@@ -15,6 +16,8 @@ export type PlaceInput = {
   lng: number;
   address: string | null;
   imageUrl: string | null;
+  /** Galería completa (0..5). imageUrl siempre es la portada = photos[0]. */
+  photos: string[];
   tips: string | null;
   city: string;
   state: string;
@@ -45,6 +48,31 @@ export function validatePlaceInput(body: unknown): Valid<PlaceInput> | Invalid {
   const city = str(b.city) || "Manzanillo";
   const state = str(b.state) || "Colima";
 
+  // Galería: hasta 5 fotos. imageUrl (portada, compatibilidad) se agrega al
+  // frente si no viene ya en la lista; photos[0] siempre termina siendo la
+  // portada del lugar.
+  const rawPhotos = Array.isArray(b.photos) ? b.photos : [];
+  const photos: string[] = [];
+  for (const p of rawPhotos) {
+    const url = str(p);
+    if (!isValidPhotoUrl(url)) {
+      return { ok: false, error: "Una de las fotos no es válida o pesa demasiado" };
+    }
+    photos.push(url);
+  }
+  if (photos.length > MAX_PHOTOS_PER_PLACE) {
+    return { ok: false, error: `Máximo ${MAX_PHOTOS_PER_PLACE} fotos por lugar` };
+  }
+  const imageUrlFinal = imageUrl ?? photos[0] ?? null;
+  if (imageUrlFinal && !isValidPhotoUrl(imageUrlFinal)) {
+    return { ok: false, error: "La foto no es válida (usa una imagen comprimida o una URL https)" };
+  }
+  const photosFinal =
+    imageUrl && !photos.includes(imageUrl) ? [imageUrl, ...photos] : photos;
+  if (photosFinal.length > MAX_PHOTOS_PER_PLACE) {
+    return { ok: false, error: `Máximo ${MAX_PHOTOS_PER_PLACE} fotos por lugar` };
+  }
+
   if (name.length < 3 || name.length > 120) {
     return { ok: false, error: "El nombre debe tener entre 3 y 120 caracteres" };
   }
@@ -63,16 +91,25 @@ export function validatePlaceInput(body: unknown): Valid<PlaceInput> | Invalid {
   if (tips && tips.length > 200) {
     return { ok: false, error: "El tip no puede exceder 200 caracteres" };
   }
-  if (imageUrl && !isValidPhotoUrl(imageUrl)) {
-    return { ok: false, error: "La foto no es válida (usa una imagen comprimida o una URL https)" };
-  }
   if (city.length > 80 || state.length > 80) {
     return { ok: false, error: "Ciudad o estado demasiado largos" };
   }
 
   return {
     ok: true,
-    data: { name, description, category, lat, lng, address, imageUrl, tips, city, state },
+    data: {
+      name,
+      description,
+      category,
+      lat,
+      lng,
+      address,
+      imageUrl: imageUrlFinal,
+      photos: photosFinal,
+      tips,
+      city,
+      state,
+    },
   };
 }
 

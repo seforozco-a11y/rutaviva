@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoUpload } from "./photo-upload";
 import { PhotoLightbox } from "./photo-lightbox";
+import { PhotoCarousel } from "./photo-carousel";
 import { directionsUrl, formatDistance } from "@/lib/geo";
 import { categoryVisual } from "@/lib/category-visual";
 import { CategoryIcon } from "./category-icon";
@@ -110,6 +111,18 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
     staleTime: 30 * 1000,
   });
 
+  // Galería: portada (imageUrl) primero + fotos aprobadas del detalle, sin duplicados.
+  const gallery = useMemo(() => {
+    const imgs: string[] = [];
+    for (const p of detailQuery.data?.place.photos ?? []) {
+      if (!imgs.includes(p.url)) imgs.push(p.url);
+    }
+    if (detail.imageUrl && !imgs.includes(detail.imageUrl)) {
+      imgs.unshift(detail.imageUrl);
+    }
+    return imgs;
+  }, [detail.imageUrl, detailQuery.data]);
+
   return (
     // flex-1 + min-h-0: la hoja ocupa hasta su alto máximo y la zona central
     // (reseñas) hace scroll por sí sola — el pie con "Cómo llegar" siempre es visible.
@@ -154,14 +167,27 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
           />
         )}
 
-        {detail.imageUrl && (
-          <img
-            src={detail.imageUrl}
-            alt={`Imagen de ${detail.name}`}
-            className="h-44 w-full rounded-2xl object-cover"
-            loading="lazy"
+        {gallery.length > 1 ? (
+          <PhotoCarousel
+            images={gallery}
+            alt={`Fotos de ${detail.name}`}
+            onOpenPhoto={(url, a) => setLightbox({ url, alt: a })}
           />
-        )}
+        ) : gallery.length === 1 ? (
+          <button
+            type="button"
+            onClick={() => setLightbox({ url: gallery[0], alt: detail.name })}
+            className="block w-full overflow-hidden rounded-2xl transition hover:opacity-95"
+            aria-label={`Ver imagen de ${detail.name} a pantalla completa`}
+          >
+            <img
+              src={gallery[0]}
+              alt={`Imagen de ${detail.name}`}
+              className="h-44 w-full object-cover"
+              loading="lazy"
+            />
+          </button>
+        ) : null}
 
         {detail.description && (
           <p className="text-sm leading-relaxed text-stone-600">{detail.description}</p>
