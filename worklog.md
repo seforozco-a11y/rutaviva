@@ -699,3 +699,16 @@ Work Log:
 
 Stage Summary:
 - Pines del mapa sin estrellas; calificaciones visibles únicamente en la ventana de detalle. Siguiente: deploy + verificación en producción (grep CSS chunk sin rv-pin-badge) + worklog final.
+
+---
+Task ID: 23-deploy
+Agent: Z.ai Code (principal)
+Task: Deploy y verificación en producción de la Task 23 — COMPLETADO
+
+Work Log:
+- Deploy por API (bun .tmp-auth/deploy-api.ts, sin teamId): READY en ~1 min (https://rutaviva-o6m2fpn2j-oroxco.vercel.app).
+- Verificación producción: ningún CSS chunk de rutaviva-seven.vercel.app contiene "rv-pin-badge" ✅; DOM del mapa: 16 pines, 0 insignias ✅; hoja de detalle: 16 svg.lucide-star y sección RESEÑAS presentes ✅. Captura /tmp/rv23-prod-final.png.
+
+Stage Summary:
+- TAREA 23 EN PRODUCCIÓN ✅: pines del mapa sin estrellas; calificaciones solo en la ventana de detalle. APK sin cambios (site remoto) — cerrar y reabrir la app.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
