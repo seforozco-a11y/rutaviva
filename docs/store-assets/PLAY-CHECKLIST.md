@@ -29,7 +29,7 @@ Consola → **Crecimiento → Store presence → Ficha principal de Play Store**
 - [x] **Ícono de la app 512×512 PNG** → subir `docs/store-assets/icon-512.png`
 - [x] **Gráfico de promoción 1024×500** → subir `docs/store-assets/feature-graphic-1024x500.png`
 - [x] **Capturas de teléfono** (mínimo 2): LISTAS — `docs/store-assets/screenshots/01-portada.png` a `04-guia.png` (1080×2340, 4 imágenes)
-- [ ] Correo de contacto público visible en la ficha (`[correo@de-contacto]` — el mismo de la política de privacidad) — **último dato que te falta definir**
+- [ ] Correo de contacto público visible en la ficha: **`seforozco@gmail.com`** — YA DEFINIDO (es el mismo que publica la política de privacidad, §1; usar exactamente ese en Play Console)
 
 - [ ] Categoría: **Viajes y guías locales** · Etiquetas: Manzanillo, Colima, playas, guía turística, México
 

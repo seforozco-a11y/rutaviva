@@ -861,3 +861,16 @@ Work Log:
 Stage Summary:
 - TAREA 30 EN PRODUCCIÓN ✅: la app ya no dice "Manzanillo" en ninguna pantalla de usuario — lista para escalar a nuevas ciudades sin cambiar textos. Datos del catálogo intactos (Manzanillo es el municipio activo).
 - Pendientes: Play Console (checklist actualizado Task 29); borrar "trabajo" (lat 0,0) y decidir "mi casa"/"mi carpinteria"; APK sin cambios (site remoto).
+
+---
+Task ID: 31
+Agent: Z.ai Code (principal)
+Task: Cierre de limpieza del catálogo (usuario borró "trabajo", "mi casa" y "mi carpinteria") + verificación de que la Tarea 30 ya vive en producción
+
+Work Log:
+- El usuario borró desde el panel los 3 lugares personales: "trabajo" (lat/lng 0,0), "mi casa" y "mi carpinteria". Verificación SOLO LECTURA de producción: 19 en BD → 16 APPROVED (coincidencia exacta), 0 pendientes/rechazados, 12 reseñas todas aprobadas; búsqueda por nombre y descripción de "casa"/"carpinter": 0 restos. Catálogo 100% real.
+- Confirmado que la Tarea 30 (app agnóstica de ciudad) ya estaba COMPLETA y desplegada por la sesión anterior: commit a452c62 (main == origin/main), add-place-form "¿Conoces una joya de esta ciudad?", splash "Disponible hoy en tu ciudad"/"Explorar la ciudad (ubicación demo)", toasts "el centro de la ciudad". Referencias restantes documentadas como intencionales: 2 menciones legales en privacidad.html §1 (ciudad de lanzamiento + ubicación del responsable — precisión legal), defaults city/state "Manzanillo"/"Colima" como datos del catálogo (invisibles al público), filename hero-manzanillo.png y comentarios técnicos (no visibles), appId com.rutaviva.colima (no se toca: rompería la ficha de Play).
+- Docs: PLAY-CHECKLIST.md — correo de contacto YA definido (seforozco@gmail.com, publicado en privacidad.html §1); los títulos de la ficha Play con "Manzanillo" se conservan a propósito (ASO local; la ficha es por app, no es UI de la app).
+
+Stage Summary:
+- CATÁLOGO LIMPIO + TAREA 30 EN PRODUCCIÓN ✅. Nada de código pendiente: solo queda el trámite de Play Console del lado del usuario (cuenta $25 → crear app → ficha → formularios → AAB de Actions → pruebas cerradas 12×14d). Si el usuario quiere también genéricas las 2 menciones legales de la privacidad, es un cambio de 2 minutos.
