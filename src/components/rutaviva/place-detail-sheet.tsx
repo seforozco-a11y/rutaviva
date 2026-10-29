@@ -40,6 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoUpload } from "./photo-upload";
 import { PhotoLightbox } from "./photo-lightbox";
+import { PrivacyNotice } from "./privacy-notice";
 import { PhotoCarousel } from "./photo-carousel";
 import { directionsUrl, formatDistance } from "@/lib/geo";
 import { categoryVisual } from "@/lib/category-visual";
@@ -719,6 +720,15 @@ function ReviewForm(props: {
           {error}
         </p>
       )}
+
+      <p className="text-center text-xs leading-relaxed text-stone-500">
+        Al enviar aceptas el{" "}
+        <PrivacyNotice
+          className="font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-800"
+          label="aviso de privacidad"
+        />
+        : tu reseña y tus fotos pasan a revisión del equipo RutaViva.
+      </p>
 
       <div className="flex gap-2">
         <Button

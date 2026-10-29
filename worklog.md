@@ -795,3 +795,21 @@ Work Log:
 Stage Summary:
 - TAREA 26 EN PRODUCCIÓN ✅: el botón atrás del móvil des-apila los niveles de la foto en orden (pantalla completa → tarjeta → pantalla de donde se abrió: admin o detalle). APK sin cambios (site remoto) — cerrar y reabrir la app.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: 27
+Agent: Z.ai Code (principal)
+Task: Aviso de privacidad con deslinde de responsabilidades (fotos/información de usuarios), amable/corto/claro, accesible para usuarios y administradores + botón atrás unificado web/APK
+
+Work Log:
+- Redactado el aviso (privacy-notice.tsx): "En una frase" (deslinde), qué envían los viajeros, "Lo que SÍ podemos hacer" (revisar/editar/eliminar, mostrar nombre, ubicación solo para ordenar cercanos, moderación admin), "Lo que NO podemos (ni vamos a) hacer" (no pedimos correo/teléfono/pagos, no vendemos datos, no rastreamos, no garantizamos contenido "tal cual", no respondemos por lo que suben los usuarios), "Tu parte del trato" (fotos propias/permiso, consentimiento de personas, no menores/ilegal, reseñas veraces), "Tus derechos" (ver/corregir/eliminar sin costo) y "Marco legal" (principios RGPD + LFPDPPP México/marco 2025 + normas de Colima, actualizable). Footer de aceptación con fecha (oct 2025).
+- Botón atrás UNIFICADO web/APK (hallazgo clave): en la APK el listener nativo Capacitor "backButton" (rutaviva-app) anula history.back, así que las Tasks 25/26 no granularían en el teléfono. Nueva infra: src/lib/back-layers.ts (pila compartida de capas; closeTopBackLayer) + src/hooks/use-back-close.ts (pushState + popstate en web; registro en la pila para el botón nativo; bandera compartida expectingPop para los history.back propios; solo la CIMA de la pila atiende un popstate — fix de doble cierre detectado en E2E). rutaviva-app: paso 0 del listener nativo = closeTopBackLayer() (cierra SOLO la capa superior).
+- photo-lightbox.tsx refactorizado a useBackClose ×2 (tarjeta + fullscreen); mismo comportamiento verificado. hooks/use-android-back.ts (borrador de esta sesión) eliminado a favor de use-back-close.
+- Accesos al aviso (PrivacyNotice = botón+Dialog): lista "Lugares" (tarjeta al pie — places-list.tsx), formulario "Sugiere un lugar singular" (nota "Al enviar… aceptas el aviso de privacidad"), formulario de reseñas (nota equivalente) y pie del panel de administración ("Aviso de privacidad · reglas de fotos y contenido"). about-panel.tsx (huérfano, no renderizado) también lo incluye para cuando se conecte.
+- Lint limpio. E2E local (414x896): tarjeta de Lugares → atrás cierra aviso y la lista queda; formulario → enlace → "Entendido" cierra, form queda; admin → enlace → atrás cierra, admin queda; regresión fotos: fs+tarjeta → atrás #1 cierra SOLO fs (fix aplicado), atrás #2 cierra tarjeta y la hoja queda; ✕ fullscreen → tarjeta queda; ✕ tarjeta → hoja queda. Sin errores de consola. Capturas rv27-1..4.
+- Deploy API: READY ~1 min (https://rutaviva-an1sn422j-oroxco.vercel.app); marcadores "Aviso de privacidad" y "rvLayer/closeTopBackLayer" en chunk 774c5b83ababe88d.js de rutaviva-seven.vercel.app.
+- E2E producción (solo lectura): aviso desde Lugares (abre, atrás cierra, lista queda — rv27-5); fotos de Justicia Civica: fullscreen → atrás → tarjeta queda → atrás → hoja queda.
+
+Stage Summary:
+- TAREA 27 EN PRODUCCIÓN ✅: aviso de privacidad amable/corto/claro con deslinde de responsabilidades, visible para viajeros (lista Lugares, sugerencias, reseñas) y administradores; el botón ◀ del móvil ahora cierra TAMBIÉN las capas en la APK (tarjeta de foto, fullscreen y aviso) sin cambiar de vista, unificando web y nativo.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".

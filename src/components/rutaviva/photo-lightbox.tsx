@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useBackClose } from "@/hooks/use-back-close";
 
 type PhotoLightboxProps = {
   url: string | null;
@@ -19,92 +20,25 @@ type PhotoLightboxProps = {
  * Visor de fotos para reseñas, sugerencias y la galería del lugar.
  *
  * Pantallas apiladas que el botón atrás del móvil (flecha ◀ de la barra de
- * Android) va deshaciendo en orden — cada nivel apila su propia entrada en
- * el historial (pushState) y el botón atrás dispara popstate, que quita la
- * cima de la pila (LIFO):
+ * Android) va deshaciendo en orden LIFO — cada nivel usa useBackClose, que
+ * apila su propia entrada en el historial (web) y se registra en la pila
+ * back-layers (APK/Capacitor):
  *
  *   pantalla anterior (panel de administrador / hoja de detalle)
- *    └─ 1. Tarjeta: foto ampliada + botón "Pantalla completa"  [rvPhotoCard]
- *        └─ 2. Pantalla completa: foto en todo el viewport     [rvPhotoFs]
+ *    └─ 1. Tarjeta: foto ampliada + botón "Pantalla completa"
+ *        └─ 2. Pantalla completa: foto en todo el viewport
  *
  * Al salir por los botones ✕ (en vez del botón atrás) se consume la entrada
- * correspondiente con history.back() para dejar el historial tal como estaba.
+ * correspondiente para dejar el historial tal como estaba.
  */
 export function PhotoLightbox({ url, alt, onClose }: PhotoLightboxProps) {
   /** URL de la foto mostrada a pantalla completa (null = cerrado). */
   const [fsUrl, setFsUrl] = useState<string | null>(null);
-  /** Entradas de historial apiladas por este visor, en orden. */
-  const stackRef = useRef<Array<"card" | "fs">>([]);
-  /** true mientras se espera el popstate de un history.back() propio. */
-  const expectingPopRef = useRef(false);
 
-  // Última versión de onClose para el listener de popstate (que es estable).
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
-
-  // Botón atrás del móvil / navegador: des-apilar UN nivel del visor.
-  useEffect(() => {
-    const onPop = () => {
-      if (expectingPopRef.current) {
-        // popstate provocado por nuestro propio history.back(): ignorarlo.
-        expectingPopRef.current = false;
-        return;
-      }
-      const top = stackRef.current.pop();
-      if (top === "fs") setFsUrl(null); // fullscreen → tarjeta
-      else if (top === "card") onCloseRef.current(); // tarjeta → pantalla anterior
-    };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
-  // Nivel 1 (tarjeta): apila su entrada al abrir y la consume al cerrar.
-  const cardOpen = url !== null;
-  useEffect(() => {
-    if (!cardOpen) return;
-    stackRef.current.push("card");
-    history.pushState({ rvPhotoCard: true }, "");
-    return () => {
-      if (stackRef.current[stackRef.current.length - 1] === "card") {
-        stackRef.current.pop();
-        expectingPopRef.current = true;
-        // Red de seguridad: si popstate no llegara, rearmar la bandera.
-        window.setTimeout(() => {
-          expectingPopRef.current = false;
-        }, 400);
-        history.back();
-      }
-    };
-  }, [cardOpen]);
-
-  // Nivel 2 (pantalla completa): ídem, encima de la tarjeta.
-  useEffect(() => {
-    if (fsUrl === null) return;
-    stackRef.current.push("fs");
-    history.pushState({ rvPhotoFs: true }, "");
-    return () => {
-      if (stackRef.current[stackRef.current.length - 1] === "fs") {
-        stackRef.current.pop();
-        expectingPopRef.current = true;
-        window.setTimeout(() => {
-          expectingPopRef.current = false;
-        }, 400);
-        history.back();
-      }
-    };
-  }, [fsUrl]);
-
-  // Si el visor se desmonta con niveles abiertos, devolver el historial.
-  useEffect(
-    () => () => {
-      const n = stackRef.current.length;
-      stackRef.current = [];
-      if (n > 0) history.go(-n);
-    },
-    []
-  );
+  // Nivel 1 (tarjeta): atrás la cierra y regresa a la pantalla anterior.
+  useBackClose(url !== null, onClose);
+  // Nivel 2 (pantalla completa): atrás cierra solo el fullscreen.
+  useBackClose(fsUrl !== null, () => setFsUrl(null));
 
   const openFullscreen = useCallback(() => {
     if (url) setFsUrl(url);
@@ -113,7 +47,7 @@ export function PhotoLightbox({ url, alt, onClose }: PhotoLightboxProps) {
   return (
     <>
       {/* Nivel 1: tarjeta con la foto ampliada dentro de la app */}
-      <Dialog open={cardOpen} onOpenChange={(o) => !o && onClose()}>
+      <Dialog open={url !== null} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-h-[85dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-2xl p-3">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
           <DialogDescription className="sr-only">{alt}</DialogDescription>
@@ -146,7 +80,7 @@ export function PhotoLightbox({ url, alt, onClose }: PhotoLightboxProps) {
       </Dialog>
 
       {/* Nivel 2: pantalla completa — se sale con el botón atrás del móvil
-          (popstate) o con el botón de salir */}
+          (popstate / capa nativa) o con el botón de salir */}
       <Dialog
         open={fsUrl !== null}
         onOpenChange={(o) => {

@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MapPin, RotateCcw, Search, Star } from "lucide-react";
+import { MapPin, RotateCcw, Search, ShieldCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categoryVisual } from "@/lib/category-visual";
 import { CategoryIcon } from "./category-icon";
+import { PrivacyNotice } from "./privacy-notice";
 import {
   COMMON_TYPES,
   SINGULAR_CATEGORIES,
@@ -271,6 +272,22 @@ export function PlacesList({
           )}
         </div>
       )}
+
+      {/* Aviso de privacidad: reglas de fotos y contenido para la comunidad */}
+      <PrivacyNotice
+        className="mt-2 flex w-full items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/50"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+          <ShieldCheck className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold text-stone-800">Aviso de privacidad</span>
+          <span className="mt-0.5 block text-xs leading-relaxed text-stone-500">
+            Qué podemos y qué no podemos hacer con las fotos y la información que se comparte en
+            RutaViva. Aplica a viajeros y administradores.
+          </span>
+        </span>
+      </PrivacyNotice>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PhotoUpload } from "./photo-upload";
+import { PrivacyNotice } from "./privacy-notice";
 import { SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { Coordinates } from "@/lib/place-types";
 
@@ -283,6 +284,15 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
           {error}
         </p>
       )}
+
+      <p className="text-center text-xs leading-relaxed text-stone-500">
+        Al enviar confirmas que tu contenido es tuyo y aceptas el{" "}
+        <PrivacyNotice
+          className="font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-800"
+          label="aviso de privacidad"
+        />
+        : nada se publica sin revisión y cada quien responde por lo que sube.
+      </p>
 
       <Button
         type="submit"

@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { COMMON_TYPES, SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { SingularPlaceDTO } from "@/lib/place-types";
+import { PrivacyNotice } from "@/components/rutaviva/privacy-notice";
 
 type AboutPanelProps = {
   places: SingularPlaceDTO[];
@@ -78,6 +79,22 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
           />
         </ol>
       </section>
+
+      {/* Aviso de privacidad: reglas compartidas entre usuarios y administradores */}
+      <PrivacyNotice
+        className="flex w-full items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/50"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+          <ShieldCheck className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold text-stone-800">Aviso de privacidad</span>
+          <span className="mt-0.5 block text-xs leading-relaxed text-stone-500">
+            Qué podemos y qué no podemos hacer con las fotos y la información que se comparte en
+            RutaViva. Léelo antes de publicar: aplica a viajeros y administradores.
+          </span>
+        </span>
+      </PrivacyNotice>
 
       <div className="space-y-3">
         <InfoCard

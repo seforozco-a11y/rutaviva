@@ -21,6 +21,7 @@ import type {
   SingularPlaceDTO,
 } from "@/lib/place-types";
 import type { MapFocus } from "./map-canvas";
+import { closeTopBackLayer } from "@/lib/back-layers";
 
 const ONBOARD_KEY = "rutaviva:onboarded";
 
@@ -137,6 +138,11 @@ export function RutavivaApp() {
     let removeListener: (() => void) | undefined;
 
     void CapApp.addListener("backButton", () => {
+      // 0) Capa apilada abierta (tarjeta de foto, pantalla completa, aviso de
+      //    privacidad…) → cerrar SOLO esa capa, como en la web (Task 25/26/27)
+      if (closeTopBackLayer()) {
+        return;
+      }
       // 1) Hoja de detalle abierta → solo cerrarla
       if (sheetOpenRef.current) {
         setSheetOpen(false);

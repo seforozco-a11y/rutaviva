@@ -53,6 +53,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PhotoLightbox } from "@/components/rutaviva/photo-lightbox";
+import { PrivacyNotice } from "@/components/rutaviva/privacy-notice";
 import { PhotoCarousel } from "@/components/rutaviva/photo-carousel";
 import { useToast } from "@/hooks/use-toast";
 import { categoryLabel, SINGULAR_CATEGORIES } from "@/lib/geo";
@@ -995,6 +996,14 @@ function ReviewQueue(props: {
           </ul>
         )}
       </section>
+
+      {/* Reglas de fotos y contenido: mismas para usuarios y administradores */}
+      <div className="flex justify-center pt-1">
+        <PrivacyNotice
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-400 underline-offset-2 transition hover:text-emerald-700 hover:underline"
+          label="Aviso de privacidad · reglas de fotos y contenido"
+        />
+      </div>
 
       {/* ---- Diálogo de validación ---- */}
       <Dialog
