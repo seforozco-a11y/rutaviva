@@ -779,3 +779,19 @@ Work Log:
 Stage Summary:
 - TAREA 25 EN PRODUCCIÓN ✅: toda foto abierta (detalle, reseñas, admin) ofrece pantalla completa con un toque; el botón atrás del móvil sale del fullscreen y regresa a la app. APK sin cambios (site remoto) — cerrar y reabrir la app.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: 26
+Agent: Z.ai Code (principal)
+Task: El botón atrás del móvil también cierra la tarjeta de la foto y regresa a la pantalla anterior (panel de administrador / hoja de detalle) — continuación de la Task 25
+
+Work Log:
+- photo-lightbox.tsx: la integración con el historial ahora es una PILA LIFO con un único listener de popstate: cada nivel apila su marcador ("card" | "fs") con pushState; el botón ◀ de Android des-apila UN nivel (fullscreen → tarjeta → pantalla anterior). Un flag expectingPopRef evita que el popstate de los history.back() propios (consumo de entrada al cerrar por ✕/Escape) dispare el handler; timer de 400 ms rearma la bandera si popstate no llega; al desmontar con niveles abiertos se devuelve el historial con history.go(-n). onClose se consume vía onCloseRef para no re-crear el listener.
+- Regla de la pila: cada efecto solo consume su entrada si sigue siendo la cima (evita dobles back en la cadena tarjeta+fullscreen).
+- Lint limpio. E2E local (414x896): (1) público — foto de Playa La Audiencia → atrás cierra la tarjeta y la hoja de detalle queda intacta (captura rv26-1); (2) cadena completa — tarjeta → fullscreen → atrás → tarjeta → atrás → hoja, sin entradas residuales (rv26-2); (3) admin (PIN local rutaviva2025) — foto de la sugerencia "Puestos de Tacos El Güero" → atrás cierra la tarjeta y el panel de administrador queda abierto en Sugerencias por revisar (rv26-3, rv26-4). Sin errores de consola.
+- Deploy API: READY ~1 min (https://rutaviva-6yzsyxt0n-oroxco.vercel.app); marcador rvPhotoCard en chunk fb8ef6f8097558fc.js de rutaviva-seven.vercel.app.
+- E2E producción (solo lectura): público con Justicia Civica (foto → atrás → hoja intacta, rv26-5); ADMIN con PIN RV7D4C22 — la sugerencia real "trabajo" (5 fotos, NO se aprobó/rechazó nada): abrir foto 1 → atrás → el panel admin queda abierto en "Sugerencias por revisar" con la sugerencia visible (rv26-6, rv26-7). Historial limpio tras cada atrás.
+
+Stage Summary:
+- TAREA 26 EN PRODUCCIÓN ✅: el botón atrás del móvil des-apila los niveles de la foto en orden (pantalla completa → tarjeta → pantalla de donde se abrió: admin o detalle). APK sin cambios (site remoto) — cerrar y reabrir la app.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
