@@ -761,3 +761,21 @@ Work Log:
 Stage Summary:
 - TAREA 24 EN PRODUCCIÓN ✅: la tarjeta de "Sugerencias por revisar" muestra TODAS las fotos del usuario en carrusel que avanza SOLO con el dedo (sin auto-avance); una sola foto sigue como imagen única. APK sin cambios (site remoto) — cerrar y reabrir la app.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: 25
+Agent: Z.ai Code (principal)
+Task: Fotos con modo pantalla completa + salida con el botón atrás del móvil (petición del usuario con captura del lightbox actual)
+
+Work Log:
+- photo-lightbox.tsx rediseñado en dos niveles: (1) tarjeta como hoy, ahora con botón verde "Pantalla completa" debajo de la foto y también abre tocando la foto; (2) fullscreen real: Dialog de Radix a todo el viewport (fixed inset-0, h-dvh, fondo negro, foto object-contain), botón circular "Salir de pantalla completa" (Minimize2) y descripción de la foto abajo con degradado y safe-area.
+- Botón atrás de Android: al abrir fullscreen se apila history.pushState({rvPhotoFs}); el botón atrás del WebView dispara popstate y cierra el visor regresando a la tarjeta. Al salir por ✕ se consume la entrada con history.back() (bandera closingRef evita dobles back); failsafe de 400 ms por si popstate no llega; cleanup del efecto limpia la entrada si el visor se desmonta (Escape/unmount). Sin useEffect con setState directo (regla react-hooks/set-state-in-effect) usando fsUrl: string|null como estado.
+- globals.css: [data-slot="dialog-content"][data-photo-fs="true"] { z-index: 1500 !important } — por encima de drawer (1101), dialogs (1301), dropdown (1350) y select (1400).
+- El mismo visor sirve a hoja de detalle (carrusel, foto única, reseñas) y al panel de Admin (lightbox existente) automáticamente.
+- Lint limpio. E2E local (414x896): tarjeta → "Pantalla completa" → fullscreen 414x896 z-1500 con history.state.rvPhotoFs; agent-browser back (equivalente al botón atrás) → fullscreen cerrado y tarjeta intacta, historial limpio (len 3); abrir tocando la foto → ✕ Salir → tarjeta intacta. Sin errores de consola. Capturas /tmp/rv25-1..4.
+- Deploy API: READY ~1 min (https://rutaviva-ot2fo5yai-oroxco.vercel.app). Producción (rutaviva-seven.vercel.app): marcadores "Pantalla completa", "Salir de pantalla completa" y "photo-fs" en chunk 0c752322f6ab5f0d.js.
+- E2E producción (solo lectura, sin escribir BD): Justicia Civica (5 fotos) → foto 1 → tarjeta → fullscreen (414x896, z-1500, rvPhotoFs) → back → tarjeta intacta, URL sin cambios → reabrir → ✕ Salir → tarjeta intacta y sin estado residual. Capturas /tmp/rv25-5-prod-fs.png, /tmp/rv25-6-prod-tras-atras.png.
+
+Stage Summary:
+- TAREA 25 EN PRODUCCIÓN ✅: toda foto abierta (detalle, reseñas, admin) ofrece pantalla completa con un toque; el botón atrás del móvil sale del fullscreen y regresa a la app. APK sin cambios (site remoto) — cerrar y reabrir la app.
+- Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".

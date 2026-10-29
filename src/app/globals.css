@@ -266,4 +266,10 @@ section[data-radix-toast-viewport] {
   z-index: 1350 !important;
 }
 
+/* Visor de foto a pantalla completa (PhotoLightbox nivel 2) por encima de
+   todo lo demás: drawer 1101, dialogs 1301, dropdown 1350, select 1400 */
+[data-slot="dialog-content"][data-photo-fs="true"] {
+  z-index: 1500 !important;
+}
+
 /* fin de estilos RutaViva */
