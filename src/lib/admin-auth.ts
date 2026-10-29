@@ -18,8 +18,10 @@ export function adminToken(): string {
 
 export function pinIsValid(pin: unknown): boolean {
   if (typeof pin !== "string") return false;
-  const a = Buffer.from(pin);
-  const b = Buffer.from(PIN);
+  // Tolerante a errores de tecleo: se compara normalizado (sin espacios
+  // accidentales y sin distinguir mayúsculas/minúsculas) en tiempo constante.
+  const a = Buffer.from(pin.trim().toUpperCase());
+  const b = Buffer.from(PIN.trim().toUpperCase());
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }

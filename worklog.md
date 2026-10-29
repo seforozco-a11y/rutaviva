@@ -813,3 +813,19 @@ Work Log:
 Stage Summary:
 - TAREA 27 EN PRODUCCIÓN ✅: aviso de privacidad amable/corto/claro con deslinde de responsabilidades, visible para viajeros (lista Lugares, sugerencias, reseñas) y administradores; el botón ◀ del móvil ahora cierra TAMBIÉN las capas en la APK (tarjeta de foto, fullscreen y aviso) sin cambiar de vista, unificando web y nativo.
 - Pendientes intactos: Play Console paso 8; limpieza de registros demo en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl".
+
+---
+Task ID: 28
+Agent: Z.ai Code (principal)
+Task: El usuario no podía entrar al panel admin en la web con PIN RV7D4C22 (en la APK sí) — diagnosticar y arreglar
+
+Work Log:
+- Diagnóstico (curl contra producción): PIN exacto RV7D4C22 → 200; minúsculas → 401; espacio final → 401. Causa raíz: pinIsValid comparaba byte a byte (timingSafeEqual sin normalizar) y el campo era type="password" (tecleo a ciegas, imposible detectar mayúsculas/espacios). En la APK funcionó porque esa vez se tecleó exacto.
+- Fix backend (admin-auth.ts): pinIsValid normaliza trim().toUpperCase() en ambos lados antes de la comparación en tiempo constante — tolerante a mayúsculas/minúsculas y espacios accidentales, misma seguridad.
+- Fix frontend (admin-panel.tsx AdminLogin): campo con toggle ojo (Eye/EyeOff, aria-label Mostrar/Ocultar PIN, aria-pressed), autoCapitalize="characters" autoCorrect="off" spellCheck={false}, nota "No distingue mayúsculas ni minúsculas" y error más amable ("PIN incorrecto. Revísalo e intenta de nuevo.").
+- Lint limpio. E2E local (414x896): curl — exacto/mayúsculas/espacios → 200, incorrecto → 401; UI — login con "  rutaviva2025  " (setter nativo React) entra al panel, sin errores de consola (rv28-1).
+- Deploy API: READY ~1 min (https://rutaviva-h3zpe45gp-oroxco.vercel.app). Producción (rutaviva-seven.vercel.app): rv7d4c22 → 200, RV7D4C22 → 200, " RV7D4C22 " → 200, ZZZZ9999 → 401; formulario nuevo verificado en el navegador (ojo + nota + input, rv28-2).
+
+Stage Summary:
+- TAREA 28 EN PRODUCCIÓN ✅: el PIN del admin ya entra aunque el teclado cambie mayúsculas o meta espacios; el campo muestra/oculta el PIN con un ojo. Desbloqueada la limpieza de registros demo desde la web.
+- Pendientes: usuario limpia en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl"; Play Console paso 8.

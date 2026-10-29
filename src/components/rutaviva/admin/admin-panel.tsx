@@ -8,6 +8,8 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  Eye,
+  EyeOff,
   Flag,
   FlagOff,
   Loader2,
@@ -228,6 +230,7 @@ function AdminLogin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
@@ -279,16 +282,37 @@ function AdminLogin() {
 
         <div className="mt-5 space-y-1.5">
           <Label htmlFor="rv-admin-pin">PIN de acceso</Label>
-          <Input
-            id="rv-admin-pin"
-            type="password"
-            autoComplete="current-password"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            placeholder="••••••••"
-            className="h-11 rounded-xl"
-            required
-          />
+          <div className="relative">
+            <Input
+              id="rv-admin-pin"
+              type={showPin ? "text" : "password"}
+              autoComplete="off"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="PIN del equipo"
+              className="h-11 rounded-xl pr-12"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPin((v) => !v)}
+              aria-label={showPin ? "Ocultar PIN" : "Mostrar PIN"}
+              aria-pressed={showPin}
+              className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-stone-400 transition-colors hover:text-stone-700"
+            >
+              {showPin ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-stone-400">
+            No distingue mayúsculas ni minúsculas.
+          </p>
         </div>
 
         {error && (
@@ -296,7 +320,7 @@ function AdminLogin() {
             role="alert"
             className="mt-3 animate-pulse rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
           >
-            PIN incorrecto
+            PIN incorrecto. Revísalo e intenta de nuevo.
           </p>
         )}
 
