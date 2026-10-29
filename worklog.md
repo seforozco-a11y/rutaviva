@@ -844,3 +844,20 @@ Work Log:
 Stage Summary:
 - PRODUCCIÓN LIMPIA VERIFICADA ✓ (los 3 demo borrados). Checklist de Play actualizado: lo único que falta del lado del usuario = cuenta Play ($25), crear app, copiar/pegar textos, formularios (respuestas listas en el checklist), subir AAB de Actions y definir el correo de contacto público.
 - Pendientes del usuario (opcionales): borrar "trabajo" (lat 0,0) y decidir sobre "mi casa"/"mi carpinteria" antes de la revisión de Play.
+
+---
+Task ID: 30
+Agent: Z.ai Code (principal)
+Task: App agnóstica de ciudad — "¿Conoces una joya de esta ciudad?" y sustitución coherente de referencias a Manzanillo/Colima en toda la UI (preparación para crecer a otras ciudades/estados/países)
+
+Work Log:
+- Inventario completo (rg manzanillo|colima en src/ + public/): clasificado en textos UI (cambiar), datos (NO tocar) y legales (caso por caso).
+- Cambios UI: add-place-form ("¿Conoces una joya de esta ciudad?" — petición literal del usuario); splash (badge "Disponible hoy en tu ciudad", subtítulo "lugares singulares de tu ciudad", botón "Explorar la ciudad (ubicación demo)", pie "Empezamos en tu ciudad · Pronto por todo el estado"); rutaviva-app (2 toasts GPS → "el centro de la ciudad"); privacy-notice ("la guía de tu ciudad", marco legal → "normas locales aplicables de cada estado y municipio"); about-panel ("guía turística local", tarjeta "De esta ciudad a todo el estado" sin listar municipios).
+- privacidad.html: meta/header/footer → "Tu guía turística local"; servicio → "guía turística digital local, disponible hoy en Manzanillo… y en crecimiento hacia nuevas ciudades" (legalmente preciso + visión de crecimiento); demo → "el centro de la ciudad"; cierre "compartir tu ciudad". Se CONSERVAN 2 referencias legales: ciudad de lanzamiento (§1) y ubicación del responsable (dato factual de contacto).
+- NO tocado (decisión documentada): defaults de city/state en place-fields-form, admin-panel y moderation.ts — son datos del catálogo (Manzanillo hoy), el admin escribe otra ciudad al expandir. Hero image y comentarios técnicos intactos.
+- Lint limpio. E2E local (414x896): splash 100% agnóstico (sinManzanillo=true), formulario con texto nuevo, aviso de privacidad sin "Colima" y con marco genérico; about-panel verificado por grep (sigue huérfano — Task 27 lo documentó). Capturas rv30-1..3.
+- Deploy API: READY (https://rutaviva-hzu62lhyy-oroxco.vercel.app). Producción: privacidad 200 con 4 marcadores agnósticos; splash sin "Manzanillo"; formulario "¿Conoces una joya de esta ciudad?" verificado en vivo (rv30-4).
+
+Stage Summary:
+- TAREA 30 EN PRODUCCIÓN ✅: la app ya no dice "Manzanillo" en ninguna pantalla de usuario — lista para escalar a nuevas ciudades sin cambiar textos. Datos del catálogo intactos (Manzanillo es el municipio activo).
+- Pendientes: Play Console (checklist actualizado Task 29); borrar "trabajo" (lat 0,0) y decidir "mi casa"/"mi carpinteria"; APK sin cambios (site remoto).

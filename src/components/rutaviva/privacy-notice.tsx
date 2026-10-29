@@ -58,7 +58,7 @@ export function PrivacyNotice({ className, label = "Aviso de privacidad", childr
                 Aviso de privacidad
               </DialogTitle>
               <DialogDescription className="mt-0.5 text-xs text-stone-500">
-                RutaViva · guía de Manzanillo escrita por viajeros como tú.
+                RutaViva · la guía de tu ciudad, escrita por viajeros como tú.
               </DialogDescription>
             </div>
           </div>
@@ -139,8 +139,8 @@ export function PrivacyNotice({ className, label = "Aviso de privacidad", childr
               Seguimos los principios de los marcos internacionales de protección de datos (como el
               RGPD de la Unión Europea: consentimiento, finalidad, minimización) y respetamos las
               leyes nacionales y locales de cada país donde se use la app — en México, la LFPDPPP y
-              su marco vigente 2025, además de las normas aplicables del estado de Colima. Podemos
-              actualizar este aviso: la versión publicada en la app es la vigente.
+              su marco vigente 2025, además de las normas locales aplicables de cada estado y
+              municipio. Podemos actualizar este aviso: la versión publicada en la app es la vigente.
             </p>
           </section>
 

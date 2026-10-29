@@ -200,7 +200,7 @@ export function RutavivaApp() {
         if (!opts?.silent) {
           toast({
             title: "GPS no disponible",
-            description: "Usamos la ubicación demo (Centro de Manzanillo).",
+            description: "Usamos la ubicación demo (el centro de la ciudad).",
           });
         }
         setOrigin(DEMO_POINT);
@@ -230,7 +230,7 @@ export function RutavivaApp() {
               variant: "destructive",
               title: "No pudimos usar tu GPS",
               description:
-                "Permiso denegado o no disponible. Activamos la ubicación demo (Manzanillo); puedes reintentar cuando quieras.",
+                "Permiso denegado o no disponible. Activamos la ubicación demo (el centro de la ciudad); puedes reintentar cuando quieras.",
             });
           }
         },

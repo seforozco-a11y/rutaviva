@@ -145,7 +145,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
           Sugerir un lugar singular
         </h1>
         <p className="text-sm text-stone-500">
-          ¿Conoces una joya de Manzanillo? Cuéntanosla: nuestro equipo la revisa y, si cumple
+          ¿Conoces una joya de esta ciudad? Cuéntanosla: nuestro equipo la revisa y, si cumple
           los lineamientos, la publica en la app.
         </p>
       </header>

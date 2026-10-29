@@ -61,7 +61,7 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
         >
           <p className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium tracking-wide text-amber-200">
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
-            Disponible hoy en Manzanillo, Colima
+            Disponible hoy en tu ciudad
           </p>
           <h1 className="text-5xl font-black tracking-tight">
             Ruta
@@ -71,7 +71,7 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
           </h1>
           <p className="mx-auto max-w-sm text-balance text-sm leading-relaxed text-emerald-100/85 sm:text-base">
             Descubre los <strong className="font-semibold text-white">lugares singulares</strong> de
-            Manzanillo — playas, miradores, sabor local — y encuentra todo lo esencial: farmacias,
+            tu ciudad — playas, miradores, sabor local — y encuentra todo lo esencial: farmacias,
             gasolineras, tiendas y más.
           </p>
         </motion.div>
@@ -137,7 +137,7 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
             className="h-11 w-full rounded-2xl border border-white/20 text-sm font-semibold text-emerald-100 hover:bg-white/10 hover:text-white"
           >
             <MapPin className="h-4 w-4" aria-hidden />
-            Explorar Manzanillo (ubicación demo)
+            Explorar la ciudad (ubicación demo)
           </Button>
         </motion.div>
       </div>
@@ -145,8 +145,8 @@ export function Splash({ onExplore, onDemo, locating }: SplashProps) {
       {/* Pie de portada */}
       <footer className="relative px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center">
         <p className="text-[11px] leading-relaxed text-emerald-200/70">
-          Empezamos en <span className="font-semibold text-amber-200">Manzanillo</span> · Pronto en
-          todo Colima · <span className="font-semibold text-amber-200">Android</span> hoy, iOS muy
+          Empezamos en <span className="font-semibold text-amber-200">tu ciudad</span> · Pronto por
+          todo el estado · <span className="font-semibold text-amber-200">Android</span> hoy, iOS muy
           pronto · Datos de mapa de OpenStreetMap
         </p>
       </footer>

@@ -29,7 +29,8 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
       <header className="space-y-1">
         <h1 className="text-2xl font-black tracking-tight text-stone-800">Guía de la app</h1>
         <p className="text-sm text-stone-500">
-          RutaViva es tu guía turística de Manzanillo: lugares singulares + servicios esenciales.
+          RutaViva es tu guía turística local: los lugares singulares y servicios esenciales de tu
+          ciudad.
         </p>
       </header>
 
@@ -104,8 +105,8 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
         />
         <InfoCard
           icon={MapPinned}
-          title="De Manzanillo a todo Colima"
-          text="Arrancamos en Manzanillo. Siguientes paradas: Armería y Tecomán en la costa; luego Colima, Comala, Villa de Álvarez, Coquimatlán, Cuauhtémoc, Ixtlahuacán y Minatitlán. Cada municipio llega con su propio catálogo de lugares singulares, sin cambiar una línea de código."
+          title="De esta ciudad a todo el estado"
+          text="Arrancamos aquí. La meta: llegar a cada municipio del estado — de la costa al interior — con su propio catálogo de lugares singulares, sin cambiar una línea de código."
         />
         <InfoCard
           icon={Globe2}
