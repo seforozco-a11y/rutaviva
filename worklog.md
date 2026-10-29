@@ -829,3 +829,18 @@ Work Log:
 Stage Summary:
 - TAREA 28 EN PRODUCCIÓN ✅: el PIN del admin ya entra aunque el teclado cambie mayúsculas o meta espacios; el campo muestra/oculta el PIN con un ojo. Desbloqueada la limpieza de registros demo desde la web.
 - Pendientes: usuario limpia en PROD (PIN RV7D4C22): "Mirador La Pozahualca", reseña "Marisol T.", "Prueba Curl"; Play Console paso 8.
+
+---
+Task ID: 29
+Agent: Z.ai Code (principal)
+Task: Verificar limpieza de producción (los 3 registros demo borrados por el usuario) + checklist de Play Console actualizado al estado real
+
+Work Log:
+- Verificación SOLO LECTURA de producción (API pública + admin overview con cookie de login): "Mirador La Pozahualca" AUSENTE, reseña "Marisol T." AUSENTE (Mercado Municipal solo tiene "TacosLover19"), "Prueba Curl" AUSENTE de la BD completa (no quedó como REJECTED). 0 lugares REJECTED/PENDING, 0 reseñas pendientes/reportadas; 13 reseñas en BD y las 13 APROBADAS. Producción LIMPIA ✓.
+- Hallazgos opcionales comunicados al usuario (no se tocó nada): lugar "trabajo" APPROVED con lat/lng 0,0 (Null Island, invisible al público por radio, ensucia el catálogo 19 en BD vs 18 visibles); "mi casa" y "mi carpinteria" visibles al público — decisión del usuario si son pruebas suyas.
+- Docs: PLAY-CHECKLIST.md actualizado al estado real: capturas ya existentes (4× 1080×2340 verificadas con file), privacidad.html ya publicada (URL exacta para registrar), Railway→Vercel+Neon, CAP_SERVER_URL/keystore/PIN marcados como hechos, encabezado con nota "ACTUALIZADO 28/oct". Assets validados: icon 512×512 ✓, feature 1024×500 ✓ (dimensiones exactas de Play).
+- GitHub API sin token: rate-limited por IP (token GH murió con el reinicio del sandbox; regenerar con .tmp-auth/gh-watch.sh si se necesita) — no bloquea: cada push a main genera AAB nuevo automáticamente.
+
+Stage Summary:
+- PRODUCCIÓN LIMPIA VERIFICADA ✓ (los 3 demo borrados). Checklist de Play actualizado: lo único que falta del lado del usuario = cuenta Play ($25), crear app, copiar/pegar textos, formularios (respuestas listas en el checklist), subir AAB de Actions y definir el correo de contacto público.
+- Pendientes del usuario (opcionales): borrar "trabajo" (lat 0,0) y decidir sobre "mi casa"/"mi carpinteria" antes de la revisión de Play.

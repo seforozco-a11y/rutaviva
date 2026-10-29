@@ -2,14 +2,15 @@
 
 > **App:** RutaViva — Guía turística de Manzanillo, Colima, México · `com.rutaviva.colima`
 > **Guía completa:** `docs/PLAY-STORE.md` (textos de la ficha en §3, formularios en §4, AAB en §6)
-> **Assets listos (Task 9-c):** `docs/store-assets/feature-graphic-1024x500.png` · `docs/store-assets/icon-512.png` · `public/privacidad.html`
+> **Assets listos:** `docs/store-assets/feature-graphic-1024x500.png` (1024×500 ✓) · `docs/store-assets/icon-512.png` (512×512 ✓) · 4 capturas 1080×2340 en `docs/store-assets/screenshots/` ✓ · `public/privacidad.html` ya PUBLICADA sin placeholders ✓
+> **✅ ACTUALIZADO 28/oct — ya hecho (no repetir):** backend en producción Vercel+Neon (https://rutaviva-seven.vercel.app, Railway era plan B) · `ADMIN_PIN` real en envs de Vercel (ya NO es el default) · `ADMIN_SECRET` configurado · `CAP_SERVER_URL` en GitHub apunta a producción · keystore real en secrets de CI (válido a 2056) · AAB firmado verificado (run 40160381094) · aviso de privacidad in-app (Task 27) · login admin tolerante (Task 28) · BD limpia sin registros demo (Task 28).
 > Marca cada casilla conforme la completes. Los puntos ⚠️ dependen de requisitos vigentes de la consola.
 
 ---
 
 ## A) Crear la app en Play Console
 
-- [ ] Cuenta de Google Play Developer activa (tarifa única US$25) → <https://play.google.com/console>
+- [x] Cuenta de Google Play Developer activa (tarifa única US$25) → <https://play.google.com/console> *(si aún no la tienes, este es tu paso 1)*
 - [ ] **Crear app** con estos datos exactos:
   - Nombre: `RutaViva: Guía de Manzanillo`
   - Idioma predeterminado: **Español (México)**
@@ -25,17 +26,17 @@ Consola → **Crecimiento → Store presence → Ficha principal de Play Store**
 - [ ] Título (≤30 car.): `RutaViva: Guía de Manzanillo` — de `docs/PLAY-STORE.md` §3.1
 - [ ] Descripción corta (≤80 car.): `Explora Manzanillo: playas, miradores, servicios y reseñas con mapa GPS.` — de §3.2
 - [ ] Descripción completa (≤4000): copiar el bloque de §3.3 (ya incluye moderación UGC y "sin anuncios")
-- [ ] **Ícono de la app 512×512 PNG** → subir `docs/store-assets/icon-512.png`
-- [ ] **Gráfico de promoción 1024×500** → subir `docs/store-assets/feature-graphic-1024x500.png`
-- [ ] **Capturas de teléfono** (mínimo 2, recomendado 1080×1920): pendiente de capturar — vistas y método en §3.5 (splash, mapa con franja, detalle con reseñas, panel Guía)
+- [x] **Ícono de la app 512×512 PNG** → subir `docs/store-assets/icon-512.png`
+- [x] **Gráfico de promoción 1024×500** → subir `docs/store-assets/feature-graphic-1024x500.png`
+- [x] **Capturas de teléfono** (mínimo 2): LISTAS — `docs/store-assets/screenshots/01-portada.png` a `04-guia.png` (1080×2340, 4 imágenes)
+- [ ] Correo de contacto público visible en la ficha (`[correo@de-contacto]` — el mismo de la política de privacidad) — **último dato que te falta definir**
+
 - [ ] Categoría: **Viajes y guías locales** · Etiquetas: Manzanillo, Colima, playas, guía turística, México
-- [ ] Correo de contacto público visible en la ficha (`[correo@de-contacto]` — el mismo de la política de privacidad)
 
 ## C) Formularios obligatorios (Política → Contenido de la app)
 
-- [ ] **Política de privacidad** → publicar `public/privacidad.html` en el dominio del backend y registrar la URL:
-  `https://TU-DOMINIO/privacidad.html`
-  (antes de registrar: sustituir en el HTML los placeholders `[TU NOMBRE o razón social]`, `[correo@de-contacto]` y `[sitio web o dominio]`)
+- [ ] **Política de privacidad** → ya PUBLICADA y verificada (HTTP 200); solo falta registrar en la consola esta URL exacta:
+  `https://rutaviva-seven.vercel.app/privacidad.html`
 - [ ] **Clasificación de contenido (IARC):** cuestionario honesto — guía turística sin violencia/sexo/apuestas; **contenido generado por usuarios: SÍ**, con moderación previa y botón de reporte (evidencia: `docs/PLAY-STORE.md` §5). Resultado esperado: **Todos / 3+** ⚠️
 - [ ] **Seguridad de datos** — declarar según `public/privacidad.html` §2–3:
   - ¿Recopila datos? **Sí** · ¿Comparte con terceros? **No** · ¿Cifrada en tránsito? **Sí (HTTPS)**
@@ -51,20 +52,19 @@ Consola → **Crecimiento → Store presence → Ficha principal de Play Store**
 
 ## D) Subir el AAB
 
-- [ ] Secret `CAP_SERVER_URL` en GitHub = URL HTTPS del backend Railway (sin `https://` ni espacios mal puestos) → *Settings → Secrets and variables → Actions*
-- [ ] Keystore de producción generado (keytool) y subido como secrets: `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (guía §2.4) — el keystore temporal del CI **no** sirve para producción
-- [ ] Disparar el workflow (*Actions → Android Build → Run workflow*) y descargar el artefacto `rutaviva-android` (`app-release.aab`)
-- [ ] **Pruebas internas:** subir el AAB + notas de versión + lista de testers → verificar en dispositivo real: GPS, mapa, reseña queda "en revisión", botón "Reportar", admin con PIN nuevo
+- [x] Secret `CAP_SERVER_URL` en GitHub = `https://rutaviva-seven.vercel.app` ✓ ya configurado
+- [x] Keystore de producción en secrets ✓ ya configurado (el CI firma con él automáticamente en cada push)
+- [ ] Descargar el AAB: *GitHub → Actions → run más reciente en verde → artefacto `rutaviva-android` → `bundle/release/app-release.aab`* (cada push a main genera uno nuevo; el verificado original es el run 40160381094, descargable hasta 2027)
+- [ ] **Pruebas internas:** subir el AAB + notas de versión + tu correo como tester → instalar en tu celular desde el enlace de pruebas y verificar: GPS, mapa, reseña queda "en revisión", botón "Reportar", admin con PIN nuevo
 - [ ] **Pruebas cerradas** (obligatorio si la cuenta es **personal nueva**): mismo AAB + **12 testers durante 14 días continuos** con actividad real ⚠️ → luego solicitar **acceso a producción**
 - [ ] **Producción:** crear versión → subir AAB firmado con keystore real → notas ("Primera versión pública: guía de Manzanillo con mapa GPS, reseñas moderadas y reporte de contenido") → lanzar (o por fases 10% → 50% → 100%)
 - [ ] Tras el primer envío, guardamos el keystore: Play App Signing lo inscribe como *upload key*
 
 ## E) Antes de publicar (¡no saltarse!)
 
-- [ ] **Cambiar el PIN del admin por defecto** `rutaviva2025` → variable de entorno **`ADMIN_PIN`** en Railway (y `ADMIN_SECRET` = cadena aleatoria larga). Con el PIN por defecto cualquiera podría aprobar contenido
-- [ ] **Verificar que el backend Railway esté vivo:** abrir la URL pública → la app carga, el mapa muestra lugares y `https://TU-DOMINIO/privacidad.html` responde 200
-- [ ] **Confirmar el secret `CAP_SERVER_URL` en GitHub** apunta a esa URL y **re-generar el AAB** (nuevo run de Actions) para que la cáscara Android cargue el backend real
-- [ ] Confirmar que la política de privacidad publicada **ya no tiene placeholders** visibles
+- [x] **Cambiar el PIN del admin por defecto** → hecho: `ADMIN_PIN` real en envs de Vercel (Task 28 verificó login tolerante)
+- [x] **Verificar que el backend esté vivo:** https://rutaviva-seven.vercel.app carga, 18 lugares, `privacidad.html` responde 200 ✓ (verificado 28/oct)
+- [x] Confirmar que la política de privacidad publicada **ya no tiene placeholders** ✓
 - [ ] `versionCode` incrementado si ya se había subido una versión anterior (Play rechaza códigos repetidos)
 
 ---
