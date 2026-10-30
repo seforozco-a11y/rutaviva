@@ -75,3 +75,4 @@ android/.cxx
 
 # Capturas/imágenes subidas por el usuario (no van al repo)
 /upload/
+.tmp-auth/
