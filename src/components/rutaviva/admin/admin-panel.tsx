@@ -149,6 +149,7 @@ type AdminOverview = {
     pendingReviews: number;
     reviewsTotal: number;
     flaggedReviews: number;
+    failedLogins24h: number;
   };
   pendingPlaces: AdminPendingPlace[];
   pendingReviews: AdminPendingReview[];
@@ -232,11 +233,11 @@ function AdminLogin() {
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(false);
+    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/admin/login", {
@@ -245,7 +246,9 @@ function AdminLogin() {
         body: JSON.stringify({ pin }),
       });
       if (!res.ok) {
-        setError(true);
+        // El servidor manda el mensaje exacto: PIN incorrecto o bloqueo
+        // temporal por intentos repetidos (429).
+        setError(await readError(res, "PIN incorrecto. Revísalo e intenta de nuevo."));
         return;
       }
       toast({
@@ -255,7 +258,7 @@ function AdminLogin() {
       queryClient.setQueryData(["admin-session"], { authenticated: true });
       void queryClient.invalidateQueries({ queryKey: ["admin-session"] });
     } catch {
-      setError(true);
+      setError("No se pudo conectar. Revisa tu internet e intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -320,7 +323,7 @@ function AdminLogin() {
             role="alert"
             className="mt-3 animate-pulse rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
           >
-            PIN incorrecto. Revísalo e intenta de nuevo.
+            {error}
           </p>
         )}
 
@@ -601,7 +604,7 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
         <>
           <section
             aria-label="Resumen del panel"
-            className="grid grid-cols-3 gap-2"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-4"
           >
             <StatCard
               value={overviewQuery.data.stats.placesPublished}
@@ -617,6 +620,11 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
               value={overviewQuery.data.stats.pendingReviews}
               label="Reseñas por validar"
               alert={overviewQuery.data.stats.pendingReviews > 0}
+            />
+            <StatCard
+              value={overviewQuery.data.stats.failedLogins24h}
+              label="Logins fallidos (24h)"
+              alert={overviewQuery.data.stats.failedLogins24h >= 10}
             />
           </section>
 

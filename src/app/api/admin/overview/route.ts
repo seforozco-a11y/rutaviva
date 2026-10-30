@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return unauthorized();
 
   try {
-    const [placesTotal, placesPublished, pendingPlaces, pendingReviews, reviewsTotal, flaggedReviews] =
+    const [placesTotal, placesPublished, pendingPlaces, pendingReviews, reviewsTotal, flaggedReviews, failedLogins24h] =
       await Promise.all([
         db.singularPlace.count(),
         db.singularPlace.count({ where: { status: "APPROVED", active: true } }),
@@ -41,6 +41,11 @@ export async function GET(req: NextRequest) {
             photos: { orderBy: { createdAt: "asc" } },
             place: { select: { id: true, name: true } },
           },
+        }),
+        // Seguridad: intentos fallidos de login del panel en las últimas 24 h
+        // (visibilidad para el equipo; el registro completo se purga a las 48 h).
+        db.adminLoginLog.count({
+          where: { success: false, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
         }),
       ]);
 
@@ -94,6 +99,7 @@ export async function GET(req: NextRequest) {
         pendingReviews: pendingReviews.length,
         reviewsTotal,
         flaggedReviews: flaggedReviews.length,
+        failedLogins24h,
       },
       pendingPlaces: pendingPlaces.map((p) => ({
         id: p.id,

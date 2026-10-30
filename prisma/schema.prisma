@@ -81,3 +81,16 @@ model Photo {
   @@index([placeId])
   @@index([reviewId])
 }
+
+// Registro de seguridad del login del panel (anti fuerza bruta). Nunca se
+// guarda la IP en claro: solo un hash con sal del servidor (irreversible).
+// Se purga automáticamente a las 48 h — coherente con el aviso de privacidad.
+model AdminLoginLog {
+  id        String   @id @default(cuid())
+  ipHash    String // HMAC-SHA256 truncado de la IP, con sal = ADMIN_SECRET
+  success   Boolean // ¿el intento fue exitoso?
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+}

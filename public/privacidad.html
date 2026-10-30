@@ -280,14 +280,22 @@
     <h3>2.4 Cookie de sesión del panel de administración</h3>
     <p>
       El <strong>panel de administración</strong> (de uso exclusivo del equipo editorial de RutaViva) utiliza
-      <strong>una sola cookie de sesión</strong>, protegida (httpOnly y firmada), que sirve únicamente para mantener la
-      sesión iniciada del administrador mientras modera contenido. Esta cookie:
+      <strong>una sola cookie de sesión</strong>, protegida (httpOnly, firmada y transmitida únicamente por HTTPS), que
+      sirve para mantener la sesión iniciada del administrador mientras modera contenido. Esta cookie:
     </p>
     <ul>
       <li><strong>No</strong> se usa para rastrear a usuarios finales.</li>
       <li><strong>No</strong> hay cookies publicitarias, de analítica de terceros ni de seguimiento de ningún tipo en la App.</li>
-      <li>Se elimina al cerrar la sesión del administrador.</li>
+      <li>Caduca sola en un máximo de 24 horas y se elimina al cerrar la sesión del administrador.</li>
     </ul>
+    <p>
+      Para <strong>proteger el acceso al panel contra ataques</strong> (fuerza bruta), cada intento de inicio de sesión
+      se registra durante <strong>48 horas</strong> únicamente como un <strong>código irreversible (hash) de la dirección
+      IP</strong> junto con el resultado del intento (exitoso o fallido). <strong>Nunca se guarda la dirección IP en
+      claro</strong>, el registro no se asocia a personas identificadas, no se usa para perfilado ni publicidad, y se
+      borra automáticamente al cumplir las 48 horas. Sirve exclusivamente para bloquear accesos abusivos y mostrar al
+      equipo un contador de intentos fallidos.
+    </p>
 
     <h3>2.5 Lo que NO recopilamos</h3>
     <ul>
