@@ -891,3 +891,12 @@ Work Log:
 
 Stage Summary:
 - HARDENING DEL PIN (Opción B) COMPLETO, COMMITEADO (99c18bd) Y VERIFICADO EN LOCAL ✅. PENDIENTE: deploy a producción — bloqueado por falta de token de Vercel (murió con el sandbox). En cuanto el usuario cree un token (vercel.com/account/tokens → 30 s) se despliega y verifica en vivo. Recomendación entregada: rotar PIN (y ADMIN_SECRET) antes de publicar en Play.
+
+**Task 32 — ADENDA: DEPLOY A PRODUCCIÓN Y VERIFICACIÓN EN VIVO ✅ (misma sesión, 01:20-01:35 UTC)**
+- El usuario proporcionó token Vercel (vcp_…). El CLI falló (token de app restringida: /v2/user → 404) → deploy por REST puro: nuevo script .tmp-auth/deploy-rest.ts (130 archivos inline base64, POST /v13/deployments, polling hasta READY). Deploy dpl_FqCYACqVPkBKAb8T1rvje6jexoRk READY en 46 s → alias rutaviva-seven.vercel.app. El build (vercel-build.sh) aplicó db push → tabla AdminLoginLog creada en Neon.
+- Verificación en producción: login correcto → 200 con cookie `Secure; HttpOnly; SameSite=lax; Max-Age=43200`; overview con failedLogins24h (código nuevo vivo); catálogo intacto (16 lugares/12 reseñas/0 pendientes); privacidad.html §2.4 con el aviso de 48 h.
+- Bloqueo en vivo: la IP de salida del sandbox ROTA por petición (ipify: 8.212.x→47.57.x) → 6 fallos por peticiones separadas no acumulan (cada una = IP/hash distinto; comportamiento CORRECTO). Con conexión TCP reutilizada (7 POST en una invocación curl): 5×401 → 6º y 7º = 429 "espera 15 min" ✓.
+- Anti-spoofing verificado: X-Forwarded-For/X-Real-IP falsificados NO esquivan el bloqueo (Vercel sobrescribe la IP real) → sin vulnerabilidad de bypass ✓.
+- UI en producción (agent-browser 414×896): login → panel con tarjeta "Logins fallidos (24h)" visible (rv32-2).
+- Nota: los ~13 intentos fallidos que verá el contador 24 h fueron las PRUEBAS propias desde el sandbox; se purgan solos (48 h registro, 24 h ventana del contador).
+- Script de deploy conservado: .tmp-auth/deploy-rest.ts (git-ignorado; leer token de .tmp-auth/vercel-token o env VERCEL_TOKEN).
