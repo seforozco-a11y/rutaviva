@@ -10,8 +10,8 @@
 
 ## A) Crear la app en Play Console
 
-- [x] Cuenta de Google Play Developer activa (tarifa única US$25) → <https://play.google.com/console> *(si aún no la tienes, este es tu paso 1)*
-- [ ] **Crear app** con estos datos exactos:
+- [x] **Cuenta de Google Play Developer ACTIVA (30/oct)** — cuenta **personal** de seforozco · ID de cuenta: `7732893812949273279` · tarifa US$25 pagada · identidad verificada → <https://play.google.com/console>
+- [ ] **⏭️ SIGUIENTE PASO — Crear app** con estos datos exactos:
   - Nombre: `RutaViva: Guía de Manzanillo`
   - Idioma predeterminado: **Español (México)**
   - Tipo: **Aplicación**

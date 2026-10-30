@@ -900,3 +900,18 @@ Stage Summary:
 - UI en producción (agent-browser 414×896): login → panel con tarjeta "Logins fallidos (24h)" visible (rv32-2).
 - Nota: los ~13 intentos fallidos que verá el contador 24 h fueron las PRUEBAS propias desde el sandbox; se purgan solos (48 h registro, 24 h ventana del contador).
 - Script de deploy conservado: .tmp-auth/deploy-rest.ts (git-ignorado; leer token de .tmp-auth/vercel-token o env VERCEL_TOKEN).
+
+---
+Task ID: 33
+Agent: Z.ai Code (principal)
+Task: Reanudar Play Console → hallazgo: el usuario NO tenía Play Console (confusión con Google Cloud) → registro de cuenta completado en vivo + preparación del Paso 1
+
+Work Log:
+- El usuario reportó "ya tengo cuenta de Play Console" (sesión previa) pero al retomar confesó que su cuenta era de **Google Cloud**. Diagnóstico rápido y guía de registro: play.google.com/console/signup, tipo **personal** (organizacional pide D-U-N-S), usar seforozco@gmail.com (coherente con la política de privacidad), 2FA previo, US$25, INE.
+- El usuario completó el registro POR SU CUENTA (pagó $25, verificó identidad): captura confirmó bienvenida "cuenta de seforozco · Cuenta personal · ID 7732893812949273279" con botón "Crear app" disponible.
+- Preparado el Paso 1 con datos exactos (nombre/idioma/tipo/modelo + 2 declaraciones) y **verificados los 6 assets como descargas públicas** (HTTP 200): icon-512.png, feature-graphic-1024x500.png y 4 capturas (01-portada, 02-mapa, 03-detalle, 04-guia) via github.com/seforozco-a11y/rutaviva/raw/main/docs/store-assets/… — el usuario ya puede bajarlos sin git.
+- Docs: RUTAVIVA-ESTADO.md (nuevo bloque de situación: hardening en prod + cuenta Play creada + ruta exacta de mañana) y PLAY-CHECKLIST.md (cuenta marcada hecha con fecha e ID; "Crear app" señalado como SIGUIENTE PASO).
+- Recordatorio al usuario: reclutar 12 testers (Gmail de cada uno) — requisito 14 días continuos de pruebas cerradas por cuenta personal nueva.
+
+Stage Summary:
+- CUENTA PLAY DEVELOPER CREADA ✅ (personal, ID 7732893812949273279). Nada de código pendiente: el hardening del PIN ya vive en producción (Task 32). MAÑANA: crear la app (datos en checklist §A) → ficha → formularios → AAB → internas → cerradas 12×14d. Assets públicos listos para descargar. Usuario reclutando testers.
