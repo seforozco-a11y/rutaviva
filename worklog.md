@@ -874,3 +874,20 @@ Work Log:
 
 Stage Summary:
 - CATÁLOGO LIMPIO + TAREA 30 EN PRODUCCIÓN ✅. Nada de código pendiente: solo queda el trámite de Play Console del lado del usuario (cuenta $25 → crear app → ficha → formularios → AAB de Actions → pruebas cerradas 12×14d). Si el usuario quiere también genéricas las 2 menciones legales de la privacidad, es un cambio de 2 minutos.
+
+---
+Task ID: 32
+Agent: Z.ai Code (principal)
+Task: Hardening del "PIN del equipo" (Opción B) — blindaje anti apropiación/extracción del PIN y del panel admin
+
+Work Log:
+- Contexto: el usuario pidió ampliar la seguridad del PIN (evitar apropiación/extracción). La sesión anterior implementó la Opción B completa y la dejó en commit 99c18bd (pusheado a origin/main) pero se cortó ANTES del deploy y sin worklog.
+- Implementación verificada en el código (commit 99c18bd): ① bloqueo anti fuerza bruta en POST /api/admin/login (5 fallos/15 min por IP → 429 con minutos restantes; el PIN correcto también se rechaza mientras dura el bloqueo; el éxito limpia los fallos del propio IP para no castigar errores de tecleo); ② registro de seguridad AdminLoginLog en BD (hash HMAC-SHA256 truncado de la IP con sal = ADMIN_SECRET — pseudonimizado e irreversible; purga automática a las 48 h, coherente con privacidad.html §2.4 actualizada); ③ sesión que caduca sola (token HMAC con ventanas de 12 h, acepta bloque actual+anterior → cookie robada muere ≤24 h; rotar ADMIN_SECRET = botón de pánico que invalida todo); ④ cookie secure en producción (solo HTTPS) + httpOnly + SameSite=lax; ⑤ contador "Logins fallidos (24h)" en el panel (StatCard con alerta si ≥10).
+- El PIN NUNCA viaja al cliente: vive solo en envs de Vercel (ADMIN_PIN server-side); no está en el bundle JS ni en localStorage; comparación en tiempo constante (timingSafeEqual) normalizada.
+- Verificación local completa (dev server 3000): login correcto → 200 + cookie HttpOnly/SameSite=lax/Max-Age=43200 (secure solo en prod, correcto); overview incluye failedLogins24h; 5 fallos → 401×5, 6º → 429 "espera 15 min"; PIN correcto bloqueado → 429 (el bloqueo no se salta con el PIN en la mano); 2 fallos + login correcto → 200 y contador vuelve a 0 (limpieza por éxito); UI E2E (agent-browser 414×896): alerta "PIN incorrecto" y mensaje de bloqueo renderizados con role=alert, tarjeta "Logins fallidos (24h)" visible en el panel, 0 errores de consola (rv32-1).
+- Lint limpio.
+- HALLAZGO/BLOQUEO DEPLOY: producción (rutaviva-seven.vercel.app) sigue con el código VIEJO — probado en vivo: 6 fallos → 401 (sin 429) y overview SIN failedLogins24h. El commit está pusheado pero no desplegado: el token de Vercel murió con el reinicio del sandbox (.tmp-auth/ eliminado; uptime del sandbox 51 min, el commit es de hace ~17 min). Probe de 7 peticiones en prod NO dejó rastro (el código viejo no registra nada).
+- Creado .tmp-auth/deploy-api.sh (listo para usar): bunx vercel link --project rutaviva + deploy --prod --token=... — el build de Vercel aplica db push (crea AdminLoginLog en Neon automáticamente).
+
+Stage Summary:
+- HARDENING DEL PIN (Opción B) COMPLETO, COMMITEADO (99c18bd) Y VERIFICADO EN LOCAL ✅. PENDIENTE: deploy a producción — bloqueado por falta de token de Vercel (murió con el sandbox). En cuanto el usuario cree un token (vercel.com/account/tokens → 30 s) se despliega y verifica en vivo. Recomendación entregada: rotar PIN (y ADMIN_SECRET) antes de publicar en Play.
