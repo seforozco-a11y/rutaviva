@@ -17,6 +17,14 @@ import type { NextRequest } from "next/server";
 export const ADMIN_COOKIE = "rv_admin";
 const SECRET = process.env.ADMIN_SECRET || "rutaviva-dev-secret";
 const PIN = process.env.ADMIN_PIN || "rutaviva2025";
+/**
+ * PIN de demostración (opcional) SOLO para la declaración de "Detalles de
+ * acceso" de Google Play Console: permite al revisor entrar al panel de
+ * moderación sin conocer el PIN de producción. Se revoca al instante
+ * eliminando la variable de entorno ADMIN_DEMO_PIN y redesplegando.
+ * Nunca se sube al repo (es público).
+ */
+const DEMO_PIN = (process.env.ADMIN_DEMO_PIN || "").trim();
 
 /** Ventana de vida de cada token de sesión (12 horas). */
 export const SESSION_WINDOW_MS = 12 * 60 * 60 * 1000;
@@ -44,9 +52,15 @@ export function pinIsValid(pin: unknown): boolean {
   // Tolerante a errores de tecleo: se compara normalizado (sin espacios
   // accidentales y sin distinguir mayúsculas/minúsculas) en tiempo constante.
   const a = Buffer.from(pin.trim().toUpperCase());
+  // 1) PIN real de producción.
   const b = Buffer.from(PIN.trim().toUpperCase());
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
+  if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
+  // 2) PIN de demostración para el revisor de Google Play (si está definido).
+  if (DEMO_PIN.length > 0) {
+    const d = Buffer.from(DEMO_PIN.toUpperCase());
+    if (a.length === d.length && crypto.timingSafeEqual(a, d)) return true;
+  }
+  return false;
 }
 
 /** Verifica la cookie del request contra el token del bloque actual o el
