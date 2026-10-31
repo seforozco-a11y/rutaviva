@@ -29,9 +29,9 @@ Consola → **Crecimiento → Store presence → Ficha principal de Play Store**
 - [x] **Ícono de la app 512×512 PNG** → subir `docs/store-assets/icon-512.png`
 - [x] **Gráfico de promoción 1024×500** → subir `docs/store-assets/feature-graphic-1024x500.png`
 - [x] **Capturas de teléfono** (mínimo 2): LISTAS — `docs/store-assets/screenshots/01-portada.png` a `04-guia.png` (1080×2340, 4 imágenes)
-- [ ] Correo de contacto público visible en la ficha: **`seforozco@gmail.com`** — YA DEFINIDO (es el mismo que publica la política de privacidad, §1; usar exactamente ese en Play Console)
+- [x] Correo de contacto público visible en la ficha: **`viverutaviva@gmail.com`** — DECISIÓN 31/oct (Opción B del dueño): buzón oficial de RutaViva; privacidad.html actualizada a este correo (4 menciones) + deploy requerido para que producción coincida. Teléfono `+52 314 125 7661` público; sitio web opcional.
 
-- [ ] Categoría: **Viajes y guías locales** · Etiquetas: Manzanillo, Colima, playas, guía turística, México
+- [x] Categoría: **"Viajes y lugares"** (nombre actual en la consola; antes "Viajes y guías locales") · Etiquetas sugeridas: "Viajes y lugares" (+ opcionales: Guías de viaje, Mapas y navegación GPS)
 
 ## C) Formularios obligatorios (Política → Contenido de la app)
 
