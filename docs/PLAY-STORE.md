@@ -255,7 +255,7 @@ Abre la app, deja que el GPS te ubique y mira al instante los lugares singulares
 
 🏖️ LOS LUGARES QUE HACEN ÚNICO A MANZANILLO
 • Playas: La Audiencia, Miramar, Salahua, Santiago, La Boquita, Ventanas y Carrizales
-• Mirador de la Bahía de Santiago y el Monumento al Pescador (el famoso pez vela)
+• Mirador de la Bahía de Santiago, el Monumento al Pescador y el famoso Monumento del Pez Vela junto a la Plaza Benito Juárez
 • Centro Histórico y Malecón, Mercado Municipal
 • El Tortugario de Cuyutlán y el Museo de la Sal
 
@@ -272,11 +272,11 @@ Escribe reseñas con calificación de estrellas y comparte hasta 3 fotos. Para p
 RutaViva es gratuita y no muestra publicidad.
 
 📍 DISPONIBLE HOY EN MANZANILLO, PRONTO EN TODO COLIMA
-Empezamos en el gran puerto del Pacífico mexicano y vamos sumando municipio por municipio los 10 del estado de Colima.
+Empezamos en el gran puerto del Pacífico Mexicano y vamos sumando municipio por municipio los 10 del estado de Colima.
 
 Descarga RutaViva y déjate llevar por la ruta. 🚗🏖️
 ```
-*(≈1,700 caracteres — cabe holgado en el límite de 4,000; evita repetir palabras clave en exceso, que Play penaliza el keyword stuffing.)*
+*(≈1,840 caracteres — cabe holgado en el límite de 4,000; evita repetir palabras clave en exceso, que Play penaliza el keyword stuffing. Nota: reseñas permiten máx. 3 fotos (limit real de la app); no prometas 5 en la ficha.)*
 
 ### 3.4 Gráficos requeridos
 
