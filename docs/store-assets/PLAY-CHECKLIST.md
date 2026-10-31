@@ -35,20 +35,19 @@ Consola → **Crecimiento → Store presence → Ficha principal de Play Store**
 
 ## C) Formularios obligatorios (Política → Contenido de la app)
 
-- [ ] **Política de privacidad** → ya PUBLICADA y verificada (HTTP 200); solo falta registrar en la consola esta URL exacta:
+- [x] **Política de privacidad** → registrada en la consola (31/oct):
   `https://rutaviva-seven.vercel.app/privacidad.html`
-- [ ] **Clasificación de contenido (IARC):** cuestionario honesto — guía turística sin violencia/sexo/apuestas; **contenido generado por usuarios: SÍ**, con moderación previa y botón de reporte (evidencia: `docs/PLAY-STORE.md` §5). Resultado esperado: **Todos / 3+** ⚠️
-- [ ] **Seguridad de datos** — declarar según `public/privacidad.html` §2–3:
+- [x] **Clasificación de contenido (IARC):** COMPLETADA (31/oct) — UGC respondido Sí con moderación previa + botón de reporte; todo lo demás No. Resultado esperado: Todos/3+.
+- [ ] **Seguridad de datos** — instrucciones entregadas al dueño 31/oct; declarar según `public/privacidad.html` §2–3:
   - ¿Recopila datos? **Sí** · ¿Comparte con terceros? **No** · ¿Cifrada en tránsito? **Sí (HTTPS)**
   - Ubicación precisa (GPS): recopilada **solo en tiempo real para lugares cercanos**, opcional, no almacenada
   - Nombre (nombre mostrado opcional de reseñas): recopilado, fin de funcionalidad
   - Fotos: recopiladas, fin de funcionalidad
   - Otros contenidos generados por el usuario (texto de reseñas/sugerencias): recopilados, fin de funcionalidad
   - ¿Se usan para publicidad o marketing? **No** · ¿Ofreces borrado de datos? **Sí** (vía correo de contacto)
-- [ ] **Público objetivo:** 13 años o más · **No** atrae deliberadamente a niños (evita el programa Familias) — coherente con la política (§7)
-- [ ] **Anuncios:** **No, la app no contiene anuncios**
+- [x] **Público objetivo:** 13+ · no atrae a niños (31/oct) · **Anuncios:** No · **Gobierno/finanzas/salud:** No
 - [x] **Acceso a la app:** código soporta `ADMIN_DEMO_PIN` (env en Vercel, tipo encrypted, 3 targets) + deploy verificado en prod (login demo → 200, falso → 401). Respuesta al formulario: **Sí, hay funcionalidad restringida** → panel de moderación en `/admin` con PIN de demostración (valor guardado SOLO en `.tmp-auth/demo-pin` local y en el chat — este repo es público, no subirlo aquí). Tras la aprobación de la app: revocar borrando el env + redesplegar.
-- [ ] Resto de declaraciones (noticias/COVID/gobierno/finanzas): **No** ⚠️
+- [x] Resto de declaraciones (noticias/COVID/gobierno/finanzas): **No**
 
 ## D) Subir el AAB
 
