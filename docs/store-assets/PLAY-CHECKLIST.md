@@ -41,10 +41,10 @@ Consola → **Crecimiento → Store presence → Ficha principal de Play Store**
 
 - [x] Secret `CAP_SERVER_URL` en GitHub = `https://rutaviva-seven.vercel.app` ✓ ya configurado
 - [x] Keystore de producción en secrets ✓ ya configurado (el CI firma con él automáticamente en cada push)
-- [ ] Descargar el AAB: *GitHub → Actions → run más reciente en verde → artefacto `rutaviva-android` → `bundle/release/app-release.aab`* (cada push a main genera uno nuevo; el verificado original es el run 40160381094, descargable hasta 2027)
-- [ ] **Pruebas internas:** subir el AAB + notas de versión + tu correo como tester → instalar en tu celular desde el enlace de pruebas y verificar: GPS, mapa, reseña queda "en revisión", botón "Reportar", admin con PIN nuevo
-- [ ] **Pruebas cerradas** (obligatorio si la cuenta es **personal nueva**): mismo AAB + **12 testers durante 14 días continuos** con actividad real ⚠️ → luego solicitar **acceso a producción**
-- [ ] **Producción:** crear versión → subir AAB firmado con keystore real → notas ("Primera versión pública: guía de Manzanillo con mapa GPS, reseñas moderadas y reporte de contenido") → lanzar (o por fases 10% → 50% → 100%)
+- [x] **Descargar el AAB (1/nov)** — GitHub → Actions → run verde → artefacto `rutaviva-android` (ZIP 13.2 MB) → `app-release.aab` (versionCode 6 = 1.0.5). Cada push a main genera uno nuevo; el verificado original es el run 40160381094, descargable hasta 2027.
+- [x] **Pruebas internas: COMPLETAS (1/nov)** — AAB subido, notas de versión en formato texto completo (¡requieren etiquetas de idioma `<es-419>…</es-419>`!), dueño agregado como tester, instalado en su celular vía vínculo opt-in. **Verificado en vivo:** mapa/GPS/lugares cargan · reseña de prueba quedó PENDING con foto (confirmada vía API: `pendingReviews: 1`) · panel Admin = pestaña "Admin" de la barra inferior con PIN demo (`ok:true`). Declaración de ID de publicidad: **No** (verificado en build.gradle: sin SDKs de ads). "Enviar 14 cambios a revisión" enviado desde la Descripción general de la publicación.
+- [ ] **Pruebas cerradas — Alpha (track YA configurado 1/nov):** AAB agregado desde la biblioteca · países: México · lista de testers creada (solo dueño por ahora) · correo de comentarios `viverutaviva@gmail.com`. **FALTA:** reclutar los **12 testers** (Gmail de cada uno), agregarlos a la lista, que se unan con el vínculo opt-in → arranca el reloj de **14 días continuos** con actividad real ⚠️ (confirmar el número exacto de testers que exige la consola) → luego solicitar **acceso a producción**.
+- [ ] **Producción:** crear versión → subir AAB firmado con keystore real (o "Agregar desde la biblioteca") → notas ("Primera versión pública: guía de Manzanillo con mapa GPS, reseñas moderadas y reporte de contenido") → lanzar (o por fases 10% → 50% → 100%)
 - [ ] Tras el primer envío, guardamos el keystore: Play App Signing lo inscribe como *upload key*
 
 ## E) Antes de publicar (¡no saltarse!)
