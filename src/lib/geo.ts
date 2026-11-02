@@ -26,10 +26,18 @@ export function formatDistance(km: number): string {
   return `${Math.round(km)} km`;
 }
 
-/** Enlace universal de direcciones de Google Maps (funciona en Android e iOS). */
-export function directionsUrl(dest: Coordinates, label?: string): string {
-  const q = label ? `${dest.lat},${dest.lng}(${encodeURIComponent(label)})` : `${dest.lat},${dest.lng}`;
-  return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+/**
+ * Enlace universal de direcciones de Google Maps (funciona en Android e iOS).
+ *
+ * IMPORTANTE: `destination` debe ser SIEMPRE `lat,lng` puro (formato oficial
+ * de la URL api=1). El sufijo no documentado `lat,lng(Etiqueta)` NO lo parsea
+ * Google Maps: muestra el string crudo en el campo destino, clava el pin en
+ * ese punto exacto y si cae en el agua (p. ej. la punta de una escollera)
+ * devuelve "No se encuentra una ruta". Con coordenadas puras, el geocodificador
+ * las resuelve al POI/dirección más cercana y traza la ruta sin problema.
+ */
+export function directionsUrl(dest: Coordinates): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}`;
 }
 
 /** Categorías de lugares singulares (extensible desde la base de datos). */

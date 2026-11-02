@@ -83,7 +83,7 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
 
   /** Abre la ruta hacia este lugar en Google Maps. */
   const openRoute = () => {
-    const url = directionsUrl({ lat: detail.lat, lng: detail.lng }, detail.name);
+    const url = directionsUrl({ lat: detail.lat, lng: detail.lng });
     if (!isNative) {
       window.open(url, "_blank", "noopener,noreferrer");
       return;
