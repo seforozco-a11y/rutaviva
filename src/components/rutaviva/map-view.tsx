@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin, RotateCcw, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, Loader2, MapPin, RotateCcw, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { COMMON_TYPES, commonTypeById, formatDistance } from "@/lib/geo";
@@ -30,6 +31,9 @@ const MapCanvas = dynamic(() => import("./map-canvas").then((m) => m.MapCanvas),
 });
 
 export type MapFilter = "singulares" | (typeof COMMON_TYPES)[number]["id"];
+
+/** Por qué la app está en modo demo en vez de GPS real. */
+export type GpsProblem = "denied" | "off" | "timeout";
 
 /* ==================== Apertura de tarjetas: tap y gesto ==================== */
 
@@ -125,6 +129,10 @@ type MapViewProps = {
   onSelect: (d: PlaceDetail) => void;
   onRequestGps: () => void;
   onRetryNearby: () => void;
+  /** true mientras se intenta obtener la posición real. */
+  locating: boolean;
+  /** Último fallo de GPS (null si no hay problema o el usuario eligió demo). */
+  gpsProblem: GpsProblem | null;
 };
 
 export function MapView({
@@ -140,9 +148,17 @@ export function MapView({
   onSelect,
   onRequestGps,
   onRetryNearby,
+  locating,
+  gpsProblem,
 }: MapViewProps) {
   const showSingulars = filter === "singulares";
   const typeDef = showSingulars ? undefined : commonTypeById(filter);
+
+  // El aviso se puede cerrar, pero reaparece si hay un fallo nuevo o un reintento.
+  const [bannerClosed, setBannerClosed] = useState(false);
+  useEffect(() => {
+    setBannerClosed(false);
+  }, [gpsProblem]);
 
   const stripSingulars = [...places]
     .sort((a, b) => (a.distanceKm ?? 1e9) - (b.distanceKm ?? 1e9))
@@ -161,12 +177,27 @@ export function MapView({
 
       {/* Capa superior: marca, estado de ubicación y filtros */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[850] space-y-2 p-3">
+        {originSource === "demo" && gpsProblem && !bannerClosed && (
+          <GpsProblemBanner
+            problem={gpsProblem}
+            onRetry={onRequestGps}
+            onClose={() => setBannerClosed(true)}
+          />
+        )}
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white/95 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-md backdrop-blur">
             <Image src="/icon-1024.png" alt="" width={16} height={16} className="h-4 w-4 rounded" />
             RutaViva
           </span>
-          {originSource === "gps" ? (
+          {locating ? (
+            <span
+              role="status"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white/95 px-3 py-1.5 text-xs font-semibold text-stone-600 shadow-md backdrop-blur"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              Buscando tu ubicación…
+            </span>
+          ) : originSource === "gps" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md">
               <span className="h-2 w-2 animate-pulse rounded-full bg-lime-300" aria-hidden />
               GPS activo
@@ -178,7 +209,13 @@ export function MapView({
               className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-emerald-950 shadow-md transition hover:bg-amber-300"
             >
               <MapPin className="h-3.5 w-3.5" aria-hidden />
-              Ubicación demo · usar mi GPS
+              {gpsProblem === "denied"
+                ? "GPS sin permiso · activar"
+                : gpsProblem === "off"
+                  ? "GPS apagado · activar"
+                  : gpsProblem === "timeout"
+                    ? "GPS lento · reintentar"
+                    : "Ubicación demo · usar mi GPS"}
             </button>
           ) : null}
         </div>
@@ -387,6 +424,71 @@ function NearbyStrip({
           No encontramos {label.toLowerCase()} muy cerca. Prueba acercando el mapa o con otro filtro.
         </div>
       )}
+    </div>
+  );
+}
+
+/* ==================== Aviso de GPS con recuperación ==================== */
+
+const GPS_BANNER_COPY: Record<GpsProblem, { title: string; text: string; cta: string }> = {
+  denied: {
+    title: "Tu GPS no tiene permiso",
+    text: "Para navegación real: Ajustes → Aplicaciones → RutaViva → Permisos → Ubicación. Luego reintenta.",
+    cta: "Activar GPS",
+  },
+  off: {
+    title: "GPS apagado o sin señal",
+    text: "Activa la Ubicación en el panel rápido del teléfono (o sal a un lugar abierto) y reintenta.",
+    cta: "Reintentar",
+  },
+  timeout: {
+    title: "El GPS tardó demasiado",
+    text: "Suele pasar en interiores. Sal a un lugar abierto y reintenta.",
+    cta: "Reintentar",
+  },
+};
+
+/**
+ * Aviso persistente (se puede cerrar) que explica por qué la app está en modo
+ * demo y cómo activar el GPS de verdad. Clave para que el usuario NUNCA
+ * sienta que "la navegación falló en silencio".
+ */
+function GpsProblemBanner({
+  problem,
+  onRetry,
+  onClose,
+}: {
+  problem: GpsProblem;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  const copy = GPS_BANNER_COPY[problem];
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-auto flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50/97 p-3 shadow-lg"
+    >
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-amber-900">{copy.title}</p>
+        <p className="mt-0.5 text-xs leading-snug text-amber-800/90">{copy.text}</p>
+        <Button
+          size="sm"
+          onClick={onRetry}
+          className="mt-2 min-h-[36px] gap-1.5 bg-amber-500 text-emerald-950 hover:bg-amber-400"
+        >
+          <MapPin className="h-3.5 w-3.5" aria-hidden /> {copy.cta}
+        </Button>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Cerrar aviso de ubicación"
+        className="-m-1 rounded-full p-1.5 text-amber-700 transition hover:bg-amber-100"
+      >
+        <X className="h-4 w-4" aria-hidden />
+      </button>
     </div>
   );
 }

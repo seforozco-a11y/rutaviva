@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { Splash } from "./splash";
 import { BottomNav, type AppView } from "./bottom-nav";
-import { MapView, type MapFilter } from "./map-view";
+import { MapView, type GpsProblem, type MapFilter } from "./map-view";
 import { PlacesList } from "./places-list";
 import { AddPlaceForm } from "./add-place-form";
 import { PlaceDetailSheet } from "./place-detail-sheet";
@@ -37,6 +37,7 @@ export function RutavivaApp() {
   const [origin, setOrigin] = useState<Coordinates | null>(null);
   const [originSource, setOriginSource] = useState<"gps" | "demo" | null>(null);
   const [locating, setLocating] = useState(false);
+  const [gpsProblem, setGpsProblem] = useState<GpsProblem | null>(null);
   const [filter, setFilter] = useState<MapFilter>("singulares");
   const [listTab, setListTab] = useState<"singulares" | "servicios">("singulares");
 
@@ -169,22 +170,6 @@ export function RutavivaApp() {
     };
   }, []);
 
-  // ---- Arranque: saltar portada si ya vio la intro (evita mismatch de hidratación) ----
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        if (localStorage.getItem(ONBOARD_KEY) === "1") {
-          setView("map");
-          setOrigin(DEMO_POINT);
-          setOriginSource("demo");
-        }
-      } catch {
-        /* localStorage no disponible */
-      }
-    }, 0);
-    return () => clearTimeout(t);
-  }, []);
-
   const finishOnboarding = useCallback(() => {
     try {
       localStorage.setItem(ONBOARD_KEY, "1");
@@ -194,8 +179,12 @@ export function RutavivaApp() {
   }, []);
 
   // ---- Geolocalización ----
+  // Evita intentos simultáneos (doble tap) y clasifica el fallo para que la
+  // UI siempre explique qué pasó y cómo recuperarse.
+  const gpsBusy = useRef(false);
   const requestGps = useCallback(
     (opts?: { silent?: boolean }) => {
+      if (gpsBusy.current) return;
       if (!("geolocation" in navigator)) {
         if (!opts?.silent) {
           toast({
@@ -203,34 +192,51 @@ export function RutavivaApp() {
             description: "Usamos la ubicación demo (el centro de la ciudad).",
           });
         }
+        setGpsProblem(null);
         setOrigin(DEMO_POINT);
         setOriginSource("demo");
         focusOn(DEMO_POINT, 14);
         return;
       }
+      gpsBusy.current = true;
+      setGpsProblem(null);
       setLocating(true);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          gpsBusy.current = false;
           const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setOrigin(c);
           setOriginSource("gps");
           setLocating(false);
+          setGpsProblem(null);
           focusOn(c, 15);
           if (!opts?.silent) {
             toast({ title: "Ubicación lista", description: "Explorando lugares cerca de ti." });
           }
         },
-        () => {
+        (err) => {
+          gpsBusy.current = false;
           setLocating(false);
           setOrigin(DEMO_POINT);
           setOriginSource("demo");
           focusOn(DEMO_POINT, 14);
+          // 1 = permiso denegado · 2 = GPS apagado o sin señal · 3 = tiempo
+          const problem: GpsProblem =
+            err?.code === 1 ? "denied" : err?.code === 2 ? "off" : "timeout";
+          setGpsProblem(problem);
           if (!opts?.silent) {
             toast({
               variant: "destructive",
-              title: "No pudimos usar tu GPS",
+              title:
+                problem === "denied"
+                  ? "No autorizaste tu ubicación"
+                  : problem === "off"
+                    ? "No hay señal de GPS"
+                    : "El GPS tardó demasiado en responder",
               description:
-                "Permiso denegado o no disponible. Activamos la ubicación demo (el centro de la ciudad); puedes reintentar cuando quieras.",
+                problem === "denied"
+                  ? "Puedes seguir en modo demo o activar el permiso en Ajustes → Aplicaciones → RutaViva → Permisos → Ubicación."
+                  : "Te mostramos el modo demo (el centro de la ciudad). Reintenta cuando quieras.",
             });
           }
         },
@@ -239,6 +245,38 @@ export function RutavivaApp() {
     },
     [toast, focusOn]
   );
+
+  // Referencia siempre fresca de requestGps para el efecto de arranque (sin
+  // re-ejecutarlo cuando cambian sus dependencias internas).
+  const requestGpsRef = useRef(requestGps);
+  useEffect(() => {
+    requestGpsRef.current = requestGps;
+  }, [requestGps]);
+
+  // ---- Arranque: saltar portada si ya vio la intro (evita mismatch de hidratación) ----
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        if (localStorage.getItem(ONBOARD_KEY) === "1") {
+          setView("map");
+          if (Capacitor.isNativePlatform()) {
+            // App Android: pedir GPS en CADA apertura. Si el permiso está
+            // pendiente, el sistema vuelve a mostrar su diálogo; si ya está
+            // concedido, ubica sin preguntar; si fue negado, cae en demo con
+            // aviso visible (la app nunca se ve "muerta").
+            requestGpsRef.current({ silent: true });
+          } else {
+            // Navegador/PWA: demo por defecto (el usuario decide con el botón).
+            setOrigin(DEMO_POINT);
+            setOriginSource("demo");
+          }
+        }
+      } catch {
+        /* localStorage no disponible */
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleExplore = useCallback(() => {
     finishOnboarding();
@@ -249,6 +287,7 @@ export function RutavivaApp() {
   const handleDemo = useCallback(() => {
     setOrigin(DEMO_POINT);
     setOriginSource("demo");
+    setGpsProblem(null);
     finishOnboarding();
     setView("map");
     focusOn(DEMO_POINT, 14);
@@ -292,6 +331,8 @@ export function RutavivaApp() {
               <MapView
                 origin={origin}
                 originSource={originSource}
+                locating={locating}
+                gpsProblem={gpsProblem}
                 places={places}
                 nearby={nearbyForMap}
                 nearbyLoading={nearbyLoadingForMap}
