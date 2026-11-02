@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import { AlertTriangle, Loader2, MapPin, RotateCcw, Star, X } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Loader2, MapPin, RotateCcw, Settings, Star, X } from "lucide-react";
+import { ensureLocationPermission, isNativeApp, openAppSettings, openLocationSettings } from "./gps";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { COMMON_TYPES, commonTypeById, formatDistance } from "@/lib/geo";
@@ -154,11 +155,9 @@ export function MapView({
   const showSingulars = filter === "singulares";
   const typeDef = showSingulars ? undefined : commonTypeById(filter);
 
-  // El aviso se puede cerrar, pero reaparece si hay un fallo nuevo o un reintento.
-  const [bannerClosed, setBannerClosed] = useState(false);
-  useEffect(() => {
-    setBannerClosed(false);
-  }, [gpsProblem]);
+  // El aviso se puede cerrar, pero reaparece ante cada fallo: como se
+  // desmonta cuando gpsProblem vuelve a null (cada reintento pasa por ahí),
+  // su estado interno se destruye y se remonta abierto.
 
   const stripSingulars = [...places]
     .sort((a, b) => (a.distanceKm ?? 1e9) - (b.distanceKm ?? 1e9))
@@ -177,12 +176,8 @@ export function MapView({
 
       {/* Capa superior: marca, estado de ubicación y filtros */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[850] space-y-2 p-3">
-        {originSource === "demo" && gpsProblem && !bannerClosed && (
-          <GpsProblemBanner
-            problem={gpsProblem}
-            onRetry={onRequestGps}
-            onClose={() => setBannerClosed(true)}
-          />
+        {originSource === "demo" && gpsProblem && (
+          <GpsProblemBanner problem={gpsProblem} onRetry={onRequestGps} />
         )}
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white/95 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-md backdrop-blur">
@@ -433,12 +428,12 @@ function NearbyStrip({
 const GPS_BANNER_COPY: Record<GpsProblem, { title: string; text: string; cta: string }> = {
   denied: {
     title: "Tu GPS no tiene permiso",
-    text: "Para navegación real: Ajustes → Aplicaciones → RutaViva → Permisos → Ubicación. Luego reintenta.",
+    text: "Toca «Activar GPS». Si la ventana de permiso ya no aparece, te llevamos directo a Ajustes → RutaViva → Permisos.",
     cta: "Activar GPS",
   },
   off: {
     title: "GPS apagado o sin señal",
-    text: "Activa la Ubicación en el panel rápido del teléfono (o sal a un lugar abierto) y reintenta.",
+    text: "Activa la Ubicación de tu teléfono y reintenta. Puedes seguir explorando en modo demo.",
     cta: "Reintentar",
   },
   timeout: {
@@ -449,20 +444,43 @@ const GPS_BANNER_COPY: Record<GpsProblem, { title: string; text: string; cta: st
 };
 
 /**
- * Aviso persistente (se puede cerrar) que explica por qué la app está en modo
- * demo y cómo activar el GPS de verdad. Clave para que el usuario NUNCA
- * sienta que "la navegación falló en silencio".
+ * Aviso persistente (se puede cerrar, reaparece ante cada fallo) que explica
+ * por qué la app está en modo demo y ofrece acciones directas: activar el
+ * permiso, abrir Ajustes o reintentar. Clave para que el usuario NUNCA sienta
+ * que "la navegación falló en silencio".
  */
 function GpsProblemBanner({
   problem,
   onRetry,
-  onClose,
 }: {
   problem: GpsProblem;
   onRetry: () => void;
-  onClose: () => void;
 }) {
   const copy = GPS_BANNER_COPY[problem];
+  // El usuario puede cerrarlo; reaparece solo ante el siguiente fallo
+  // (el banner se desmonta cuando gpsProblem pasa a null y se remonta).
+  const [closed, setClosed] = useState(false);
+  // Solo se renderiza del lado del cliente (gpsProblem llega tras un fallo),
+  // así que leer el puente nativo aquí no causa mismatch de hidratación.
+  const native = isNativeApp();
+  const [working, setWorking] = useState(false);
+
+  if (closed) return null;
+
+  // denied → pedir el permiso de nuevo (diálogo nativo) y, si el sistema ya
+  // no lo muestra, abrir Ajustes automáticamente; luego reintentar si cedió.
+  const handleCta = () => {
+    if (problem !== "denied") {
+      onRetry();
+      return;
+    }
+    setWorking(true);
+    void ensureLocationPermission().then((granted) => {
+      setWorking(false);
+      if (granted) onRetry();
+    });
+  };
+
   return (
     <div
       role="status"
@@ -473,17 +491,40 @@ function GpsProblemBanner({
       <div className="min-w-0 flex-1">
         <p className="text-xs font-bold text-amber-900">{copy.title}</p>
         <p className="mt-0.5 text-xs leading-snug text-amber-800/90">{copy.text}</p>
-        <Button
-          size="sm"
-          onClick={onRetry}
-          className="mt-2 min-h-[36px] gap-1.5 bg-amber-500 text-emerald-950 hover:bg-amber-400"
-        >
-          <MapPin className="h-3.5 w-3.5" aria-hidden /> {copy.cta}
-        </Button>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={handleCta}
+            disabled={working}
+            className="min-h-[36px] gap-1.5 bg-amber-500 text-emerald-950 hover:bg-amber-400"
+          >
+            {working ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            ) : (
+              <MapPin className="h-3.5 w-3.5" aria-hidden />
+            )}
+            {copy.cta}
+          </Button>
+          {native && (problem === "denied" || problem === "off") && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                void (problem === "denied"
+                  ? openAppSettings()
+                  : openLocationSettings())
+              }
+              className="min-h-[36px] gap-1.5 text-amber-900 hover:bg-amber-100 hover:text-amber-950"
+            >
+              <Settings className="h-3.5 w-3.5" aria-hidden />
+              {problem === "denied" ? "Abrir ajustes" : "Abrir ubicación"}
+            </Button>
+          )}
+        </div>
       </div>
       <button
         type="button"
-        onClick={onClose}
+        onClick={() => setClosed(true)}
         aria-label="Cerrar aviso de ubicación"
         className="-m-1 rounded-full p-1.5 text-amber-700 transition hover:bg-amber-100"
       >

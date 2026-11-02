@@ -7,6 +7,7 @@ import { App as CapApp } from "@capacitor/app";
 import { Splash } from "./splash";
 import { BottomNav, type AppView } from "./bottom-nav";
 import { MapView, type GpsProblem, type MapFilter } from "./map-view";
+import { locate } from "./gps";
 import { PlacesList } from "./places-list";
 import { AddPlaceForm } from "./add-place-form";
 import { PlaceDetailSheet } from "./place-detail-sheet";
@@ -179,69 +180,64 @@ export function RutavivaApp() {
   }, []);
 
   // ---- Geolocalización ----
+  // Usa el puente nativo (src/components/rutaviva/gps.ts): el diálogo de
+  // permiso de Android reaparece en CADA apertura mientras esté pendiente y
+  // el aviso del mapa siempre explica el problema con acciones concretas.
   // Evita intentos simultáneos (doble tap) y clasifica el fallo para que la
   // UI siempre explique qué pasó y cómo recuperarse.
   const gpsBusy = useRef(false);
   const requestGps = useCallback(
     (opts?: { silent?: boolean }) => {
       if (gpsBusy.current) return;
-      if (!("geolocation" in navigator)) {
-        if (!opts?.silent) {
-          toast({
-            title: "GPS no disponible",
-            description: "Usamos la ubicación demo (el centro de la ciudad).",
-          });
-        }
-        setGpsProblem(null);
-        setOrigin(DEMO_POINT);
-        setOriginSource("demo");
-        focusOn(DEMO_POINT, 14);
-        return;
-      }
       gpsBusy.current = true;
       setGpsProblem(null);
       setLocating(true);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          gpsBusy.current = false;
-          const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      void locate().then((r) => {
+        gpsBusy.current = false;
+        setLocating(false);
+        if (r.ok) {
+          const c: Coordinates = { lat: r.lat, lng: r.lng };
           setOrigin(c);
           setOriginSource("gps");
-          setLocating(false);
           setGpsProblem(null);
           focusOn(c, 15);
           if (!opts?.silent) {
             toast({ title: "Ubicación lista", description: "Explorando lugares cerca de ti." });
           }
-        },
-        (err) => {
-          gpsBusy.current = false;
-          setLocating(false);
-          setOrigin(DEMO_POINT);
-          setOriginSource("demo");
-          focusOn(DEMO_POINT, 14);
-          // 1 = permiso denegado · 2 = GPS apagado o sin señal · 3 = tiempo
-          const problem: GpsProblem =
-            err?.code === 1 ? "denied" : err?.code === 2 ? "off" : "timeout";
-          setGpsProblem(problem);
-          if (!opts?.silent) {
-            toast({
-              variant: "destructive",
-              title:
-                problem === "denied"
-                  ? "No autorizaste tu ubicación"
-                  : problem === "off"
-                    ? "No hay señal de GPS"
-                    : "El GPS tardó demasiado en responder",
-              description:
-                problem === "denied"
-                  ? "Puedes seguir en modo demo o activar el permiso en Ajustes → Aplicaciones → RutaViva → Permisos → Ubicación."
-                  : "Te mostramos el modo demo (el centro de la ciudad). Reintenta cuando quieras.",
-            });
-          }
-        },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
-      );
+          return;
+        }
+        // Fallback: modo demo (la app sigue usable) + aviso SIEMPRE, incluso
+        // en el arranque silencioso — el usuario nunca siente que la app
+        // "falló en silencio" al abrirla.
+        setOrigin(DEMO_POINT);
+        setOriginSource("demo");
+        setGpsProblem(r.problem);
+        focusOn(DEMO_POINT, 14);
+        const copy =
+          r.problem === "denied"
+            ? {
+                title: "No autorizaste tu ubicación",
+                description:
+                  "Toca «GPS sin permiso · activar» arriba del mapa, o ve a Ajustes → Aplicaciones → RutaViva → Permisos.",
+              }
+            : r.problem === "off"
+              ? {
+                  title: "GPS apagado o sin señal",
+                  description:
+                    "Activa la Ubicación de tu teléfono y toca «Reintentar». Modo demo activo mientras tanto.",
+                }
+              : {
+                  title: "El GPS tardó demasiado",
+                  description:
+                    "Suele pasar en interiores. Toca «Reintentar» en el aviso del mapa.",
+                };
+        if (opts?.silent) {
+          // Arranque automático: aviso informativo (no alarmista) + banner fijo.
+          toast(copy);
+        } else {
+          toast({ variant: "destructive", ...copy });
+        }
+      });
     },
     [toast, focusOn]
   );
