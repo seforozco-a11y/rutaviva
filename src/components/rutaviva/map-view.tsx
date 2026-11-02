@@ -174,8 +174,10 @@ export function MapView({
         onSelect={onSelect}
       />
 
-      {/* Capa superior: marca, estado de ubicación y filtros */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[850] space-y-2 p-3">
+      {/* Capa superior: marca, estado de ubicación y filtros. El pr-16 evita
+          que el contenido toque la columna de controles de zoom/centrado del
+          mapa (esquina derecha), que tapa la X del aviso. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[850] space-y-2 p-3 pr-16">
         {originSource === "demo" && gpsProblem && (
           <GpsProblemBanner problem={gpsProblem} onRetry={onRequestGps} />
         )}
