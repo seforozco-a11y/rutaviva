@@ -246,9 +246,13 @@ export function PlaceFieldsForm({
       <PhotoUpload
         photos={values.photos}
         onChange={(photos) => onPatch({ photos })}
-        max={1}
-        label="Foto del lugar (portada)"
+        max={5}
+        label="Fotos del lugar"
       />
+      <p className="text-xs leading-relaxed text-stone-400">
+        La primera foto es la <strong className="font-semibold">portada</strong> de la
+        ficha; las demás aparecen en la galería (máximo 5).
+      </p>
 
       <div className="space-y-1.5">
         <Label htmlFor={`${idPrefix}-tips`}>Tip local (opcional)</Label>

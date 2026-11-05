@@ -12,6 +12,7 @@ import {
   EyeOff,
   Flag,
   FlagOff,
+  Image as ImageIcon,
   Loader2,
   LogOut,
   MapPin,
@@ -139,6 +140,12 @@ type AdminPlaceRow = {
   photosCount: number;
   ratingAvg: number | null;
   ratingCount: number;
+}
+
+/** Detalle de un lugar con TODAS sus fotos de galería (GET /api/admin/places/[id]). */
+type AdminPlaceDetail = {
+  id: string;
+  photos: AdminPhoto[];
 };
 
 type AdminOverview = {
@@ -399,6 +406,9 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
           lng,
           address: values.address.trim() || null,
           imageUrl: values.photos[0] ?? null,
+          // Galería completa (photos[0] = portada): el backend sincroniza las
+          // fotos del lugar (quita eliminadas, agrega nuevas).
+          photos: values.photos,
           tips: values.tips.trim() || null,
           city: values.city.trim() || "Manzanillo",
           state: values.state.trim() || "Colima",
@@ -441,6 +451,9 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
           lng,
           address: values.address.trim() || null,
           imageUrl: values.photos[0] ?? null,
+          // Galería completa (photos[0] = portada): el backend sincroniza las
+          // fotos del lugar (quita eliminadas, agrega nuevas).
+          photos: values.photos,
           tips: values.tips.trim() || null,
           city: values.city.trim() || row.city,
           state: values.state.trim() || row.state,
@@ -1063,7 +1076,9 @@ function ReviewQueue(props: {
                 tips: validating.tips ?? "",
                 city: validating.city || "Manzanillo",
                 state: validating.state || "Colima",
-                photos: validating.photos.length > 0 ? [validating.photos[0].url] : [],
+                // TODAS las fotos enviadas por quien sugirió (la primera es la
+                // portada); el equipo puede quitar o agregar más aquí.
+                photos: validating.photos.map((ph) => ph.url),
               }}
               origin={props.origin}
               requireChecks
@@ -1293,6 +1308,15 @@ function PlacesSection(props: {
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   <StatusBadge status={p.status} />
+                  {p.photosCount > 0 && (
+                    <span
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500"
+                      aria-label={`${p.photosCount} ${p.photosCount === 1 ? "foto" : "fotos"} en la galería`}
+                    >
+                      <ImageIcon className="h-3 w-3" aria-hidden />
+                      {p.photosCount} {p.photosCount === 1 ? "foto" : "fotos"}
+                    </span>
+                  )}
                   {p.ratingCount > 0 && (
                     <span className="inline-flex items-center gap-0.5 text-xs text-stone-500">
                       <Star className="h-3 w-3 fill-amber-400 text-amber-400" aria-hidden />
@@ -1359,28 +1383,8 @@ function PlacesSection(props: {
       >
         <DialogContent className="max-h-[85dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-2xl">
           {editing && (
-            <PlaceFormDialogBody
-              key={editing.id}
-              idPrefix="rv-edit"
-              title={`Editar: ${editing.name}`}
-              description="Los cambios se validan con los mismos formatos de publicación."
-              initial={{
-                name: editing.name,
-                description: editing.description,
-                category: SINGULAR_CATEGORIES.some((c) => c.id === editing.category)
-                  ? editing.category
-                  : "otro",
-                lat: String(editing.lat),
-                lng: String(editing.lng),
-                address: editing.address ?? "",
-                tips: editing.tips ?? "",
-                city: editing.city || "Manzanillo",
-                state: editing.state || "Colima",
-                photos: editing.imageUrl ? [editing.imageUrl] : [],
-              }}
-              origin={null}
-              requireChecks={false}
-              saveLabel="Guardar cambios"
+            <EditPlaceContent
+              place={editing}
               onSave={(values) => props.onEditSave(editing, values)}
               onClose={() => setEditing(null)}
             />
@@ -1418,6 +1422,122 @@ function PlacesSection(props: {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+/* ==================== Contenido del diálogo Editar ==================== */
+
+/**
+ * Carga la galería COMPLETA del lugar (GET /api/admin/places/[id]) al abrir el
+ * diálogo y arma el formulario con todas las fotos: portada primero, luego las
+ * de galería no rechazadas (sin duplicar la portada, máximo 5). Así el equipo
+ * ve y administra las fotos que subieron los usuarios, no solo la portada.
+ */
+function EditPlaceContent(props: {
+  place: AdminPlaceRow;
+  onSave: (values: PlaceFormValues) => Promise<void>;
+  onClose: () => void;
+}) {
+  const detailQuery = useQuery({
+    queryKey: ["admin-place", props.place.id],
+    queryFn: async (): Promise<AdminPlaceDetail> => {
+      const res = await fetch(`/api/admin/places/${props.place.id}`);
+      if (!res.ok) {
+        throw new Error(
+          await readError(res, "No se pudieron cargar las fotos del lugar")
+        );
+      }
+      return (await res.json()) as AdminPlaceDetail;
+    },
+  });
+
+  if (detailQuery.isPending) {
+    return (
+      <div className="space-y-4 py-2" aria-busy>
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-lg font-black text-stone-800">
+            Editar: {props.place.name}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-stone-500">
+            Cargando las fotos del lugar…
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-3 gap-2">
+          <Skeleton className="aspect-square rounded-xl" />
+          <Skeleton className="aspect-square rounded-xl" />
+          <Skeleton className="aspect-square rounded-xl" />
+        </div>
+        <Skeleton className="h-11 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (detailQuery.isError || !detailQuery.data) {
+    return (
+      <div className="space-y-3 py-2 text-center">
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-lg font-black text-stone-800">
+            Editar: {props.place.name}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-stone-500">
+            No pudimos cargar las fotos de este lugar. Revisa tu conexión.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => void detailQuery.refetch()}
+            className="h-11 border-amber-300"
+          >
+            Reintentar
+          </Button>
+          <Button
+            variant="outline"
+            onClick={props.onClose}
+            className="h-11 border-stone-300"
+          >
+            Cerrar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const galleryUrls = detailQuery.data.photos
+    .filter((ph) => ph.status !== "REJECTED")
+    .map((ph) => ph.url);
+  const photos = (
+    props.place.imageUrl && !galleryUrls.includes(props.place.imageUrl)
+      ? [props.place.imageUrl, ...galleryUrls]
+      : galleryUrls
+  ).slice(0, 5);
+
+  return (
+    <PlaceFormDialogBody
+      key={props.place.id}
+      idPrefix="rv-edit"
+      title={`Editar: ${props.place.name}`}
+      description="Los cambios se validan con los mismos formatos de publicación."
+      initial={{
+        name: props.place.name,
+        description: props.place.description,
+        category: SINGULAR_CATEGORIES.some((c) => c.id === props.place.category)
+          ? props.place.category
+          : "otro",
+        lat: String(props.place.lat),
+        lng: String(props.place.lng),
+        address: props.place.address ?? "",
+        tips: props.place.tips ?? "",
+        city: props.place.city || "Manzanillo",
+        state: props.place.state || "Colima",
+        photos,
+      }}
+      origin={null}
+      requireChecks={false}
+      saveLabel="Guardar cambios"
+      onSave={props.onSave}
+      onClose={props.onClose}
+    />
   );
 }
 
@@ -1480,6 +1600,8 @@ function NewPlaceSection(props: {
           lng,
           address: values.address.trim() || null,
           imageUrl: values.photos[0] ?? null,
+          // Galería completa: el backend crea las fotos de galería aprobadas.
+          photos: values.photos,
           tips: values.tips.trim() || null,
           city: values.city.trim() || "Manzanillo",
           state: values.state.trim() || "Colima",

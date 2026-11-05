@@ -915,3 +915,20 @@ Work Log:
 
 Stage Summary:
 - CUENTA PLAY DEVELOPER CREADA ✅ (personal, ID 7732893812949273279). Nada de código pendiente: el hardening del PIN ya vive en producción (Task 32). MAÑANA: crear la app (datos en checklist §A) → ficha → formularios → AAB → internas → cerradas 12×14d. Assets públicos listos para descargar. Usuario reclutando testers.
+
+---
+Task ID: 34
+Agent: Z.ai Code (principal)
+Task: Panel admin — gestión completa de la galería de fotos (ver las 5 fotos en Editar y Sugerencias; alta directa con 5 fotos)
+
+Work Log:
+- Petición del usuario: en "Editar" y "Sugerencias por revisar" solo se ve una foto ("Foto del lugar (portada) 1/1"); quiere ver TODAS las fotos (y el total) y que "Alta directa del equipo" permita agregar las 5 fotos acordadas por lugar.
+- Diagnóstico: (a) PlaceFieldsForm usaba PhotoUpload max={1} y solo se enviaba imageUrl; (b) el diálogo "Validar y publicar" pasaba solo validating.photos[0] al formulario; (c) el diálogo "Editar" solo tenía la portada — la galería (Photo records) ni se descargaba (overview solo manda photosCount); (d) el backend POST /api/admin/places ya creaba galería desde `photos`, pero PATCH action=update la ignoraba (compat con curls viejos).
+- Backend (api/admin/places/[id]/route.ts): NUEVO GET de detalle con TODAS las fotos de galería (cualquier estado) para el diálogo Editar; PATCH action=update ahora SINCRONIZA la galería cuando el cliente envía `photos` (transacción: borra eliminadas, crea nuevas — APPROVED si el lugar ya está publicado, PENDING si es sugerencia — y aprueba pendientes conservadas en lugares publicados; photos[0] queda como portada). Sin `photos` en el body → galería intacta (retro-compatibilidad con el flujo curl documentado).
+- Frontend: PlaceFieldsForm ahora sube hasta 5 fotos ("Fotos del lugar n/5" + nota "la primera es la portada"); el diálogo Editar (EditPlaceContent nuevo) hace fetch on-demand de GET /api/admin/places/[id] y arma la lista portada + galería no rechazada (dedup, máx 5) con skeleton y estado de error con reintentar; el diálogo de validación recibe TODAS las fotos de la sugerencia; las 3 acciones (publicar validada, editar, alta directa) envían `photos` completo; el catálogo muestra badge "N fotos" por lugar.
+- Seguridad del sync verificada: las fotos de reseñas tienen reviewId (placeId NULL) — 0 registros con ambos — así que la galería del lugar está aislada y el borrado masivo no toca fotos de reseñas.
+- Verificación E2E local (agent-browser + API): PATCH conservar/quitar/restaurar galería OK (5→5, 5→4, →5; ficha pública estable con dedup de portada); alta directa UI con 3 fotos subidas de una vez → lugar APPROVED con 3 fotos APPROVED (luego borrado); sugerencia con 3 fotos → diálogo 3/5 → "Aprobar y publicar" → 3 fotos APPROVED y portada correcta (luego borrado); Editar muestra "5/5" con grid de 5; badge "5 fotos" en el catálogo; consola sin errores ni advertencias de a11y (DialogTitle añadido a estados de carga/error del diálogo); lint limpio. Datos de prueba eliminados (14 lugares, 1 pendiente real intacta).
+- Nota técnica: los diálogos Radix usan position:fixed → offsetParent es null; verificar visibilidad con getBoundingClientRect (los "sin diálogo" intermedios eran fallos del script de prueba, no de la app).
+
+Stage Summary:
+- GALERÍA DE FOTOS DEL PANEL COMPLETA ✅: Editar muestra y administra TODAS las fotos del lugar (fetch on-demand), Sugerencias por revisar muestra todas las fotos del usuario en el diálogo de validación, y Alta directa permite las 5 fotos acordadas (portada = primera). Backend sincroniza la galería de forma segura (sin tocar fotos de reseñas) y mantiene retro-compatibilidad. PENDIENTE: push + deploy a producción.
