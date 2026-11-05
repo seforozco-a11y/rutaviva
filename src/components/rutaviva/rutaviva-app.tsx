@@ -287,7 +287,9 @@ export function RutavivaApp() {
       }
       try {
         if (localStorage.getItem(ONBOARD_KEY) === "1") {
-          setView(deepViewRef.current ?? "map");
+          const dv = deepViewRef.current;
+          deepViewRef.current = null; // el enlace se consume UNA vez
+          setView(dv ?? "map");
           if (Capacitor.isNativePlatform()) {
             // App Android: pedir GPS en CADA apertura. Si el permiso está
             // pendiente, el sistema vuelve a mostrar su diálogo; si ya está
@@ -311,7 +313,9 @@ export function RutavivaApp() {
   // hay, se aterriza en el mapa como siempre.
   const handleExplore = useCallback(() => {
     finishOnboarding();
-    setView(deepViewRef.current ?? "map");
+    const dv = deepViewRef.current;
+    deepViewRef.current = null; // consumido: recargas de portada ya no repiten el salto
+    setView(dv ?? "map");
     requestGps();
   }, [requestGps, finishOnboarding]);
 
@@ -320,7 +324,9 @@ export function RutavivaApp() {
     setOriginSource("demo");
     setGpsProblem(null);
     finishOnboarding();
-    setView(deepViewRef.current ?? "map");
+    const dv = deepViewRef.current;
+    deepViewRef.current = null; // consumido: una sola vez también en modo demo
+    setView(dv ?? "map");
     focusOn(DEMO_POINT, 14);
   }, [finishOnboarding, focusOn]);
 

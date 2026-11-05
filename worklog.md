@@ -992,3 +992,4 @@ Work Log:
 
 Stage Summary:
 - GUÍA DE LA APP CONECTADA ✅: 5ª pestaña "Guía" siempre visible + deep link ?view=about; copys en lenguaje de turista y tarjeta que enseña DÓNDE reportar (chip del mapa / ficha del lugar). El Aviso de privacidad queda accesible desde la navegación principal. Sin cambios de backend ni datos. PENDIENTE: push + deploy a producción.
+- FIX posterior (mismo deploy): deep link no se anulaba tras consumirse — "Ver la portada otra vez" → Explorar re-aterrizaba en la vista del enlace en vez del mapa. Ahora los 3 puntos de uso (arranque ya-onboarded, handleExplore, handleDemo) leen y limpian deepViewRef (se consume UNA vez). Verificado local: 1er Explorar → Guía, 2º Explorar → mapa. Lint limpio.
