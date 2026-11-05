@@ -139,13 +139,40 @@ para descartar el reporte y devolverla).
 
 ---
 
+## 🧭 P10 · Canales de comentarios (¡nuevo!)
+
+**A) Reportar un lugar con datos erróneos:**
+1. Abre la ficha de cualquier lugar (o servicio de farmacia/gasolinera).
+2. Al final toca **"¿Información incorrecta o desactualizada? Repórtalo"**.
+3. Elige un motivo (ubicación, cerrado, info que no corresponde, duplicado…),
+   agrega detalles si quieres y envía.
+
+✅ **Esperado:** confirmación "nuestro equipo lo revisará pronto". El reporte
+llega clasificado al panel del equipo (no oculta el lugar: el equipo corrige).
+
+**B) Ayuda y comentarios sobre la app:**
+1. En el mapa, toca el chip **"Ayuda y comentarios"** (junto al estado del GPS).
+2. Elige: "Algo no funciona", "Una idea o mejora", "Contenido inapropiado" u
+   "Otro", escribe detalles y envía.
+
+✅ **Esperado:** confirmación de envío. La app adjunta sola el tipo de
+dispositivo para ayudarnos a reproducir el problema.
+
+**C) Reseñas con motivo más preciso:**
+1. Reporta una reseña: ahora aparecen **motivos frecuentes con un toque**
+   (spam, ofensivo, información falsa, fuera de tema) que precargan el texto.
+
+✅ **Esperado:** el motivo se llena al tocar el chip y puedes editarlo.
+
+---
+
 ## 🐞 Cómo reportar un problema
 
 Copia este formato y mándalo por WhatsApp a quien te invitó:
 
 ```
 🐞 BUG RutaViva
-Prueba: (P1 a P9)
+Prueba: (P1 a P10)
 ¿Qué hiciste?: (pasos exactos)
 ¿Qué esperaba?: 
 ¿Qué pasó?: 

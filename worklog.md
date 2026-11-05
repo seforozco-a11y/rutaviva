@@ -953,3 +953,26 @@ Work Log:
 
 Stage Summary:
 - GALERÍA DE FOTOS EN VIVO EN PRODUCCIÓN ✅: Editar (5/5 con gestión por foto), Sugerencias por revisar (carrusel 1/3 + lightbox pantalla completa) y Alta directa (subida 0..5 con Cámara/Galería) verificados E2E contra prod con datos de prueba creados y limpiados. Commit en prod: f229f5f (incluye 860a76e). Sin AAB nuevo necesario.
+
+---
+Task ID: 36
+Agent: Z.ai Code (principal)
+Task: Auditoría y ampliación de canales de feedback de usuarios (precisión de reportes y comentarios)
+
+Work Log:
+- Petición: revisar si hay que ser "más precisos" al recibir comentarios sobre el funcionamiento y las publicaciones de la app. Auditoría: existían SOLO reporte de reseñas (motivo libre), sugerencias y reseñas moderadas. FALTABAN: canal para reportar datos erróneos de un lugar (ubicación/cerrado/fotos/duplicado) y canal de feedback del funcionamiento (bugs/ideas). AboutPanel (donde habría ido ayuda) está huérfano (no renderizado).
+- Implementado (commit b2b74e4, deploy dpl_36pYMfRgoz3qWFWhKSxnENcmiWNv READY):
+  · Modelo Report (kind PLACE|APP, reason slug predefinido, detail 500, contact 80, meta 300, status PENDING|RESOLVED|DISMISSED; placeId sin FK a propósito + placeName snapshot para sobrevivir a borrados).
+  · src/lib/reports.ts compartido: motivos por tipo (PLACE: ubicacion/cerrado/info/duplicado/inapropiado/otro; APP: error/idea/contenido/otro), límites y deviceMeta() (userAgent+idioma+pantalla, pseudónimo, solo APP).
+  · POST /api/reports público + validateReportInput en moderation.ts (motivo DEBE venir de la lista) + antispam en memoria por IP pseudonimizada ipHashOf (10/hora, limpieza perezosa del bucket).
+  · PATCH /api/admin/reports/[id] (resolve|dismiss, sin borrar: bitácora) + overview añade reports (PENDING, máx 50) y stats.reportsOpen; badge "Por revisar" del panel suma reportes.
+  · Ficha (singular Y servicios OSM): botón "¿Información incorrecta o desactualizada? Repórtalo" → ReportDialog kind=PLACE.
+  · Mapa: chip "Ayuda y comentarios" en la barra superior → ReportDialog kind=APP (envía deviceMeta).
+  · Reporte de reseñas: chips de motivos frecuentes que precargan el textarea (editable) — sin cambio de backend.
+  · Panel: sección "Reportes y comentarios (N)" con badge Lugar/App, motivo legible, lugar afectado, detalle, contacto, meta truncada y acciones Marcar resuelto / Descartar.
+- E2E local: POST válidos/inválidos (motivo falso, falta placeId, lugar inexistente), overview stats, resolve/dismiss API, UI chip mapa → envío, UI ficha → envío (¡dialog Radix cubierto por sheet: usar elementFromPoint/diálogos apilados), panel resuelve desde UI. Detalle dev: reinicio del dev server requerido tras regenerar Prisma Client (db.report undefined en el proceso viejo).
+- E2E producción: 2 reportes de prueba creados vía API (PLACE El Tortugario + APP), chip visible, diálogo con chips + contacto, botón Enviar deshabilitado sin motivo (validación), panel los listó y se resolvieron/descartaron desde la UI → cola limpia (0). Datos de prueba eliminados.
+- Docs: guion QA actualizado con P10 (canales de comentarios).
+
+Stage Summary:
+- FEEDBACK DE USUARIOS COMPLETO Y PRECISO ✅: 4 canales (reseñas, sugerencias, reporte de lugar, ayuda de app) con motivos predefinidos que llegan clasificados al panel; reportes de lugar NO ocultan contenido (el equipo decide); antispam pseudónimo; verificado E2E en producción y limpiado. WebView carga del servidor → sin AAB nuevo.
