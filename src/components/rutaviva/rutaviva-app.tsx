@@ -29,6 +29,22 @@ const ONBOARD_KEY = "rutaviva:onboarded";
 // Punto de respaldo: Centro Histórico de Manzanillo, Colima
 const DEMO_POINT: Coordinates = { lat: 19.0536, lng: -104.3149 };
 
+// ---- Enlaces directos (?view=add|list) ----
+// Permiten compartir URLs que abren una vista concreta (p. ej. el guion de
+// pruebas manda a los testers directo al formulario de sugerencias). El mapa
+// es el default y "admin" se excluye a propósito: requiere PIN y no se
+// promueve por enlaces.
+const DEEP_VIEWS = new Set<AppView>(["list", "add"]);
+
+function deepViewFromUrl(): AppView | null {
+  try {
+    const v = new URLSearchParams(window.location.search).get("view");
+    return v && DEEP_VIEWS.has(v as AppView) ? (v as AppView) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function RutavivaApp() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -46,6 +62,10 @@ export function RutavivaApp() {
   const focusK = useRef(0);
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Vista destino de un enlace directo (?view=add|list), leída una vez en el
+  // arranque y consumida al pasar la portada (o al saltarla si ya vio la intro).
+  const deepViewRef = useRef<AppView | null>(null);
 
   // ---- Estado del servidor (TanStack Query) ----
   const placesQuery = useQuery({
@@ -252,9 +272,21 @@ export function RutavivaApp() {
   // ---- Arranque: saltar portada si ya vio la intro (evita mismatch de hidratación) ----
   useEffect(() => {
     const t = setTimeout(() => {
+      // Enlace directo (?view=add|list): se consume UNA vez y se limpia de la
+      // URL para que recargas o capturas no hereden el salto de vista.
+      deepViewRef.current = deepViewFromUrl();
+      if (deepViewRef.current) {
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.delete("view");
+          window.history.replaceState(null, "", u);
+        } catch {
+          /* historial no disponible */
+        }
+      }
       try {
         if (localStorage.getItem(ONBOARD_KEY) === "1") {
-          setView("map");
+          setView(deepViewRef.current ?? "map");
           if (Capacitor.isNativePlatform()) {
             // App Android: pedir GPS en CADA apertura. Si el permiso está
             // pendiente, el sistema vuelve a mostrar su diálogo; si ya está
@@ -274,9 +306,11 @@ export function RutavivaApp() {
     return () => clearTimeout(t);
   }, []);
 
+  // Tras la portada, un enlace directo (?view=…) manda a esa vista; si no
+  // hay, se aterriza en el mapa como siempre.
   const handleExplore = useCallback(() => {
     finishOnboarding();
-    setView("map");
+    setView(deepViewRef.current ?? "map");
     requestGps();
   }, [requestGps, finishOnboarding]);
 
@@ -285,7 +319,7 @@ export function RutavivaApp() {
     setOriginSource("demo");
     setGpsProblem(null);
     finishOnboarding();
-    setView("map");
+    setView(deepViewRef.current ?? "map");
     focusOn(DEMO_POINT, 14);
   }, [finishOnboarding, focusOn]);
 
