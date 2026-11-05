@@ -932,3 +932,24 @@ Work Log:
 
 Stage Summary:
 - GALERÍA DE FOTOS DEL PANEL COMPLETA ✅: Editar muestra y administra TODAS las fotos del lugar (fetch on-demand), Sugerencias por revisar muestra todas las fotos del usuario en el diálogo de validación, y Alta directa permite las 5 fotos acordadas (portada = primera). Backend sincroniza la galería de forma segura (sin tocar fotos de reseñas) y mantiene retro-compatibilidad. PENDIENTE: push + deploy a producción.
+
+---
+Task ID: 35
+Agent: Z.ai Code (principal)
+Task: Deploy a producción de la galería de fotos del panel + verificación E2E en vivo
+
+Work Log:
+- El usuario retomó la sesión y mandó un NUEVO token de Vercel (vcp_6Bc6…, guardado en ~/.vercel-token con chmod 600; el anterior vcp_5lQ7… quedó pendiente de revocar en su día).
+- Descubrimiento clave: la funcionalidad de la Task 34 ya estaba implementada y pusheada (commit 860a76e en GitHub main desde el 5/nov), pero NUNCA se desplegó — producción seguía en 0c89eee (fix "Cómo llegar" del 2/nov). Por eso el usuario seguía viendo "Foto del lugar (portada) 1/1".
+- Chequeo pre-deploy: lint limpio; backend revisado línea por línea (GET detalle con todas las fotos, PATCH update con sync de galería en transacción, validatePlaceInput con fotos hasta 5, POST alta directa crea fotos APPROVED, overview manda fotos completas de pendientes); confirmado que producción usa Neon PostgreSQL y el vercel-build.sh hace db push NO destructivo → los 29 lugares publicados no corren riesgo.
+- Deploy vía API Vercel (POST /v13/deployments, gitSource repoId 1431800848 ref main, token nuevo): dpl_8vEqSDi8uvwKsUnT9mCfHgQaq5mu → READY en ~45s (BUILDING×3 → READY). Se pusheó antes el commit local f229f5f (solo db/custom.db de dev) para alinear main.
+- Verificación E2E EN PRODUCCIÓN (rutaviva-seven.vercel.app, agent-browser + API con cookie de admin):
+  · API: login OK; GET /api/admin/places/[San Pedrito] devuelve 5 fotos APPROVED + portada.
+  · EDITAR: diálogo de Escollera de San Pedrito muestra "Fotos del lugar 5/5" con grid de 5 miniaturas y botón quitar en cada una (capturas /tmp/admin_editar_5fotos*.png). Cancelado sin cambios.
+  · ALTA DIRECTA: formulario muestra "Fotos del lugar 0/5" con botones Cámara y Galería; subida real de 3 fotos JPG vía input múltiple → contador 3/5 → "Lugar publicado en el mapa" → lugar APPROVED con photosCount=3 y source=ADMIN (captura /tmp/admin_alta_directa.png). Eliminado después.
+  · SUGERENCIAS POR REVISAR: sugerencia de prueba con 3 fotos → carrusel con contador "1/3", botones Foto siguiente (→2/3), puntos "Ir a la foto N", lightbox con "Pantalla completa" funcionando (capturas /tmp/admin_sugerencias_1.png, /tmp/admin_lightbox.png). Rechazada después → cola limpia "No hay sugerencias por revisar".
+- Limpieza verificada por API: 0 pendientes, 0 lugares de prueba, total 29 lugares publicados (igual que antes de las pruebas).
+- WebView carga del servidor → NO requiere AAB nuevo; los cambios ya son visibles en la app Android al reabrir.
+
+Stage Summary:
+- GALERÍA DE FOTOS EN VIVO EN PRODUCCIÓN ✅: Editar (5/5 con gestión por foto), Sugerencias por revisar (carrusel 1/3 + lightbox pantalla completa) y Alta directa (subida 0..5 con Cámara/Galería) verificados E2E contra prod con datos de prueba creados y limpiados. Commit en prod: f229f5f (incluye 860a76e). Sin AAB nuevo necesario.
