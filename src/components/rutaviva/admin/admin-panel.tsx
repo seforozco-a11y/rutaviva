@@ -16,6 +16,7 @@ import {
   Loader2,
   LogOut,
   MapPin,
+  MessageCircleQuestion,
   MoreVertical,
   Pencil,
   ShieldCheck,
@@ -60,6 +61,7 @@ import { PrivacyNotice } from "@/components/rutaviva/privacy-notice";
 import { PhotoCarousel } from "@/components/rutaviva/photo-carousel";
 import { useToast } from "@/hooks/use-toast";
 import { categoryLabel, SINGULAR_CATEGORIES } from "@/lib/geo";
+import { reportReasonLabel, type ReportKind } from "@/lib/reports";
 import type { Coordinates } from "@/lib/place-types";
 import { cn } from "@/lib/utils";
 import {
@@ -142,6 +144,19 @@ type AdminPlaceRow = {
   ratingCount: number;
 }
 
+/** Reporte de lugar o comentario de la app (GET /api/admin/overview → reports). */
+type AdminReport = {
+  id: string;
+  kind: ReportKind;
+  placeId: string | null;
+  placeName: string | null;
+  reason: string;
+  detail: string | null;
+  contact: string | null;
+  meta: string | null;
+  createdAt: string;
+};
+
 /** Detalle de un lugar con TODAS sus fotos de galería (GET /api/admin/places/[id]). */
 type AdminPlaceDetail = {
   id: string;
@@ -157,10 +172,12 @@ type AdminOverview = {
     reviewsTotal: number;
     flaggedReviews: number;
     failedLogins24h: number;
+    reportsOpen: number;
   };
   pendingPlaces: AdminPendingPlace[];
   pendingReviews: AdminPendingReview[];
   flaggedReviews: AdminFlaggedReview[];
+  reports: AdminReport[];
   allPlaces: AdminPlaceRow[];
 };
 
@@ -565,10 +582,31 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
     [toast, refresh, refreshPublic]
   );
 
+  /** Acciones sobre reportes de lugares y comentarios de la app. */
+  const reportAction = useCallback(
+    async (reportId: string, action: "resolve" | "dismiss") => {
+      const res = await fetch(`/api/admin/reports/${reportId}`, {
+        method: "PATCH",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error(await readError(res, "No se pudo actualizar el reporte"));
+      toast(
+        action === "resolve"
+          ? { title: "Reporte resuelto", description: "Queda registrado como atendido." }
+          : { title: "Reporte descartado", description: "No requiere cambios."
+        }
+      );
+      refresh();
+    },
+    [toast, refresh]
+  );
+
   const pendingTotal =
     (overviewQuery.data?.stats.pendingPlaces ?? 0) +
     (overviewQuery.data?.stats.pendingReviews ?? 0) +
-    (overviewQuery.data?.stats.flaggedReviews ?? 0);
+    (overviewQuery.data?.stats.flaggedReviews ?? 0) +
+    (overviewQuery.data?.stats.reportsOpen ?? 0);
 
   return (
     <div className="mx-auto w-full max-w-md space-y-4 px-4 pb-24 pt-5">
@@ -673,11 +711,13 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
                 pendingPlaces={overviewQuery.data.pendingPlaces}
                 pendingReviews={overviewQuery.data.pendingReviews}
                 flaggedReviews={overviewQuery.data.flaggedReviews}
+                reports={overviewQuery.data.reports}
                 origin={origin}
                 onPublishValidated={publishValidated}
                 onRejectPlace={rejectPlace}
                 onReviewAction={reviewAction}
                 onFlagAction={flagAction}
+                onReportAction={reportAction}
               />
             </TabsContent>
 
@@ -722,6 +762,7 @@ function ReviewQueue(props: {
   pendingPlaces: AdminPendingPlace[];
   pendingReviews: AdminPendingReview[];
   flaggedReviews: AdminFlaggedReview[];
+  reports: AdminReport[];
   origin: Coordinates | null;
   onPublishValidated: (pendingId: string, values: PlaceFormValues) => Promise<void>;
   onRejectPlace: (pendingId: string) => Promise<void>;
@@ -731,6 +772,7 @@ function ReviewQueue(props: {
     placeId: string,
     action: "dismiss-flag" | "reject"
   ) => Promise<void>;
+  onReportAction: (reportId: string, action: "resolve" | "dismiss") => Promise<void>;
 }) {
   const [validating, setValidating] = useState<AdminPendingPlace | null>(null);
   const [rejecting, setRejecting] = useState<AdminPendingPlace | null>(null);
@@ -781,6 +823,21 @@ function ReviewQueue(props: {
       toast({
         variant: "destructive",
         title: "No se pudo actualizar la reseña",
+        description: err instanceof Error ? err.message : "Error inesperado",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleReportAction = async (r: AdminReport, action: "resolve" | "dismiss") => {
+    setBusyId(r.id);
+    try {
+      await props.onReportAction(r.id, action);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "No se pudo actualizar el reporte",
         description: err instanceof Error ? err.message : "Error inesperado",
       });
     } finally {
@@ -1033,6 +1090,86 @@ function ReviewQueue(props: {
                     >
                       <X className="h-4 w-4" aria-hidden />
                       Rechazar
+                    </Button>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ---- Reportes de lugares y comentarios de la app ---- */}
+      <section aria-label="Reportes y comentarios" className="space-y-3">
+        <h2 className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wide text-stone-500">
+          <MessageCircleQuestion className="h-4 w-4 text-emerald-700" aria-hidden />
+          Reportes y comentarios ({props.reports.length})
+        </h2>
+        {props.reports.length === 0 ? (
+          <EmptyQueue text="Sin reportes ni comentarios. ¡Todo al día!" />
+        ) : (
+          <ul className="space-y-3">
+            {props.reports.map((r) => (
+              <li key={r.id}>
+                <article className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge
+                      className={
+                        "border-0 hover:bg-inherit " +
+                        (r.kind === "PLACE"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-emerald-100 text-emerald-800")
+                      }
+                    >
+                      {r.kind === "PLACE" ? "Lugar" : "App"}
+                    </Badge>
+                    <span className="text-xs font-bold text-stone-700">
+                      {reportReasonLabel(r.kind, r.reason)}
+                    </span>
+                    <span className="ml-auto text-xs text-stone-400">
+                      {relativeDate(r.createdAt)}
+                    </span>
+                  </div>
+                  {r.kind === "PLACE" && r.placeName && (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-sm font-bold text-stone-800">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-stone-400" aria-hidden />
+                      {r.placeName}
+                    </p>
+                  )}
+                  {r.detail && (
+                    <p className="mt-1.5 text-sm leading-relaxed text-stone-600">{r.detail}</p>
+                  )}
+                  {r.contact && (
+                    <p className="mt-1.5 text-xs text-stone-500">
+                      <strong className="font-semibold">Contacto:</strong> {r.contact}
+                    </p>
+                  )}
+                  {r.meta && (
+                    <p className="mt-1 truncate text-[11px] text-stone-300" title={r.meta}>
+                      {r.meta}
+                    </p>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      onClick={() => void handleReportAction(r, "resolve")}
+                      disabled={busyId === r.id}
+                      className="h-11 flex-1 gap-1.5 border border-emerald-300 bg-white font-semibold text-emerald-800 hover:bg-emerald-50"
+                    >
+                      {busyId === r.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      ) : (
+                        <Check className="h-4 w-4" aria-hidden />
+                      )}
+                      Marcar resuelto
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => void handleReportAction(r, "dismiss")}
+                      disabled={busyId === r.id}
+                      className="h-11 flex-1 gap-1.5 border-stone-200 font-semibold text-stone-600 hover:bg-stone-50"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                      Descartar
                     </Button>
                   </div>
                 </article>

@@ -42,6 +42,7 @@ import { PhotoUpload } from "./photo-upload";
 import { PhotoLightbox } from "./photo-lightbox";
 import { PrivacyNotice } from "./privacy-notice";
 import { PhotoCarousel } from "./photo-carousel";
+import { ReportDialog } from "./report-dialog";
 import { directionsUrl, formatDistance } from "@/lib/geo";
 import { categoryVisual } from "@/lib/category-visual";
 import { CategoryIcon } from "./category-icon";
@@ -99,6 +100,9 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
   // Vive aquí arriba para que "sé el primero" también pueda abrir el formulario.
   const [reviewStage, setReviewStage] = useState<"idle" | "form" | "done">("idle");
   const [submittedName, setSubmittedName] = useState("");
+  // Canal "¿Información incorrecta?" — reporte del LUGAR (ubicación errónea,
+  // cerrado, fotos que no corresponden…) para cualquier tipo de ficha.
+  const [reportPlaceOpen, setReportPlaceOpen] = useState(false);
 
   // Detalle público (solo lugares singulares validados): calificación + reseñas.
   const detailQuery = useQuery({
@@ -231,6 +235,17 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
             onOpenPhoto={(url, alt) => setLightbox({ url, alt })}
           />
         )}
+
+        {/* Canal de precisión del catálogo: reportar el LUGAR (disponible para
+            singulares y servicios OSM — ambos pueden estar mal o cerrados). */}
+        <button
+          type="button"
+          onClick={() => setReportPlaceOpen(true)}
+          className="mx-auto flex min-h-[36px] items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+        >
+          <Flag className="h-3.5 w-3.5" aria-hidden />
+          ¿Información incorrecta o desactualizada? Repórtalo
+        </button>
       </div>
 
       {/* Pie fijo: siempre visible sin depender del scroll de las reseñas */}
@@ -256,6 +271,15 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
         alt={lightbox?.alt ?? "Foto de viajeros"}
         onClose={() => setLightbox(null)}
       />
+
+      {reportPlaceOpen && (
+        <ReportDialog
+          kind="PLACE"
+          placeId={detail.id}
+          placeName={detail.name}
+          onClose={() => setReportPlaceOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -540,8 +564,24 @@ function ReportReviewDialog(props: {
             “{props.review.comment.length > 90 ? `${props.review.comment.slice(0, 90)}…` : props.review.comment}”
           </p>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="rv-report-reason">Motivo (opcional)</Label>
+            {/* Motivos frecuentes con un toque: llenan el texto y se pueden
+                editar — la precisión del reporte empieza aquí. */}
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Motivos frecuentes">
+              {["Spam o publicidad", "Contenido ofensivo", "Información falsa", "No tiene que ver con el lugar"].map(
+                (preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setReason(preset)}
+                    className="min-h-[32px] rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-stone-600 transition hover:border-emerald-300 hover:text-emerald-800"
+                  >
+                    {preset}
+                  </button>
+                )
+              )}
+            </div>
             <Textarea
               id="rv-report-reason"
               value={reason}

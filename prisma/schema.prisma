@@ -94,3 +94,26 @@ model AdminLoginLog {
   @@index([ipHash, createdAt])
   @@index([createdAt])
 }
+
+// Reportes y comentarios de los usuarios (sin cuenta necesaria):
+//  - kind PLACE: "¿Información incorrecta?" en la ficha de un lugar
+//    (ubicación errónea, cerrado, fotos que no corresponden, duplicado…).
+//  - kind APP: "Ayuda y comentarios" en el mapa (errores, ideas, contenido).
+// Motivos predefinidos (src/lib/reports.ts) + detalle libre + contacto
+// opcional. placeId es SOLO referencia informativa sin FK a propósito: el
+// reporte sobrevive si el lugar se elimina (placeName queda de snapshot).
+model Report {
+  id         String    @id @default(cuid())
+  kind       String // PLACE | APP
+  placeId    String?
+  placeName  String?
+  reason     String // slug del motivo (REPORT_REASONS)
+  detail     String? // texto libre (máx 500)
+  contact    String? // correo/teléfono opcional (máx 80)
+  meta       String? // dispositivo/navegador auto-capturado (máx 300)
+  status     String    @default("PENDING") // PENDING | RESOLVED | DISMISSED
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([status, createdAt])
+}

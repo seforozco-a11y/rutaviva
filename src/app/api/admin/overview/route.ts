@@ -8,13 +8,14 @@ export const dynamic = "force-dynamic";
  * GET /api/admin/overview → todo lo que el equipo RutaViva necesita para
  * moderar: estadísticas, sugerencias de lugares PENDING, reseñas PENDING
  * (con fotos), reseñas REPORTADAS por usuarios (flagged — política UGC de
- * Google Play) y el catálogo completo con su estado.
+ * Google Play), REPORTES de lugares y comentarios de la app (Report) y el
+ * catálogo completo con su estado.
  */
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return unauthorized();
 
   try {
-    const [placesTotal, placesPublished, pendingPlaces, pendingReviews, reviewsTotal, flaggedReviews, failedLogins24h] =
+    const [placesTotal, placesPublished, pendingPlaces, pendingReviews, reviewsTotal, flaggedReviews, failedLogins24h, openReports] =
       await Promise.all([
         db.singularPlace.count(),
         db.singularPlace.count({ where: { status: "APPROVED", active: true } }),
@@ -46,6 +47,13 @@ export async function GET(req: NextRequest) {
         // (visibilidad para el equipo; el registro completo se purga a las 48 h).
         db.adminLoginLog.count({
           where: { success: false, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+        }),
+        // Reportes de lugares + comentarios de la app (PENDING): el canal de
+        // feedback de los usuarios sobre el contenido y el funcionamiento.
+        db.report.findMany({
+          where: { status: "PENDING" },
+          orderBy: { createdAt: "desc" },
+          take: 50,
         }),
       ]);
 
@@ -100,6 +108,7 @@ export async function GET(req: NextRequest) {
         reviewsTotal,
         flaggedReviews: flaggedReviews.length,
         failedLogins24h,
+        reportsOpen: openReports.length,
       },
       pendingPlaces: pendingPlaces.map((p) => ({
         id: p.id,
@@ -138,6 +147,17 @@ export async function GET(req: NextRequest) {
         flaggedAt: r.flaggedAt ? r.flaggedAt.toISOString() : null,
         createdAt: r.createdAt.toISOString(),
         photos: r.photos.map((ph) => ({ id: ph.id, url: ph.url, status: ph.status })),
+      })),
+      reports: openReports.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        placeId: r.placeId,
+        placeName: r.placeName,
+        reason: r.reason,
+        detail: r.detail,
+        contact: r.contact,
+        meta: r.meta,
+        createdAt: r.createdAt.toISOString(),
       })),
       allPlaces: allPlacesDto,
     });

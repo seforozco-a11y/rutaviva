@@ -165,3 +165,64 @@ export function validateReviewInput(body: unknown): Valid<ReviewInput> | Invalid
 
   return { ok: true, data: { placeId, authorName, rating, comment, photos } };
 }
+
+/* ==================== Reportes y comentarios (Report) ==================== */
+
+import {
+  MAX_REPORT_CONTACT,
+  MAX_REPORT_DETAIL,
+  MAX_REPORT_META,
+  REPORT_REASONS,
+  type ReportKind,
+} from "@/lib/reports";
+
+export type ReportInput = {
+  kind: ReportKind;
+  placeId: string | null;
+  reason: string;
+  detail: string | null;
+  contact: string | null;
+  meta: string | null;
+};
+
+/**
+ * Valida el envío de un reporte/comentario (POST /api/reports).
+ * kind PLACE exige placeId; el motivo DEBE ser uno de los predefinidos
+ * (REPORT_REASONS) — así la cola del panel llega clasificada y precisa.
+ */
+export function validateReportInput(body: unknown): Valid<ReportInput> | Invalid {
+  if (typeof body !== "object" || body === null) {
+    return { ok: false, error: "Cuerpo inválido" };
+  }
+  const b = body as Record<string, unknown>;
+
+  const kind = str(b.kind) === "APP" ? "APP" : str(b.kind) === "PLACE" ? "PLACE" : null;
+  if (!kind) return { ok: false, error: "Tipo de reporte no válido" };
+
+  const placeId = str(b.placeId) || null;
+  if (kind === "PLACE" && !placeId) {
+    return { ok: false, error: "Falta el lugar del reporte" };
+  }
+
+  const reason = str(b.reason);
+  if (!REPORT_REASONS[kind].some((r) => r.id === reason)) {
+    return { ok: false, error: "Elige un motivo de la lista" };
+  }
+
+  const detail = str(b.detail) || null;
+  if (detail && detail.length > MAX_REPORT_DETAIL) {
+    return { ok: false, error: `El detalle no puede exceder ${MAX_REPORT_DETAIL} caracteres` };
+  }
+
+  const contact = str(b.contact) || null;
+  if (contact && contact.length > MAX_REPORT_CONTACT) {
+    return { ok: false, error: `El contacto no puede exceder ${MAX_REPORT_CONTACT} caracteres` };
+  }
+
+  const meta = str(b.meta) || null;
+  if (meta && meta.length > MAX_REPORT_META) {
+    return { ok: false, error: "Meta de dispositivo no válida" };
+  }
+
+  return { ok: true, data: { kind, placeId, reason, detail, contact, meta } };
+}
