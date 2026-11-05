@@ -976,3 +976,19 @@ Work Log:
 
 Stage Summary:
 - FEEDBACK DE USUARIOS COMPLETO Y PRECISO ✅: 4 canales (reseñas, sugerencias, reporte de lugar, ayuda de app) con motivos predefinidos que llegan clasificados al panel; reportes de lugar NO ocultan contenido (el equipo decide); antispam pseudónimo; verificado E2E en producción y limpiado. WebView carga del servidor → sin AAB nuevo.
+
+---
+Task ID: 37
+Agent: Z.ai Code (principal)
+Task: Conectar la Guía de la app (AboutPanel) a la navegación — entrada visible + deep link ?view=about
+
+Work Log:
+- Contexto: la Task 36 dejó los canales de feedback operando en producción, pero AboutPanel (guía + aviso de privacidad + explicación del flujo de publicación) seguía huérfano: existía el componente pero ninguna vista lo renderizaba. El usuario confirmó conectarlo ("sí, lo conectamos").
+- Navegación (bottom-nav.tsx): AppView suma "about"; pestaña "Guía" (icono BookOpen, ariaLabel "Abrir la guía de la app") entre el botón central y Admin; grid 4→5 columnas [1fr_1fr_1.4fr_1fr_1fr]. Verificado sin overflow a 414px y a 360px (nav scrollWidth = window width; botón central 80×44px, leyenda de 2 líneas intacta).
+- App (rutaviva-app.tsx): render de AboutPanel en view="about" (recibe places para stats en vivo y onShowSplash → setView("splash")); DEEP_VIEWS ahora {list, add, about} → ?view=about comparte la guía; "admin" sigue excluido por PIN.
+- Copys del AboutPanel orientados a usuario final (antes tenían jerga de desarrollador): "Escalable por diseño (Prisma + SQLite…)" → "Siempre en crecimiento"; "Datos abiertos en vivo (Overpass API…)" → "Servicios siempre actualizados"; "Una base de código, dos plataformas (Capacitor…)" → "Web y app Android"; nota de destacados ya no menciona `featured` en la base de datos; "Consejo de curaduría" → "Consejo para sugerir". NUEVA tarjeta "¿Algo falla o viste datos incorrectos?" que dirige al chip "Ayuda y comentarios" y al enlace de la ficha — cierra el circuito de feedback dentro de la guía.
+- E2E local (agent-browser, 414×896 y 360×740): pestaña Guía abre el panel completo (stats 13 lugares/7 categorías/7 servicios, flujo de publicación, tarjeta de reporte, aviso de privacidad, 6 tarjetas, botón de portada); "Ver la portada otra vez" → splash → "Explorar" regresa; deep link ?view=about aterriza directo en la guía y LIMPIA el query (?view= desaparece de la URL); flujo de usuario nuevo con localStorage limpio: portada → "Explorar cerca de mí" → aterriza en la Guía (deepViewRef consumido en handleExplore). Lint limpio; dev.log sin errores (solo queries normales).
+- Docs: guion QA P10 gana inciso D (pestaña Guía + enlace ?view=about + qué revisar).
+
+Stage Summary:
+- GUÍA DE LA APP CONECTADA ✅: 5ª pestaña "Guía" siempre visible + deep link ?view=about; copys en lenguaje de turista y tarjeta que enseña DÓNDE reportar (chip del mapa / ficha del lugar). El Aviso de privacidad queda accesible desde la navegación principal. Sin cambios de backend ni datos. PENDIENTE: push + deploy a producción.

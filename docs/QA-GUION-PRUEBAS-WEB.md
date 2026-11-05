@@ -164,6 +164,18 @@ dispositivo para ayudarnos a reproducir el problema.
 
 ✅ **Esperado:** el motivo se llena al tocar el chip y puedes editarlo.
 
+**D) Guía de la app (pestaña nueva):**
+1. En la barra de abajo toca la pestaña **"Guía"** (junto a Admin). También
+   puedes abrir directamente: **`?view=about`** →
+   `https://rutaviva-seven.vercel.app/?view=about`
+2. Revisa que se vea: estadísticas, cómo funciona la publicación
+   (sugieres → validamos → se publica), la tarjeta "¿Algo falla?", el
+   Aviso de privacidad y las tarjetas informativas.
+3. Al final, toca **"Ver la portada otra vez"** y regresa con "Explorar".
+
+✅ **Esperado:** la guía abre y se lee completa sin errores; la portada
+vuelve a mostrarse y al explorar regresas al mapa.
+
 ---
 
 ## 🐞 Cómo reportar un problema

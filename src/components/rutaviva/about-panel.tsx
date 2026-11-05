@@ -6,6 +6,7 @@ import {
   Globe2,
   ImagePlay,
   MapPinned,
+  MessageCirclePlus,
   ShieldCheck,
   Smartphone,
   Star,
@@ -70,7 +71,7 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
             n={2}
             icon={ShieldCheck}
             title="Validamos"
-            text="Previo estudio, el equipo RutaViva revisa cada aporte con los formatos de publicación."
+            text="El equipo RutaViva revisa cada aporte antes de publicarlo: nada entra al mapa sin validar."
           />
           <PublishStep
             n={3}
@@ -79,6 +80,23 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
             text="Lo aprobado aparece en el mapa y en las reseñas del lugar, para toda la comunidad."
           />
         </ol>
+      </section>
+
+      {/* Cierre del circuito de feedback: aquí explicamos DÓNDE escribir */}
+      <section
+        aria-label="Cómo reportar un problema"
+        className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+      >
+        <h2 className="flex items-center gap-2 text-sm font-bold text-emerald-900">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <MessageCirclePlus className="h-4 w-4" aria-hidden />
+          </span>
+          ¿Algo falla o viste datos incorrectos?
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-emerald-900/80">
+          Toca «Ayuda y comentarios» arriba del mapa, o «¿Información incorrecta?» dentro de
+          cualquier lugar. Tu reporte llega directo al equipo RutaViva, sin necesidad de cuenta.
+        </p>
       </section>
 
       {/* Aviso de privacidad: reglas compartidas entre usuarios y administradores */}
@@ -100,32 +118,32 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
       <div className="space-y-3">
         <InfoCard
           icon={Database}
-          title="Escalable por diseño"
-          text="Los lugares singulares viven en una base de datos (Prisma + SQLite, migre a Postgres cuando quieras). Agrega lugares desde el botón + sin tocar código, o conecta un panel de administración con roles."
+          title="Siempre en crecimiento"
+          text="El catálogo crece con cada sugerencia validada por el equipo: entre todos mantenemos la guía completa, confiable y actualizada."
         />
         <InfoCard
           icon={MapPinned}
           title="De esta ciudad a todo el estado"
-          text="Arrancamos aquí. La meta: llegar a cada municipio del estado — de la costa al interior — con su propio catálogo de lugares singulares, sin cambiar una línea de código."
+          text="Arrancamos aquí. La meta: llegar a cada municipio del estado — de la costa al interior — con su propio catálogo de lugares singulares."
         />
         <InfoCard
           icon={Globe2}
-          title="Datos abiertos en vivo"
-          text="Farmacias, gasolineras, tiendas, cajeros y más provienen de OpenStreetMap (Overpass API): gratis, sin API key y siempre actualizados por la comunidad. Si mañana agregas una categoría nueva, solo añades su filtro."
+          title="Servicios siempre actualizados"
+          text="Farmacias, gasolineras, tiendas y cajeros provienen de OpenStreetMap, el mapa libre mantenido por una comunidad mundial: si un negocio se muda o cierra, la información se actualiza sola."
         />
         <InfoCard
           icon={Smartphone}
-          title="Una base de código, dos plataformas"
-          text="Esta app web se convierte en APK/AAB con Capacitor para Google Play y, más adelante, en app iOS. La misma interfaz, la misma lógica, sin reescribir nada."
+          title="Web y app Android"
+          text="RutaViva funciona en el navegador y como app Android con la misma interfaz y funciones: lo que sugieres desde una aparece en la otra."
         />
         <InfoCard
           icon={ImagePlay}
           title="Categorías ampliables"
-          text={`Hoy: ${SINGULAR_CATEGORIES.map((c) => c.label).join(", ")}. Nuevas categorías (lanchas, ruinas, vida nocturna…) son un cambio pequeño en el catálogo.`}
+          text={`Hoy: ${SINGULAR_CATEGORIES.map((c) => c.label).join(", ")}. Nuevas categorías se irán sumando conforme crezca la guía.`}
         />
         <InfoCard
           icon={BookOpen}
-          title="Consejo de curaduría"
+          title="Consejo para sugerir"
           text="Un buen lugar singular tiene foto, descripción de 2–3 líneas y un tip práctico (horarios, mejor hora, cómo llegar). Eso hace que la gente vuelva."
         />
       </div>
@@ -134,8 +152,7 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
         <p className="flex items-start gap-2 text-sm leading-relaxed text-emerald-900">
           <Star className="mt-0.5 h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
           Los lugares con estrella son <strong>destacados</strong>: aparecen primero en el mapa y en
-          la lista. Márcalos con <code className="rounded bg-emerald-100 px-1">featured</code> en la
-          base de datos.
+          la lista.
         </p>
       </div>
 

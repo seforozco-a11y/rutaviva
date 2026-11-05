@@ -1,9 +1,9 @@
 "use client";
 
-import { Map, Plus, ShieldCheck, SquareStack } from "lucide-react";
+import { BookOpen, Map, Plus, ShieldCheck, SquareStack } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AppView = "map" | "list" | "add" | "admin";
+export type AppView = "map" | "list" | "add" | "about" | "admin";
 
 type BottomNavProps = {
   view: AppView;
@@ -15,6 +15,12 @@ type NavItem = { id: AppView; label: string; icon: typeof Map; ariaLabel?: strin
 const items: NavItem[] = [
   { id: "map", label: "Explorar", icon: Map },
   { id: "list", label: "Lugares", icon: SquareStack },
+  {
+    id: "about",
+    label: "Guía",
+    icon: BookOpen,
+    ariaLabel: "Abrir la guía de la app",
+  },
   {
     id: "admin",
     label: "Admin",
@@ -31,7 +37,7 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
       className="fixed inset-x-0 bottom-0 z-[1000] border-t border-emerald-900/10 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(6,78,59,0.08)] backdrop-blur"
     >
       {/* La columna central es más ancha para la leyenda del botón ámbar */}
-      <ul className="mx-auto grid h-16 max-w-md grid-cols-[1fr_1fr_1.5fr_1fr] items-center gap-0.5 px-2">
+      <ul className="mx-auto grid h-16 max-w-md grid-cols-[1fr_1fr_1.4fr_1fr_1fr] items-center gap-0.5 px-2">
         {items.slice(0, 2).map(({ id, label, icon: Icon }) => (
           <li key={id} className="flex justify-center">
             <NavButton active={view === id} label={label} onClick={() => onChange(id)}>

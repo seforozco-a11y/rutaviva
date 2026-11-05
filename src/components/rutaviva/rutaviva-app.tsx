@@ -11,6 +11,7 @@ import { locate } from "./gps";
 import { PlacesList } from "./places-list";
 import { AddPlaceForm } from "./add-place-form";
 import { PlaceDetailSheet } from "./place-detail-sheet";
+import { AboutPanel } from "./about-panel";
 import { AdminPanel } from "./admin/admin-panel";
 import { fetchNearbyPlaces, clearNearbyCache } from "@/lib/nearby-client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,12 +30,12 @@ const ONBOARD_KEY = "rutaviva:onboarded";
 // Punto de respaldo: Centro Histórico de Manzanillo, Colima
 const DEMO_POINT: Coordinates = { lat: 19.0536, lng: -104.3149 };
 
-// ---- Enlaces directos (?view=add|list) ----
+// ---- Enlaces directos (?view=add|list|about) ----
 // Permiten compartir URLs que abren una vista concreta (p. ej. el guion de
-// pruebas manda a los testers directo al formulario de sugerencias). El mapa
-// es el default y "admin" se excluye a propósito: requiere PIN y no se
-// promueve por enlaces.
-const DEEP_VIEWS = new Set<AppView>(["list", "add"]);
+// pruebas manda a los testers directo al formulario de sugerencias, o a la
+// guía de la app). El mapa es el default y "admin" se excluye a propósito:
+// requiere PIN y no se promueve por enlaces.
+const DEEP_VIEWS = new Set<AppView>(["list", "add", "about"]);
 
 function deepViewFromUrl(): AppView | null {
   try {
@@ -400,6 +401,14 @@ export function RutavivaApp() {
                   origin={origin}
                   onSuggested={handleSuggested}
                   onDone={handleSuggestionDone}
+                />
+              </div>
+            )}
+            {view === "about" && (
+              <div className="rv-scroll absolute inset-0 overflow-y-auto bg-gradient-to-b from-emerald-50/60 to-background">
+                <AboutPanel
+                  places={places}
+                  onShowSplash={() => setView("splash")}
                 />
               </div>
             )}
