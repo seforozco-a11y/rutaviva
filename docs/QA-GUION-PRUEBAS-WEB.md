@@ -12,10 +12,15 @@
 | Dato | Valor |
 |---|---|
 | **URL** | https://rutaviva-seven.vercel.app |
+| **URL directa: lista de lugares** | https://rutaviva-seven.vercel.app/?view=list |
+| **URL directa: sugerir un lugar** | https://rutaviva-seven.vercel.app/?view=add |
 | **Duración total** | ~15 minutos |
 | **Qué necesitas** | Celular o computadora con internet (ideal: celular, para probar GPS) |
 | **Cuenta** | No se necesita registro ni contraseña |
 
+> 💡 **Enlaces directos:** las URLs con `?view=…` abren esa pantalla después de
+> la portada (el primer acceso muestra la bienvenida; los siguientes van
+> directo). Funcionan una vez por visita — si recargas, vuelves al mapa normal.
 > 💡 Consejo: haz las pruebas desde el celular si puedes — así validamos GPS,
 > cámara/galería y los botones en pantalla chica, que es como la usará la gente.
 
@@ -67,6 +72,8 @@ pin en el mar, captura pantalla — es justo lo que buscamos confirmar.
 
 ## 📚 P5 · Lista de lugares y servicios
 
+> 🔗 Enlace directo: https://rutaviva-seven.vercel.app/?view=list
+
 1. En la barra inferior toca **"Lugares"**.
 2. Cambia entre las pestañas: **Singulares, Farmacias, Gasolineras, Conveniencia,
    Súper, Cajeros**.
@@ -78,6 +85,8 @@ con su distancia.
 ---
 
 ## 📍 P6 · Sugerir un lugar nuevo (flujo estrella ⭐)
+
+> 🔗 Enlace directo: https://rutaviva-seven.vercel.app/?view=add
 
 1. Toca el botón naranja **"Sugiere un lugar singular"**.
 2. Llena: nombre, descripción (mínimo 30 caracteres), categoría, coordenadas
