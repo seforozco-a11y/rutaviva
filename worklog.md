@@ -1026,3 +1026,4 @@ Work Log:
 
 Stage Summary:
 - PORTADA PERMANENTE HASTA EL TOQUE ✅: la APK abre siempre en la portada; el GPS se precalienta en silencio; el usuario entra con el botón amarillo (o demo) y el mapa llega con ubicación y lugares al instante. Sin intervalos ni tiempos automáticos. PENDIENTE: deploy.
+- DEPLOY (Task 39): dpl_2p6QpN4SdefHu3spsuTDxAf77vFy → READY ~50 s (commit 4d8cafc). E2E producción: portada OK, Explorar→mapa OK, ?view=list directo (sin portada) OK, 0 errores JS. Confirmación real en teléfono del usuario al reabrir la APK (WebView sin AAB nuevo).
