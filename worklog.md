@@ -1027,3 +1027,15 @@ Work Log:
 Stage Summary:
 - PORTADA PERMANENTE HASTA EL TOQUE ✅: la APK abre siempre en la portada; el GPS se precalienta en silencio; el usuario entra con el botón amarillo (o demo) y el mapa llega con ubicación y lugares al instante. Sin intervalos ni tiempos automáticos. PENDIENTE: deploy.
 - DEPLOY (Task 39): dpl_2p6QpN4SdefHu3spsuTDxAf77vFy → READY ~50 s (commit 4d8cafc). E2E producción: portada OK, Explorar→mapa OK, ?view=list directo (sin portada) OK, 0 errores JS. Confirmación real en teléfono del usuario al reabrir la APK (WebView sin AAB nuevo).
+
+## Sesión: acompañamiento Play Console — AAB 1.0.6 (v7) enviado a revisión (6 nov 2026)
+Task: Acompañamiento de publicación — subir AAB 1.0.6 (v7) a la prueba cerrada (Alpha) y seguimiento del reloj 12×14.
+
+- SIN CAMBIOS DE CÓDIGO: sesión de guía al usuario en Google Play Console. Portada permanente (Task 39) confirmada viva en producción (dpl_2p6QpN4S READY, commit 4d8cafc).
+- PLAY CONSOLE — REQUISITOS DE PRODUCCIÓN: ✅ prueba cerrada publicada; ✅ 12/12 verificadores aceptaron (los Gmail de colchón funcionaron); ⏳ reloj 14 días en día 2/14 → botón "Solicitar acceso a producción" se activa ~16-17 nov. Cuidados: que nadie de los 12 se salga de la prueba; que abran la app seguido; vigilar 🔔 notificaciones.
+- AAB 1.0.6 (v7) CONFIRMADO FALTANTE: panel "Versiones y paquetes más recientes" mostraba solo código 6 (1.0.5, Activo 31 oct 8:25 p.m.) en Alpha y prueba interna. Verificado en repo: android/app/build.gradle ya tenía versionCode 7 / versionName "1.0.6".
+- AAB LOCALIZADO: GitHub Actions run 42256695423 ("Android AAB (RutaViva)", commit 4d8cafc, 6 nov 16:54 UTC, success) → artefacto rutaviva-android 13.8 MB (AAB firmado v7 + APK), expira en ~89 días. Copia local ~/play-release/ perdida por reinicio del sandbox; el artefacto en GitHub es la fuente.
+- UPLOAD COMPLETADO POR EL USUARIO: descargó artefacto, subió el .aab a Prueba cerrada - Alpha (Creando versión → Subir → `1.0.6 (7)` procesado). Advertencias R8/deofuscación (v6 y v7) = inofensivas, ignoradas. Error "Para guardar, corrige los errores" resuelto llenando Novedades ("Corrección de la detección de ubicación GPS en dispositivos Android y mejoras generales de estabilidad").
+- ENVÍO #2 (6 nov, 12:40 p.m.) → ESTADO "EN REVISIÓN" en Actividad de envío. Envío #1 (31 oct) sigue "Publicado". Rutas de monitoreo: Pruebas → Prueba cerrada → Versiones; Actividad de envío; 🔔.
+- SUBIR LA 1.0.6 NO REINICIA EL RELOJ 12×14 (el contador es por verificadores activos, no por versiones).
+- Siguiente sesión: ① verificar aprobación del envío #2 (estado "Disponible para los verificadores" / envío #2 "Publicado"); ② opcional: repetir upload en Prueba interna; ③ seguir reloj 12×14 → captura → solicitar producción ~16-17 nov; ④ pendiente lejano: rotar ADMIN_PIN/ADMIN_SECRET en Vercel.
