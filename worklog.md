@@ -1010,3 +1010,4 @@ Work Log:
 
 Stage Summary:
 - PORTADA EN CADA APERTURA DE LA APK ✅ (2.2–4 s según GPS): el mapa abre con ubicación y lugares ya en marcha; enlaces compartidos siguen directos; web sin cambios. PENDIENTE: token de Vercel (el sandbox lo borró) → deploy a producción para que se perciba en el teléfono.
+- DEPLOY (Task 38): token nuevo del usuario guardado en ~/.vercel-token (chmod 600; validado vía /v9/projects). Deploy dpl_3ejRJM4FAeST67zZF4iX79XaEFW5 → READY ~40 s (commit 7b652e5). E2E producción: portada en 1er acceso OK; Explorar→mapa OK; ?view=about directo con URL limpia; 0 errores JS. La espera de 2.2–4 s es nativa: se confirma en el teléfono del usuario al reabrir la APK (sin AAB nuevo).
