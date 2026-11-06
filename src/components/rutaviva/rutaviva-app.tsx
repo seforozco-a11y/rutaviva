@@ -31,13 +31,11 @@ const ONBOARD_KEY = "rutaviva:onboarded";
 const DEMO_POINT: Coordinates = { lat: 19.0536, lng: -104.3149 };
 
 // ---- Portada en cada apertura (solo APK) ----
-// Al abrir la app, la portada ya no se salta de inmediato: permanece visible
-// mientras el GPS responde y los lugares cercanos cargan, para que el mapa
-// aparezca listo. Mínimo SPLASH_MIN_MS (deja respirar la animación) y tope
-// SPLASH_MAX_MS (el GPS nunca bloquea la entrada: si tarda, el mapa abre con
-// su aviso de ubicación y el chip "Buscando tu ubicación…").
-const SPLASH_MIN_MS = 2200;
-const SPLASH_MAX_MS = 4000;
+// Al abrir la app, la portada PERMANECE hasta que el usuario elige: toca el
+// botón amarillo "Explorar cerca de mí" o el modo demo. Mientras tanto, ya se
+// pidió el GPS en silencio — así el toque encuentra la posición caliente
+// (caché de 30 s del sistema) y los lugares cercanos cargan al instante. Los
+// enlaces compartidos (?view=…) siguen entrando directos, sin portada.
 
 // ---- Enlaces directos (?view=add|list|about) ----
 // Permiten compartir URLs que abren una vista concreta (p. ej. el guion de
@@ -76,11 +74,6 @@ export function RutavivaApp() {
   // Vista destino de un enlace directo (?view=add|list), leída una vez en el
   // arranque y consumida al pasar la portada (o al saltarla si ya vio la intro).
   const deepViewRef = useRef<AppView | null>(null);
-
-  // Espera de portada en la APK: ¿ya respondió el GPS? y el intervalo que
-  // libera la portada (se cancela si el usuario entra manualmente antes).
-  const gpsResolvedRef = useRef(false);
-  const splashReleaseRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ---- Estado del servidor (TanStack Query) ----
   const placesQuery = useQuery({
@@ -225,12 +218,10 @@ export function RutavivaApp() {
     (opts?: { silent?: boolean }) => {
       if (gpsBusy.current) return;
       gpsBusy.current = true;
-      gpsResolvedRef.current = false; // la portada espera este resultado
       setGpsProblem(null);
       setLocating(true);
       void locate().then((r) => {
         gpsBusy.current = false;
-        gpsResolvedRef.current = true; // resuelto (éxito o fallback demo)
         setLocating(false);
         if (r.ok) {
           const c: Coordinates = { lat: r.lat, lng: r.lng };
@@ -286,14 +277,6 @@ export function RutavivaApp() {
     requestGpsRef.current = requestGps;
   }, [requestGps]);
 
-  /** Cancela la espera automática de portada (el usuario ya eligió destino). */
-  const cancelSplashHold = useCallback(() => {
-    if (splashReleaseRef.current !== null) {
-      clearInterval(splashReleaseRef.current);
-      splashReleaseRef.current = null;
-    }
-  }, []);
-
   // ---- Arranque: saltar portada si ya vio la intro (evita mismatch de hidratación) ----
   useEffect(() => {
     const t = setTimeout(() => {
@@ -320,26 +303,13 @@ export function RutavivaApp() {
             // aviso visible (la app nunca se ve "muerta").
             requestGpsRef.current({ silent: true });
             if (dv) {
-              // Enlace compartido (?view=…): directo a su vista, sin espera.
+              // Enlace compartido (?view=…): directo a su vista, sin portada.
               setView(dv);
-            } else {
-              // Portada visible unos segundos en cada apertura: le da tiempo
-              // al GPS y a la carga de lugares cercanos para que el mapa se
-              // muestre listo. Entra al mapa cuando el GPS responde (respetando
-              // el mínimo) o al llegar al tope — y tocar Explorar entra ya.
-              const started = Date.now();
-              cancelSplashHold();
-              splashReleaseRef.current = setInterval(() => {
-                const dt = Date.now() - started;
-                if (
-                  (dt >= SPLASH_MIN_MS && gpsResolvedRef.current) ||
-                  dt >= SPLASH_MAX_MS
-                ) {
-                  cancelSplashHold();
-                  setView("map");
-                }
-              }, 150);
             }
+            // Sin enlace: la portada PERMANECE hasta que el usuario elija
+            // (botón amarillo "Explorar cerca de mí" o modo demo). El GPS ya
+            // corre en silencio de fondo, así que el toque entra con la
+            // posición caliente y los lugares cargando de una vez.
           } else {
             // Navegador/PWA: demo por defecto (el usuario decide con el botón).
             setOrigin(DEMO_POINT);
@@ -351,25 +321,20 @@ export function RutavivaApp() {
         /* localStorage no disponible */
       }
     }, 0);
-    return () => {
-      clearTimeout(t);
-      cancelSplashHold();
-    };
-  }, [cancelSplashHold]);
+    return () => clearTimeout(t);
+  }, []);
 
   // Tras la portada, un enlace directo (?view=…) manda a esa vista; si no
   // hay, se aterriza en el mapa como siempre.
   const handleExplore = useCallback(() => {
-    cancelSplashHold(); // entrar manual: la espera automática se cancela
     finishOnboarding();
     const dv = deepViewRef.current;
     deepViewRef.current = null; // consumido: recargas de portada ya no repiten el salto
     setView(dv ?? "map");
     requestGps();
-  }, [requestGps, finishOnboarding, cancelSplashHold]);
+  }, [requestGps, finishOnboarding]);
 
   const handleDemo = useCallback(() => {
-    cancelSplashHold(); // entrar manual: la espera automática se cancela
     setOrigin(DEMO_POINT);
     setOriginSource("demo");
     setGpsProblem(null);
@@ -378,7 +343,7 @@ export function RutavivaApp() {
     deepViewRef.current = null; // consumido: una sola vez también en modo demo
     setView(dv ?? "map");
     focusOn(DEMO_POINT, 14);
-  }, [finishOnboarding, focusOn, cancelSplashHold]);
+  }, [finishOnboarding, focusOn]);
 
   // ---- Sugerencia de lugar (entra PENDING a la cola del admin) ----
   const handleSuggested = useCallback(() => {

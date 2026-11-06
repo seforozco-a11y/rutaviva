@@ -1011,3 +1011,18 @@ Work Log:
 Stage Summary:
 - PORTADA EN CADA APERTURA DE LA APK ✅ (2.2–4 s según GPS): el mapa abre con ubicación y lugares ya en marcha; enlaces compartidos siguen directos; web sin cambios. PENDIENTE: token de Vercel (el sandbox lo borró) → deploy a producción para que se perciba en el teléfono.
 - DEPLOY (Task 38): token nuevo del usuario guardado en ~/.vercel-token (chmod 600; validado vía /v9/projects). Deploy dpl_3ejRJM4FAeST67zZF4iX79XaEFW5 → READY ~40 s (commit 7b652e5). E2E producción: portada en 1er acceso OK; Explorar→mapa OK; ?view=about directo con URL limpia; 0 errores JS. La espera de 2.2–4 s es nativa: se confirma en el teléfono del usuario al reabrir la APK (sin AAB nuevo).
+
+---
+Task ID: 39
+Agent: Z.ai Code (principal)
+Task: Portada permanente en la APK hasta el toque del usuario (sin salto automático)
+
+Work Log:
+- Petición del usuario tras probar la Task 38: le gustó que el mapa llegue con GPS y lugares cargados, pero quiere que la portada PERMANEZCA hasta que él dé clic en el botón amarillo "Explorar cerca de mí" — sin entrada automática.
+- Simplificación (rutaviva-app.tsx): se eliminan SPLASH_MIN_MS/SPLASH_MAX_MS, gpsResolvedRef, splashReleaseRef y cancelSplashHold (la espera con intervalo ya no es necesaria). En nativo onboarded sin deep link: se pide GPS en silencio ({silent:true}, comportamiento ya establecido — diálogo nativo reaparece si el permiso sigue pendiente) y la vista SE QUEDA en splash indefinidamente; el usuario entra cuando toque "Explorar cerca de mí" (handleExplore → requestGps no-silent; con GPS_OPTIONS.maximumAge=30_000 el sistema puede responder con la posición caliente del arranque → entrada casi instantánea) o el modo demo. Deep links (?view=…) siguen directos sin portada. Web/PWA sin cambios (demo instantáneo). handleExplore/handleDemo vuelven a su forma simple.
+- Nota UX: mientras corre el GPS silencioso el splash muestra "Localizándote…" (botones deshabilitados unos segundos); al resolver se habilitan y el usuario entra cuando quiera. Si el GPS tarda mucho, los botones se habilitan al resolverse (o puede usar demo tras habilitarse).
+- Verificación local: lint limpio; grep sin referencias viejas; flujo web portada→Explorar→mapa OK (regresión). Camino nativo se valida en el teléfono del usuario tras el deploy.
+- Docs: P1 del guion QA actualizado ("la portada se queda en pantalla hasta que tú entres… GPS ya preparando en segundo plano").
+
+Stage Summary:
+- PORTADA PERMANENTE HASTA EL TOQUE ✅: la APK abre siempre en la portada; el GPS se precalienta en silencio; el usuario entra con el botón amarillo (o demo) y el mapa llega con ubicación y lugares al instante. Sin intervalos ni tiempos automáticos. PENDIENTE: deploy.
