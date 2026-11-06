@@ -35,6 +35,11 @@
 ✅ **Esperado:** el mapa se abre centrado en Manzanillo (o en tu zona si diste
 ubicación) y se ven pines de colores.
 
+📱 **En la APK (si pruebas la app instalada):** al abrirla, la portada se
+queda unos segundos a la vista mientras se carga tu ubicación — es intencional
+para que el mapa llegue con los lugares ya listos. Puedes tocar "Explorar
+cerca de mí" en cuanto se habilite para entrar de inmediato.
+
 ---
 
 ## 🗺️ P2 · Explorar el mapa

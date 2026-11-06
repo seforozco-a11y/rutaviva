@@ -994,3 +994,19 @@ Stage Summary:
 - GUÍA DE LA APP CONECTADA ✅: 5ª pestaña "Guía" siempre visible + deep link ?view=about; copys en lenguaje de turista y tarjeta que enseña DÓNDE reportar (chip del mapa / ficha del lugar). El Aviso de privacidad queda accesible desde la navegación principal. Sin cambios de backend ni datos. PENDIENTE: push + deploy a producción.
 - FIX posterior (mismo deploy): deep link no se anulaba tras consumirse — "Ver la portada otra vez" → Explorar re-aterrizaba en la vista del enlace en vez del mapa. Ahora los 3 puntos de uso (arranque ya-onboarded, handleExplore, handleDemo) leen y limpian deepViewRef (se consume UNA vez). Verificado local: 1er Explorar → Guía, 2º Explorar → mapa. Lint limpio.
 - Deploy final: dpl_7fLoZHsfEWtGSUVN3wKT9P4tGZnQ READY (commit fix). E2E en producción (414×896): A) usuario nuevo + ?view=about → Guía con URL limpiada; B) 2ª vuelta desde portada → mapa (consumo único OK); C) pestaña Guía abre el panel (29 lugares, 9 categorías reales); D) nav de 5 ítems sin overflow; consola sin errores ([]). WebView carga del servidor → sin AAB nuevo.
+
+---
+Task ID: 38
+Agent: Z.ai Code (principal)
+Task: Portada visible en cada apertura de la APK (tiempo para GPS + carga de lugares)
+
+Work Log:
+- Petición del usuario: al abrir la APK saltaba directo al mapa (portada invisible tras la primera visita) y quería verla más tiempo para que el GPS y los lugares cercanos carguen antes de mostrar el mapa.
+- Causa: el efecto de arranque hacía setView("map") con setTimeout 0 en usuarios ya onboarded — la portada duraba ~50 ms en la APK.
+- Implementación (rutaviva-app.tsx): en nativo SIN deep link, la portada permanece y un intervalo (150 ms) libera el paso al mapa cuando (dt ≥ SPLASH_MIN_MS=2200 Y gpsResolvedRef) o dt ≥ SPLASH_MAX_MS=4000 (techo: el GPS nunca bloquea la entrada — gps.ts tiene timeout 12 s, así que con GPS lento el mapa abre con el chip "Buscando tu ubicación…" y el aviso llega al resolverse). gpsResolvedRef se marca en CUALQUIER resolución de locate() (éxito o fallback demo). cancelSplashHold() en handleExplore/handleDemo evita que el intervalo "jale" al usuario tras entrar manual. Con deep link (?view=…) sigue entrando DIRECTO sin espera (guion QA intacto). Web/PWA sin cambios (demo instantáneo). Cleanup del intervalo en el unmount del efecto.
+- UX durante la espera: splash muestra "Localizándote…" (spinner) mientras corre el GPS; al resolver, los botones se habilitan y el ping del CTA sigue visible — el usuario puede entrar manual antes de los 2.2 s si quiere.
+- Verificación local (web, sandbox sin puente nativo): lint limpio; flujo manual portada→Explorar→mapa OK; ?view=add sigue instantáneo con URL limpiada; dev.log sin errores. El camino nativo (espera) queda garantizado por el techo de 4 s y se verifica real en el teléfono del usuario tras el deploy (WebView carga del servidor → sin AAB nuevo).
+- Docs: P1 del guion QA gana nota 📱 explicando la portada de unos segundos en la APK y que se puede entrar manual en cuanto se habilita el botón.
+
+Stage Summary:
+- PORTADA EN CADA APERTURA DE LA APK ✅ (2.2–4 s según GPS): el mapa abre con ubicación y lugares ya en marcha; enlaces compartidos siguen directos; web sin cambios. PENDIENTE: token de Vercel (el sandbox lo borró) → deploy a producción para que se perciba en el teléfono.
