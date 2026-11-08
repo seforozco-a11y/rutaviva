@@ -95,6 +95,21 @@ model AdminLoginLog {
   @@index([createdAt])
 }
 
+// Fragmentos temporales de una restauración de respaldo. Los archivos grandes
+// no caben en una sola petición de Vercel (límite 4.5 MB), así que el panel
+// los sube por partes: cada parte se guarda aquí y, al confirmar, se
+// reconstruye el JSON completo. Se purgan al confirmar o a las 24 h.
+model BackupChunk {
+  id        String   @id @default(cuid())
+  sessionId String // id de la subida (generado por el panel)
+  seq       Int // orden del fragmento (0, 1, 2…)
+  data      String // trozo de texto del respaldo (JSON)
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, seq])
+  @@index([createdAt])
+}
+
 // Reportes y comentarios de los usuarios (sin cuenta necesaria):
 //  - kind PLACE: "¿Información incorrecta?" en la ficha de un lugar
 //    (ubicación errónea, cerrado, fotos que no corresponden, duplicado…).

@@ -59,6 +59,7 @@ import {
 import { PhotoLightbox } from "@/components/rutaviva/photo-lightbox";
 import { PrivacyNotice } from "@/components/rutaviva/privacy-notice";
 import { PhotoCarousel } from "@/components/rutaviva/photo-carousel";
+import { BackupSection } from "./backup-section";
 import { useToast } from "@/hooks/use-toast";
 import { categoryLabel, SINGULAR_CATEGORIES } from "@/lib/geo";
 import { reportReasonLabel, type ReportKind } from "@/lib/reports";
@@ -680,7 +681,7 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
           </section>
 
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl bg-stone-100 p-1">
+            <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-2xl bg-stone-100 p-1">
               <TabsTrigger
                 value="review"
                 className="min-h-[40px] gap-1 rounded-xl text-xs font-bold data-[state=active]:bg-white"
@@ -703,6 +704,12 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
                 className="min-h-[40px] rounded-xl text-xs font-bold data-[state=active]:bg-white"
               >
                 Nuevo lugar
+              </TabsTrigger>
+              <TabsTrigger
+                value="backup"
+                className="min-h-[40px] rounded-xl text-xs font-bold data-[state=active]:bg-white"
+              >
+                Respaldos
               </TabsTrigger>
             </TabsList>
 
@@ -732,6 +739,10 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
 
             <TabsContent value="new" className="mt-4">
               <NewPlaceSection origin={origin} onCreated={refresh} onPublished={refreshPublic} />
+            </TabsContent>
+
+            <TabsContent value="backup" className="mt-4">
+              <BackupSection />
             </TabsContent>
           </Tabs>
         </>
