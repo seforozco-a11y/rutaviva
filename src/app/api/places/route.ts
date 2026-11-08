@@ -26,6 +26,64 @@ type PlaceDTO = {
 };
 
 /**
+ * Caché en memoria del catálogo público (Task 40): el query a la DB NO depende
+ * de lat/lng/categoría — la distancia y el orden se calculan en memoria por
+ * petición. Así cada instancia de función lee la DB como máximo 1 vez por
+ * minuto sin importar cuántos usuarios estén explorando. Crítica para el plan
+ * gratis de Neon (5 GB de transferencia/mes): el agotamiento de ese límite
+ * dejó la app vacía el 7-8 nov 2026.
+ */
+const PLACES_CACHE_TTL = 60_000;
+let placesCache: { ts: number; rows: PlaceDTO[] } | null = null;
+
+async function loadCatalogBase(): Promise<PlaceDTO[]> {
+  if (placesCache && Date.now() - placesCache.ts < PLACES_CACHE_TTL) {
+    return placesCache.rows;
+  }
+  const rows = await db.singularPlace.findMany({
+    where: { active: true, status: "APPROVED" },
+    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+    take: 200,
+    include: {
+      reviews: {
+        // Igual que en el detalle: las reseñas reportadas (flagged) no
+        // cuentan para el rating público mientras el equipo las revisa.
+        where: { status: "APPROVED", flagged: false },
+        select: { rating: true },
+      },
+    },
+  });
+  const mapped = rows.map((r) => {
+    const ratings = r.reviews.map((rv) => rv.rating);
+    const ratingCount = ratings.length;
+    const ratingAvg =
+      ratingCount > 0
+        ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratingCount) * 10) / 10
+        : null;
+    return {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      category: r.category,
+      categoryLabel:
+        SINGULAR_CATEGORIES.find((c) => c.id === r.category)?.label ?? "Lugar singular",
+      lat: r.lat,
+      lng: r.lng,
+      address: r.address,
+      imageUrl: r.imageUrl,
+      tips: r.tips,
+      featured: r.featured,
+      distanceKm: null,
+      ratingAvg,
+      ratingCount,
+      createdAt: r.createdAt.toISOString(),
+    };
+  });
+  placesCache = { ts: Date.now(), rows: mapped };
+  return mapped;
+}
+
+/**
  * GET /api/places
  *   ?lat=&lng=&radiusKm=&category=  → lugares APPROVED ordenados por cercanía
  *   Sin lat/lng → devuelve todos los publicados (ordenados por destacados)
@@ -44,50 +102,17 @@ export async function GET(req: NextRequest) {
 
     const hasOrigin = Number.isFinite(lat) && Number.isFinite(lng);
 
-    const rows = await db.singularPlace.findMany({
-      where: {
-        active: true,
-        status: "APPROVED",
-        ...(category && category !== "all" ? { category } : {}),
-      },
-      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-      take: 200,
-      include: {
-        reviews: {
-          // Igual que en el detalle: las reseñas reportadas (flagged) no
-          // cuentan para el rating público mientras el equipo las revisa.
-          where: { status: "APPROVED", flagged: false },
-          select: { rating: true },
-        },
-      },
-    });
+    // Catálogo base cacheado (máx 1 lectura de DB por minuto por instancia).
+    const base = await loadCatalogBase();
+    const byCategory =
+      category && category !== "all" ? base.filter((p) => p.category === category) : base;
 
-    const mapped: PlaceDTO[] = rows.map((r) => {
-      const ratings = r.reviews.map((rv) => rv.rating);
-      const ratingCount = ratings.length;
-      const ratingAvg =
-        ratingCount > 0
-          ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratingCount) * 10) / 10
-          : null;
-      return {
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        category: r.category,
-        categoryLabel:
-          SINGULAR_CATEGORIES.find((c) => c.id === r.category)?.label ?? "Lugar singular",
-        lat: r.lat,
-        lng: r.lng,
-        address: r.address,
-        imageUrl: r.imageUrl,
-        tips: r.tips,
-        featured: r.featured,
-        distanceKm: hasOrigin ? haversineKm({ lat, lng }, { lat: r.lat, lng: r.lng }) : null,
-        ratingAvg,
-        ratingCount,
-        createdAt: r.createdAt.toISOString(),
-      };
-    });
+    const mapped: PlaceDTO[] = hasOrigin
+      ? byCategory.map((p) => ({
+          ...p,
+          distanceKm: haversineKm({ lat, lng }, { lat: p.lat, lng: p.lng }),
+        }))
+      : byCategory;
 
     const filtered = hasOrigin
       ? mapped.filter((p) => (p.distanceKm ?? 0) <= radiusKm)
@@ -97,7 +122,11 @@ export async function GET(req: NextRequest) {
       ? [...filtered].sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0))
       : filtered;
 
-    return NextResponse.json({ places: sorted, total: sorted.length });
+    // Caché de borde además de la memoria local: Vercel re-sirve la respuesta
+    // desde el CDN por 60 s (por región) sin invocar la función.
+    const res = NextResponse.json({ places: sorted, total: sorted.length });
+    res.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    return res;
   } catch (err) {
     console.error("[api/places GET]", err);
     return NextResponse.json({ error: "No se pudieron cargar los lugares" }, { status: 500 });

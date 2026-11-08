@@ -5,6 +5,15 @@ import { SINGULAR_CATEGORIES } from "@/lib/geo";
 export const dynamic = "force-dynamic";
 
 /**
+ * Caché en memoria por lugar (Task 40, límite de transferencia de Neon):
+ * el detalle incluye fotos y reseñas con base64, y cada vista de ficha lo
+ * transfería completo desde la DB. Con esta caché + caché de borde, cada
+ * ficha lee la DB como máximo 1 vez por minuto por instancia.
+ */
+const DETAIL_CACHE_TTL = 60_000;
+const detailCache = new Map<string, { ts: number; body: Record<string, unknown> }>();
+
+/**
  * GET /api/places/[id] → detalle público de un lugar + reseñas APROBADAS
  * (con sus fotos aprobadas). Las reseñas reportadas por usuarios (flagged,
  * mecanismo "Reportar reseña" de la política UGC de Google Play) se excluyen
@@ -17,6 +26,13 @@ export async function GET(
 ) {
   try {
     const { id } = await ctx.params;
+
+    const hit = detailCache.get(id);
+    if (hit && Date.now() - hit.ts < DETAIL_CACHE_TTL) {
+      const cached = NextResponse.json(hit.body);
+      cached.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+      return cached;
+    }
 
     const place = await db.singularPlace.findUnique({
       where: { id },
@@ -52,7 +68,7 @@ export async function GET(
         ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratingCount) * 10) / 10
         : null;
 
-    return NextResponse.json({
+    const body = {
       place: {
         id: place.id,
         name: place.name,
@@ -87,7 +103,19 @@ export async function GET(
         createdAt: r.createdAt.toISOString(),
         photos: r.photos.map((p) => ({ id: p.id, url: p.url })),
       })),
-    });
+    };
+
+    // Higiene del mapa de caché: si crece mucho, expulsa entradas vencidas.
+    if (detailCache.size > 100) {
+      for (const [k, v] of detailCache) {
+        if (Date.now() - v.ts > DETAIL_CACHE_TTL) detailCache.delete(k);
+      }
+    }
+    detailCache.set(id, { ts: Date.now(), body });
+
+    const res = NextResponse.json(body);
+    res.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    return res;
   } catch (err) {
     console.error("[api/places/[id] GET]", err);
     return NextResponse.json({ error: "No se pudo cargar el lugar" }, { status: 500 });

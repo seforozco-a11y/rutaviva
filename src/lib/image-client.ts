@@ -1,12 +1,14 @@
 /**
  * Compresión de imágenes en el cliente para RutaViva.
- * Convierte un File en dataURL JPEG redimensionado (máx 1280 px el lado mayor,
- * calidad 0.72) para que quepa cómodamente en los límites de la API.
+ * Convierte un File en dataURL JPEG redimensionado (máx 960 px el lado mayor,
+ * calidad 0.66). Endurecido en la Task 40: las fotos viven como base64 dentro
+ * de la DB y Neon limita el plan gratis a 5 GB de transferencia/mes — cada
+ * KB ahorrado aquí multiplica en cada lectura.
  */
 
 const MAX_INPUT_BYTES = 12 * 1024 * 1024; // 12 MB
-const MAX_SIDE = 1280;
-const JPEG_QUALITY = 0.72;
+const MAX_SIDE = 960;
+const JPEG_QUALITY = 0.66;
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
