@@ -1064,3 +1064,15 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - E2E LOCAL VERIFICADA (agent-browser + round-trip por script): login PIN → tab Respaldos ✔; descargar → toast "Respaldo descargado" ✔; upload del JSON → diálogo "¿Restaurar la base de datos?" con fecha del respaldo → "Sí, restaurar" → toast "Base de datos restaurada" ✔. Round-trip API: respaldo con +1 lugar sintético restauró 15; original restauró 14 (el público ve 13: 1 lugar PENDING = estado preservado). Rechazos correctos: commit sin fragmentos → 400; JSON inválido → 400. Lint limpio. Móvil 390px OK (icono del tab retirado por desborde en pantalla chica).
 - NOTA DE DESPLIEGUE: este push dispara un deploy que FALLARÁ en build (P1001, Neon vieja sigue congelada) — es esperado e inofensivo; producción sigue sirviendo dpl_2p6QpN4S (portada OK). Todo entrará junto con la recuperación Opción B.
 - SIGUIENTE: Opción B — usuario crea cuenta Neon nueva (otro correo) + proyecto AWS US East 1 + pega cadena POOLED → upsert de envs en Vercel (DATABASE_URL + DIRECT_URL/POSTGRES_URL_NON_POOLING hacia la nueva) → deploy (db push + seed-if-empty repuebla) → verificación → PRIMER RESPALDO REAL del usuario. Recordatorios fijados: 15 nov (Play Console producción ~16-17) y 1 dic (rescate de reseñas/fotos de la Neon vieja apenas reinicie el ciclo, y no borrar la cuenta vieja antes).
+
+## Sesión: Opción B — nuevo proyecto Neon y reconexión de producción (8 nov 2026)
+
+- Neon viejo agotó 5.57/5 GB de transferencia mensual → cómputo congelado (P1001). Datos retenidos; rescate posible el 1 dic al reiniciar el ciclo.
+- Usuario creó cuenta Neon nueva (viverutaviva@gmail.com) → proyecto `rutaviva` (snowy-truth-56254959), AWS US East 2 (Ohio), Postgres 18.6.
+- Conexión verificada con pg (pooler + directa) ANTES de tocar Vercel. Nota: el host real es `ep-flat-bird-begk3q5z…` (una "g"; copiar la cadena, no leerla de capturas).
+- 16 variables de entorno reescritas por PATCH en Vercel (upsert rechazado con ENV_ALREADY_EXISTS por ser envs ligados a la integración vieja). ADMIN_PIN/ADMIN_SECRET/ADMIN_DEMO_PIN intactos.
+- Deploy de producción desde main: READY (dpl_954k3UsFrAoqB3rE25usDpmQtjhJ). El build ejecutó `prisma db push` + seed → 14 lugares (13 APPROVED + 1 PENDING demo), 8 reseñas demo, 4 fotos demo (rutas estáticas /images/reviews/*, sin base64).
+- Auditoría E2E con navegador real: portada permanente ✓, mapa + marcadores ✓, lista con distancias ✓, detalle Mercado Municipal (5.0★ · 1 reseña · imagen · tip) ✓, reseña de TacosLover19 + botón reportar ✓, cero errores de página/consola ✓.
+- Payload de /api/places: 7.4 KB (13 lugares, sin fotos embebidas) + blindaje de caché memoria+borde ya en main (59e49a5) → consumo de transferencia reducido ~99% vs el patrón que quemó Neon.
+- /api/diag ya no existe en main (removido en 59e49a5): la verificación se hizo vía /api/places y conteos directos en la DB.
+- Pendiente: script pg_dump timestamped hacia iCloud Drive del PC (definir Windows/Mac), rescate del proyecto viejo el 1 dic, aviso a los 12 verificadores.
