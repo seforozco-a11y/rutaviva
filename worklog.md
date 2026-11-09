@@ -1084,3 +1084,4 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - Mejoras UX de login desplegadas (f9c9936): leyenda del PIN explica el uso del ojo; error 401 ahora sugiere revisar letras parecidas (O/0, I/l).
 - El usuario realizó su PRIMER respaldo desde el panel (Admin → Respaldos → Descargar respaldo → Google Drive). Recordatorio de cadencia: semanal y tras cambios importantes.
 - Pendiente vigente: script pg_dump semanal en Windows del usuario (entregado, falta su primera corrida) y rescate del proyecto Neon viejo el 1 dic.
+- CIERRE DE SESIÓN (verificado): producción viva — GET /api/places → HTTP 200, 8.2 KB. Todo lo demás queda en manos del usuario: Capa 2 del respaldo (primera corrida del .bat), aviso a los 12 verificadores, solicitud de producción en Play Console (~16-17 nov) y rescate pg_dump de la Neon vieja (1 dic).
