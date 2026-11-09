@@ -339,7 +339,8 @@ function AdminLogin() {
             </button>
           </div>
           <p className="text-xs text-stone-400">
-            No distingue mayúsculas ni minúsculas.
+            No distingue mayúsculas ni minúsculas. Usa el ícono del ojo para verlo
+            antes de entrar y confirmar que no haya errores de tecleo.
           </p>
         </div>
 

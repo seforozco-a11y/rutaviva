@@ -53,7 +53,13 @@ export async function POST(req: NextRequest) {
     await db.adminLoginLog.create({ data: { ipHash, success: ok } });
 
     if (!ok) {
-      return NextResponse.json({ error: "PIN incorrecto" }, { status: 401 });
+      return NextResponse.json(
+        {
+          error:
+            "PIN incorrecto. Revisa letras parecidas (O y 0, I y l) o usa el ícono del ojo para verlo.",
+        },
+        { status: 401 }
+      );
     }
 
     // Éxito: limpia los fallos previos de esta IP (un equipo real que se
