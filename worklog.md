@@ -1076,3 +1076,11 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - Payload de /api/places: 7.4 KB (13 lugares, sin fotos embebidas) + blindaje de caché memoria+borde ya en main (59e49a5) → consumo de transferencia reducido ~99% vs el patrón que quemó Neon.
 - /api/diag ya no existe en main (removido en 59e49a5): la verificación se hizo vía /api/places y conteos directos en la DB.
 - Pendiente: script pg_dump timestamped hacia iCloud Drive del PC (definir Windows/Mac), rescate del proyecto viejo el 1 dic, aviso a los 12 verificadores.
+
+## Sesión: rotación de PIN de admin + claridad de URLs (8-9 nov 2026)
+
+- Usuario reportó no poder entrar al panel desde "la web" mientras la APK sí entraba. Diagnóstico con el registro AdminLoginLog (directo en Neon): el servidor aceptaba el PIN; la PC no enviaba solicitudes. Causa real: el usuario entraba a la vista previa del chat de desarrollo (preview-chat-….space-z.ai, con PIN de desarrollo) en lugar de producción (rutaviva-seven.vercel.app). Resuelto explicando la diferencia de entornos.
+- ADMIN_PIN rotado a petición del usuario (valor NO se registra aquí por ser repo público); verificado con HTTP 200 + cookie y control 401 en producción. Sesiones previas siguen válidas hasta expirar naturalmente (rotar ADMIN_SECRET invalida al instante, si algún día hace falta).
+- Mejoras UX de login desplegadas (f9c9936): leyenda del PIN explica el uso del ojo; error 401 ahora sugiere revisar letras parecidas (O/0, I/l).
+- El usuario realizó su PRIMER respaldo desde el panel (Admin → Respaldos → Descargar respaldo → Google Drive). Recordatorio de cadencia: semanal y tras cambios importantes.
+- Pendiente vigente: script pg_dump semanal en Windows del usuario (entregado, falta su primera corrida) y rescate del proyecto Neon viejo el 1 dic.
