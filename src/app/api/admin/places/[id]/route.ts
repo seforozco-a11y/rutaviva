@@ -5,6 +5,36 @@ import { validatePlaceInput } from "@/lib/server/moderation";
 
 export const dynamic = "force-dynamic";
 
+const LIGHT_PHOTO_URL = /^\/api\/images\/photo\/([a-zA-Z0-9]+)/;
+const LIGHT_PLACE_URL = /^\/api\/images\/place\/([a-zA-Z0-9]+)/;
+
+/**
+ * Resuelve una URL ligera (/api/images/photo/[id] o /api/images/place/[id])
+ * a la URL REAL guardada en la fila. Si el cliente envía URLs de la API de
+ * imágenes (p. ej. porque salió de una lista optimizada), las fotos existentes
+ * no se borran ni se re-crean: se preserva el dato original (base64 o ruta
+ * estática).
+ */
+async function resolvePhotoUrl(u: string): Promise<string> {
+  const photoMatch = LIGHT_PHOTO_URL.exec(u);
+  if (photoMatch) {
+    const row = await db.photo.findUnique({
+      where: { id: photoMatch[1] },
+      select: { url: true },
+    });
+    return row?.url ?? u;
+  }
+  const placeMatch = LIGHT_PLACE_URL.exec(u);
+  if (placeMatch) {
+    const row = await db.singularPlace.findUnique({
+      where: { id: placeMatch[1] },
+      select: { imageUrl: true },
+    });
+    return row?.imageUrl ?? u;
+  }
+  return u;
+}
+
 /**
  * GET /api/admin/places/[id] → detalle completo del lugar con TODAS sus fotos
  * de galería (cualquier estado, ordenadas de la más antigua a la más nueva).
@@ -92,7 +122,12 @@ export async function PATCH(
         data: {
           status: "APPROVED",
           active: true,
-          ...( !place.imageUrl && firstPending ? { imageUrl: firstPending.url } : {}),
+          ...( !place.imageUrl && firstPending
+            ? {
+                imageUrl: firstPending.url,
+                coverInline: firstPending.url.startsWith("data:"),
+              }
+            : {}),
         },
       });
       return NextResponse.json({ ok: true, action });
@@ -119,13 +154,27 @@ export async function PATCH(
     }
 
     if (action === "update") {
-      const parsed = validatePlaceInput(body);
+      // Normaliza URLs ligeras → crudas antes de validar (la validación solo
+      // acepta data URLs, /images/ o https).
+      const rawPhotosIn = Array.isArray(body?.photos)
+        ? await Promise.all((body.photos as unknown[]).map((u) => resolvePhotoUrl(String(u))))
+        : undefined;
+      const rawImageUrlIn =
+        typeof body?.imageUrl === "string" ? await resolvePhotoUrl(body.imageUrl) : body?.imageUrl;
+      const normalized = {
+        ...(body ?? {}),
+        ...(rawPhotosIn !== undefined ? { photos: rawPhotosIn } : {}),
+        ...(rawImageUrlIn !== undefined ? { imageUrl: rawImageUrlIn } : {}),
+      };
+      const parsed = validatePlaceInput(normalized);
       if (!parsed.ok) {
         return NextResponse.json({ error: parsed.error }, { status: 400 });
       }
       const featured =
         typeof body?.featured === "boolean" ? body.featured : place.featured;
       const { photos, ...placeFields } = parsed.data;
+      const coverInline =
+        !!placeFields.imageUrl && placeFields.imageUrl.startsWith("data:");
       // El panel nuevo siempre envía `photos` (arreglo completo de la galería,
       // photos[0] = portada). Si no viene el arreglo, solo se editan campos y
       // la galería queda intacta (compatibilidad con clientes anteriores).
@@ -134,7 +183,7 @@ export async function PATCH(
       await db.$transaction(async (tx) => {
         await tx.singularPlace.update({
           where: { id },
-          data: { ...placeFields, featured },
+          data: { ...placeFields, coverInline, featured },
         });
 
         if (syncGallery) {
@@ -162,6 +211,7 @@ export async function PATCH(
                 placeId: id,
                 url,
                 status: place.status === "APPROVED" ? "APPROVED" : "PENDING",
+                inline: url.startsWith("data:"),
               })),
             });
           }

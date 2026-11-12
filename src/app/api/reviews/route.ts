@@ -36,7 +36,11 @@ export async function POST(req: NextRequest) {
         comment: parsed.data.comment,
         status: "PENDING",
         photos: {
-          create: parsed.data.photos.map((url) => ({ url, status: "PENDING" })),
+          create: parsed.data.photos.map((url) => ({
+            url,
+            status: "PENDING",
+            inline: url.startsWith("data:"),
+          })),
         },
       },
     });

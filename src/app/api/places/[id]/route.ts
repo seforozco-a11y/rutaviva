@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { SINGULAR_CATEGORIES } from "@/lib/geo";
+import { photoImageUrl, placeCoverUrl } from "@/lib/image-urls";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Caché en memoria por lugar (Task 40, límite de transferencia de Neon):
- * el detalle incluye fotos y reseñas con base64, y cada vista de ficha lo
- * transfería completo desde la DB. Con esta caché + caché de borde, cada
- * ficha lee la DB como máximo 1 vez por minuto por instancia.
+ * cada ficha lee la DB como máximo 1 vez por minuto por instancia.
  */
 const DETAIL_CACHE_TTL = 60_000;
 const detailCache = new Map<string, { ts: number; body: Record<string, unknown> }>();
@@ -19,6 +18,11 @@ const detailCache = new Map<string, { ts: number; body: Record<string, unknown> 
  * mecanismo "Reportar reseña" de la política UGC de Google Play) se excluyen
  * mientras el equipo las revisa. Si el lugar está PENDING/REJECTED responde
  * 404: el público solo ve contenido validado por el equipo RutaViva.
+ *
+ * Blindaje de transferencia: las fotos inline (base64) NUNCA se leen de la DB
+ * aquí — solo sus ids + flags; el JSON expone rutas /api/images/... que sirven
+ * la imagen convertida a WebP con caché inmutable. Solo las fotos con URL
+ * normal (estática/https, ≤ 2000 chars) se leen en una segunda pasada.
  */
 export async function GET(
   _req: NextRequest,
@@ -36,21 +40,42 @@ export async function GET(
 
     const place = await db.singularPlace.findUnique({
       where: { id },
-      include: {
-        // Galería pública del lugar (fotos aprobadas, portada primero).
+      // SIN imageUrl ni photos.url: los base64 pueden pesar 150 KB por fila.
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        lat: true,
+        lng: true,
+        address: true,
+        tips: true,
+        featured: true,
+        city: true,
+        state: true,
+        status: true,
+        active: true,
+        coverInline: true,
+        updatedAt: true,
         photos: {
+          // Galería pública del lugar (fotos aprobadas, portada primero).
           where: { status: "APPROVED" },
           orderBy: { createdAt: "asc" },
-          select: { id: true, url: true },
+          select: { id: true, inline: true, createdAt: true },
         },
         reviews: {
           where: { status: "APPROVED", flagged: false },
           orderBy: { createdAt: "desc" },
           take: 50,
-          include: {
+          select: {
+            id: true,
+            authorName: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
             photos: {
               where: { status: "APPROVED" },
-              select: { id: true, url: true },
+              select: { id: true, inline: true, createdAt: true },
             },
           },
         },
@@ -61,12 +86,41 @@ export async function GET(
       return NextResponse.json({ error: "Lugar no encontrado" }, { status: 404 });
     }
 
+    // Portada: inline → ruta API; normal → segunda lectura barata.
+    const coverUrl = place.coverInline
+      ? placeCoverUrl(place.id, null, true, place.updatedAt)
+      : (
+          await db.singularPlace.findUnique({
+            where: { id },
+            select: { imageUrl: true },
+          })
+        )?.imageUrl ?? null;
+
+    // Fotos no inline (estáticas/https): una sola segunda lectura para todas.
+    const nonInlineIds = [
+      ...place.photos.filter((p) => !p.inline).map((p) => p.id),
+      ...place.reviews.flatMap((r) => r.photos.filter((p) => !p.inline).map((p) => p.id)),
+    ];
+    const staticUrls = new Map<string, string>();
+    if (nonInlineIds.length > 0) {
+      const raws = await db.photo.findMany({
+        where: { id: { in: nonInlineIds } },
+        select: { id: true, url: true },
+      });
+      for (const r of raws) if (r.url) staticUrls.set(r.id, r.url);
+    }
+
     const ratings = place.reviews.map((r) => r.rating);
     const ratingCount = ratings.length;
     const ratingAvg =
       ratingCount > 0
         ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratingCount) * 10) / 10
         : null;
+
+    const galleryUrls = place.photos.map((p) => ({
+      id: p.id,
+      url: photoImageUrl(p.id, staticUrls.get(p.id) ?? null, p.inline, p.createdAt)!,
+    }));
 
     const body = {
       place: {
@@ -79,14 +133,14 @@ export async function GET(
         lat: place.lat,
         lng: place.lng,
         address: place.address,
-        imageUrl: place.imageUrl,
+        imageUrl: coverUrl,
         // Galería: portada (imageUrl) primero, luego las fotos aprobadas que
         // no la dupliquen (p. ej. sugerencias de usuarios con 5 fotos).
         photos: [
-          ...(place.imageUrl && !place.photos.some((p) => p.url === place.imageUrl)
-            ? [{ id: "cover", url: place.imageUrl }]
+          ...(coverUrl && !galleryUrls.some((p) => p.url === coverUrl)
+            ? [{ id: "cover", url: coverUrl }]
             : []),
-          ...place.photos.map((p) => ({ id: p.id, url: p.url })),
+          ...galleryUrls,
         ],
         tips: place.tips,
         featured: place.featured,
@@ -101,7 +155,10 @@ export async function GET(
         rating: r.rating,
         comment: r.comment,
         createdAt: r.createdAt.toISOString(),
-        photos: r.photos.map((p) => ({ id: p.id, url: p.url })),
+        photos: r.photos.map((p) => ({
+          id: p.id,
+          url: photoImageUrl(p.id, staticUrls.get(p.id) ?? null, p.inline, p.createdAt)!,
+        })),
       })),
     };
 

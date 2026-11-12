@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminRequest, unauthorized } from "@/lib/admin-auth";
+import { placeCoverUrl } from "@/lib/image-urls";
 
 export const dynamic = "force-dynamic";
 
@@ -60,11 +61,42 @@ export async function GET(req: NextRequest) {
     const allPlaces = await db.singularPlace.findMany({
       orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
       take: 300,
-      include: {
+      // SIN imageUrl: portadas base64 de hasta 150 KB por fila no viajan a la
+      // lambda; la URL ligera se arma con coverInline + updatedAt.
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        lat: true,
+        lng: true,
+        address: true,
+        tips: true,
+        featured: true,
+        active: true,
+        status: true,
+        source: true,
+        suggestedBy: true,
+        city: true,
+        state: true,
+        description: true,
+        coverInline: true,
+        createdAt: true,
+        updatedAt: true,
         _count: { select: { reviews: true, photos: true } },
         reviews: { where: { status: "APPROVED" }, select: { rating: true } },
       },
     });
+
+    // Portadas no inline (estáticas/https): segunda lectura barata.
+    const coverNonInlineIds = allPlaces.filter((p) => !p.coverInline).map((p) => p.id);
+    const coverStatic = new Map<string, string>();
+    if (coverNonInlineIds.length > 0) {
+      const raws = await db.singularPlace.findMany({
+        where: { id: { in: coverNonInlineIds } },
+        select: { id: true, imageUrl: true },
+      });
+      for (const r of raws) if (r.imageUrl) coverStatic.set(r.id, r.imageUrl);
+    }
 
     const allPlacesDto = allPlaces.map((p) => {
       const ratings = p.reviews.map((r) => r.rating);
@@ -80,7 +112,8 @@ export async function GET(req: NextRequest) {
         lat: p.lat,
         lng: p.lng,
         address: p.address,
-        imageUrl: p.imageUrl,
+        // Inline → /api/images/place/[id]; estática/https → su propia URL.
+        imageUrl: placeCoverUrl(p.id, coverStatic.get(p.id) ?? null, p.coverInline, p.updatedAt),
         tips: p.tips,
         featured: p.featured,
         active: p.active,

@@ -175,6 +175,19 @@ export async function POST(req: NextRequest) {
       const { tables } = parsed;
 
       try {
+        // Los flags coverInline/inline se RECOMPUTAN desde el contenido real:
+        // respaldos hechos antes del blindaje de transferencia no los traen, y
+        // una fila base64 con flag false re-inflaría la lista pública.
+        const placeRows = tables.singularPlace.map((row) => ({
+          ...row,
+          coverInline:
+            typeof row.imageUrl === "string" && row.imageUrl.startsWith("data:"),
+        }));
+        const photoRows = tables.photo.map((row) => ({
+          ...row,
+          inline: typeof row.url === "string" && row.url.startsWith("data:"),
+        }));
+
         const restored = await db.$transaction(async (tx) => {
           // Borrado en orden inverso de dependencia (hijos primero).
           await tx.photo.deleteMany({});
@@ -184,9 +197,9 @@ export async function POST(req: NextRequest) {
 
           // Inserción en orden de dependencia (padres primero).
           const counts = {
-            singularPlace: await insertAll(tx.singularPlace, tables.singularPlace),
+            singularPlace: await insertAll(tx.singularPlace, placeRows),
             review: await insertAll(tx.review, tables.review),
-            photo: await insertAll(tx.photo, tables.photo),
+            photo: await insertAll(tx.photo, photoRows),
             report: await insertAll(tx.report, tables.report),
           };
           return counts;

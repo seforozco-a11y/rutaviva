@@ -30,6 +30,10 @@ model SingularPlace {
   suggestedBy String? // nombre del usuario que sugirió (si source = USER)
   city        String   @default("Manzanillo")
   state       String   @default("Colima")
+  // true cuando imageUrl es un data URL base64: la lista pública NO transfiere
+  // la imagen (era el patrón que quemó la cuota de Neon); la portada se sirve
+  // por /api/images/place/[id] con caché inmutable en el CDN.
+  coverInline Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -76,6 +80,9 @@ model Photo {
   reviewId  String?
   review    Review?        @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   status    String         @default("PENDING") // PENDING | APPROVED | REJECTED
+  // true cuando url es un data URL base64: los JSON públicos devuelven una URL
+  // ligera (/api/images/photo/[id]) en vez del base64 completo.
+  inline    Boolean        @default(false)
   createdAt DateTime       @default(now())
 
   @@index([placeId])

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { haversineKm, SINGULAR_CATEGORIES } from "@/lib/geo";
 import { validatePlaceInput } from "@/lib/server/moderation";
+import { placeCoverUrl } from "@/lib/image-urls";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -40,19 +42,50 @@ async function loadCatalogBase(): Promise<PlaceDTO[]> {
   if (placesCache && Date.now() - placesCache.ts < PLACES_CACHE_TTL) {
     return placesCache.rows;
   }
+  /**
+   * SIN imageUrl: las portadas base64 pesan hasta 150 KB por fila y la lista
+   * no las necesita — la URL ligera se construye con coverInline + updatedAt.
+   * Esta consulta es la que más se repite en toda la app: cada byte cuenta
+   * para la cuota de transferencia de Neon.
+   */
   const rows = await db.singularPlace.findMany({
     where: { active: true, status: "APPROVED" },
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     take: 200,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      category: true,
+      lat: true,
+      lng: true,
+      address: true,
+      tips: true,
+      featured: true,
+      coverInline: true,
+      updatedAt: true,
+      createdAt: true,
       reviews: {
         // Igual que en el detalle: las reseñas reportadas (flagged) no
         // cuentan para el rating público mientras el equipo las revisa.
         where: { status: "APPROVED", flagged: false },
         select: { rating: true },
       },
-    },
+    } satisfies Prisma.SingularPlaceSelect,
   });
+
+  // Segunda lectura SOLO para las portadas no inline (rutas estáticas o https,
+  // ≤ 2000 caracteres): barata y necesaria para exponerlas tal cual.
+  const nonInlineIds = rows.filter((r) => !r.coverInline).map((r) => r.id);
+  const staticUrls = new Map<string, string>();
+  if (nonInlineIds.length > 0) {
+    const raws = await db.singularPlace.findMany({
+      where: { id: { in: nonInlineIds } },
+      select: { id: true, imageUrl: true },
+    });
+    for (const r of raws) if (r.imageUrl) staticUrls.set(r.id, r.imageUrl);
+  }
+
   const mapped = rows.map((r) => {
     const ratings = r.reviews.map((rv) => rv.rating);
     const ratingCount = ratings.length;
@@ -70,7 +103,9 @@ async function loadCatalogBase(): Promise<PlaceDTO[]> {
       lat: r.lat,
       lng: r.lng,
       address: r.address,
-      imageUrl: r.imageUrl,
+      // Inline → ruta de la API de imágenes (base64 nunca viaja al cliente);
+      // estática/https → su propia URL.
+      imageUrl: placeCoverUrl(r.id, staticUrls.get(r.id) ?? null, r.coverInline, r.updatedAt),
       tips: r.tips,
       featured: r.featured,
       distanceKm: null,
@@ -154,10 +189,13 @@ export async function POST(req: NextRequest) {
     const suggestedBy = suggestedByRaw ? suggestedByRaw.slice(0, 40) : null;
 
     const { photos, ...placeData } = parsed.data;
+    const coverInline =
+      !!placeData.imageUrl && placeData.imageUrl.startsWith("data:");
 
     const created = await db.singularPlace.create({
       data: {
         ...placeData,
+        coverInline,
         status: "PENDING",
         source: "USER",
         suggestedBy,
@@ -166,7 +204,11 @@ export async function POST(req: NextRequest) {
         ...(photos.length > 0
           ? {
               photos: {
-                create: photos.map((url) => ({ url, status: "PENDING" })),
+                create: photos.map((url) => ({
+                  url,
+                  status: "PENDING",
+                  inline: url.startsWith("data:"),
+                })),
               },
             }
           : {}),
