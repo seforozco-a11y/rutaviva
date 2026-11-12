@@ -1085,3 +1085,17 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - El usuario realizó su PRIMER respaldo desde el panel (Admin → Respaldos → Descargar respaldo → Google Drive). Recordatorio de cadencia: semanal y tras cambios importantes.
 - Pendiente vigente: script pg_dump semanal en Windows del usuario (entregado, falta su primera corrida) y rescate del proyecto Neon viejo el 1 dic.
 - CIERRE DE SESIÓN (verificado): producción viva — GET /api/places → HTTP 200, 8.2 KB. Todo lo demás queda en manos del usuario: Capa 2 del respaldo (primera corrida del .bat), aviso a los 12 verificadores, solicitud de producción en Play Console (~16-17 nov) y rescate pg_dump de la Neon vieja (1 dic).
+
+## Sesión: blindaje de transferencia de imágenes inline (9 nov 2026)
+
+- Hallazgo al arrancar: /api/places en producción pasó de 8.2 KB → 527 KB. Causa: 7 lugares nuevos de Manzanillo creados por el equipo, 6 con portada base64 de 45-146 KB incrustada en imageUrl (los verificadores ya están usando el panel).
+- Solución implementada (commit cc61018, pendiente de deploy por token muerto):
+  - Schema: `SingularPlace.coverInline` + `Photo.inline` (Boolean default false) → el listado consulta SIN imageUrl y arma la URL ligera con el flag + updatedAt/createdAt.
+  - NUEVO `/api/images/place/[id]` y `/api/images/photo/[id]`: sirven el base64 convertido a WebP 720px q72 con sharp + `Cache-Control: public, max-age=31536000, immutable, s-maxage=31536000` (el query ?v= versiona). Caché en memoria de la función (10 min, máx 40). Público exige APPROVED (+admin cookie para PENDING); 404 en vez de 401 para no filtrar existencia.
+  - `/api/places`, `/api/places/[id]` y `/api/admin/overview` devuelven URLs ligeras; segunda lectura barata solo para portadas/fotos no inline (estáticas/https).
+  - Colas de moderación (pendingPlaces/pendingReviews/flagged) conservan URLs CRUDAS: el flujo "Validar y publicar" las reenvía al PATCH.
+  - PATCH admin "update": normaliza URLs ligeras (/api/images/photo|place/{id}) a su valor real ANTES de validar y sincronizar la galería — evita borrar fotos existentes cuando un cliente sale de una lista optimizada.
+  - Restore: recomputa coverInline/inline al restaurar (respaldos previos no traen los flags).
+  - Creación (POST /api/places, admin POST/PATCH, POST /api/reviews): persiste el flag según contenido.
+- E2E local: lista 7.8 KB sin base64 con 15 lugares; detalle 0.6 KB; portada inline 2177 KB → 82.5 KB WebP (96% menos) con caché inmutable; PENDING sin cookie → 404; PATCH con URLs ligeras preserva la foto original; render verificado en navegador (Agent Browser: img naturalWidth > 0 para /api/images/place/... y /api/images/photo/...). Lint limpio.
+- DESPLIEGUE PENDIENTE: el token de Vercel del sandbox está revocado ("User not found"); pedir token nuevo al usuario. Tras el deploy: re-ejecutar `UPDATE "SingularPlace" SET "coverInline" = ("imageUrl" LIKE 'data:%'); UPDATE "Photo" SET "inline" = ("url" LIKE 'data:%');` (falló antes porque el build es quien crea las columnas con db push) y verificar payload de /api/places ~10 KB.
