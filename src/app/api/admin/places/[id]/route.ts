@@ -37,7 +37,8 @@ async function resolvePhotoUrl(u: string): Promise<string> {
 
 /**
  * GET /api/admin/places/[id] → detalle completo del lugar con TODAS sus fotos
- * de galería (cualquier estado, ordenadas de la más antigua a la más nueva).
+ * de galería (cualquier estado, en el orden elegido por el equipo; si nunca se
+ * reordenó, del más antiguo al más nuevo).
  * Lo usa el diálogo "Editar" del panel: la portada (imageUrl) puede vivir
  * fuera de la galería, así que el panel la agrega al frente.
  */
@@ -53,7 +54,7 @@ export async function GET(
       where: { id },
       include: {
         photos: {
-          orderBy: { createdAt: "asc" },
+          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
           select: { id: true, url: true, status: true, createdAt: true },
         },
       },
@@ -88,9 +89,10 @@ export async function GET(
  *  - "feature" / "unfeature" → destacar o quitar destaque.
  *  - "update"  → edita campos (validados con los mismos formatos de publicación).
  *    Si el cliente envía `photos` (arreglo), TAMBIÉN sincroniza la galería
- *    completa del lugar: quita las fotos eliminadas, agrega las nuevas y deja
- *    photos[0] como portada. Clientes que solo envían imageUrl conservan la
- *    galería intacta (compatibilidad hacia atrás).
+ *    completa del lugar: quita las fotos eliminadas, agrega las nuevas, deja
+ *    photos[0] como portada y guarda el orden enviado (photos[i] → order i).
+ *    Clientes que solo envían imageUrl conservan la galería intacta
+ *    (compatibilidad hacia atrás).
  */
 export async function PATCH(
   req: NextRequest,
@@ -105,7 +107,7 @@ export async function PATCH(
 
     const place = await db.singularPlace.findUnique({
       where: { id },
-      include: { photos: { orderBy: { createdAt: "asc" } } },
+      include: { photos: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] } },
     });
     if (!place) {
       return NextResponse.json({ error: "Lugar no encontrado" }, { status: 404 });
@@ -190,7 +192,7 @@ export async function PATCH(
           // Sin duplicados y conservando el orden enviado.
           const nextUrls = [...new Set(photos)];
           const nextSet = new Set(nextUrls);
-          const existing = place.photos; // ya viene ordenada por createdAt asc
+          const existing = place.photos; // orden elegido (order asc, luego createdAt)
 
           // 1) Quitar las fotos que el equipo eliminó en la edición.
           const toDelete = existing.filter((p) => !nextSet.has(p.url));
@@ -203,6 +205,7 @@ export async function PATCH(
           // 2) Agregar las fotos nuevas. En lugares ya publicados nacen
           //    aprobadas (las sube el equipo tras revisarlas); en sugerencias
           //    PENDING nacen pendientes y "approve" las aprueba al publicar.
+          //    Cada foto nace con su posición final en la galería.
           const existingUrls = new Set(existing.map((p) => p.url));
           const toAdd = nextUrls.filter((u) => !existingUrls.has(u));
           if (toAdd.length > 0) {
@@ -212,6 +215,7 @@ export async function PATCH(
                 url,
                 status: place.status === "APPROVED" ? "APPROVED" : "PENDING",
                 inline: url.startsWith("data:"),
+                order: nextUrls.indexOf(url),
               })),
             });
           }
@@ -225,6 +229,18 @@ export async function PATCH(
               data: { status: "APPROVED" },
             });
           }
+
+          // 4) Guardar el orden elegido por el equipo (la posición i del
+          //    arreglo enviado = order i). Así el reordenamiento sobrevive
+          //    al guardar y la galería pública lo respeta.
+          await Promise.all(
+            nextUrls.map((url, idx) =>
+              tx.photo.updateMany({
+                where: { placeId: id, url },
+                data: { order: idx },
+              })
+            )
+          );
         }
       });
       return NextResponse.json({ ok: true, action });

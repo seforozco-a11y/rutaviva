@@ -58,9 +58,10 @@ export async function GET(
         coverInline: true,
         updatedAt: true,
         photos: {
-          // Galería pública del lugar (fotos aprobadas, portada primero).
+          // Galería pública del lugar (fotos aprobadas, en el orden que el
+          // equipo definió; order 0 = portada).
           where: { status: "APPROVED" },
-          orderBy: { createdAt: "asc" },
+          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
           select: { id: true, inline: true, createdAt: true },
         },
         reviews: {

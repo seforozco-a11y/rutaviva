@@ -83,6 +83,9 @@ model Photo {
   // true cuando url es un data URL base64: los JSON públicos devuelven una URL
   // ligera (/api/images/photo/[id]) en vez del base64 completo.
   inline    Boolean        @default(false)
+  // Posición de la foto en la galería del lugar (0 = portada). La define el
+  // equipo al editar el lugar; el orden de subida solo es el respaldo inicial.
+  order     Int            @default(0)
   createdAt DateTime       @default(now())
 
   @@index([placeId])

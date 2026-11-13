@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         db.singularPlace.findMany({
           where: { status: "PENDING" },
           orderBy: { createdAt: "desc" },
-          include: { photos: { orderBy: { createdAt: "asc" } } },
+          include: { photos: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] } },
         }),
         db.review.findMany({
           where: { status: "PENDING" },

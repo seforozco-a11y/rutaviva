@@ -34,13 +34,15 @@ export async function POST(req: NextRequest) {
         status: "APPROVED",
         source: "ADMIN",
         // Galería completa; los lugares creados por admin nacen aprobados.
+        // El orden del arreglo es el elegido en el formulario (photos[0] = portada).
         ...(photos.length > 0
           ? {
               photos: {
-                create: photos.map((url) => ({
+                create: photos.map((url, idx) => ({
                   url,
                   status: "APPROVED",
                   inline: url.startsWith("data:"),
+                  order: idx,
                 })),
               },
             }
