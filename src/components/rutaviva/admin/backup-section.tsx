@@ -7,6 +7,7 @@ import {
   DatabaseBackup,
   Download,
   FileJson,
+  FileSpreadsheet,
   Loader2,
   Upload,
 } from "lucide-react";
@@ -95,6 +96,7 @@ export function BackupSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [exporting, setExporting] = useState(false);
+  const [exportingXlsx, setExportingXlsx] = useState(false);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -153,6 +155,67 @@ export function BackupSection() {
       });
     } finally {
       setExporting(false);
+    }
+  }
+
+  /* ---------- Descargar respaldo en EXCEL (listado con fotos) ---------- */
+  async function handleExportExcel() {
+    setExportingXlsx(true);
+    try {
+      const res = await fetch("/api/admin/backup-excel");
+      if (res.status === 401) {
+        toast({
+          variant: "destructive",
+          description: "Tu sesión expiró. Vuelve a iniciar sesión en el panel.",
+        });
+        return;
+      }
+      if (!res.ok) throw new Error("El servidor no pudo generar el Excel");
+
+      const blob = await res.blob();
+      const header = res.headers.get("Content-Disposition") ?? "";
+      const match = /filename="([^"]+)"/.exec(header);
+      const filename = match?.[1] ?? `respaldo-rutaviva-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      let summary = "";
+      try {
+        const counts = JSON.parse(res.headers.get("X-Backup-Counts") ?? "{}") as {
+          places?: number;
+          photos?: number;
+          reviews?: number;
+          reports?: number;
+        };
+        const parts: string[] = [];
+        if (counts.places) parts.push(`${counts.places} lugares`);
+        if (counts.photos) parts.push(`${counts.photos} fotos`);
+        if (counts.reviews) parts.push(`${counts.reviews} reseñas`);
+        if (counts.reports) parts.push(`${counts.reports} reportes`);
+        summary = parts.join(" · ");
+      } catch {
+        /* el resumen es opcional */
+      }
+
+      toast({
+        title: "Excel descargado",
+        description: `${filename} · ${formatBytes(blob.size)}${summary ? ` · ${summary}` : ""}`,
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        description:
+          err instanceof Error ? err.message : "No se pudo descargar el Excel. Intenta de nuevo.",
+      });
+    } finally {
+      setExportingXlsx(false);
     }
   }
 
@@ -303,6 +366,46 @@ export function BackupSection() {
             <li>• Descárgalo al menos una vez por semana y siempre después de aprobar reseñas o lugares.</li>
             <li>• Guarda 2 copias: una en tu PC y otra en la nube (correo, Drive…).</li>
             <li>• Hazlo desde el navegador de tu computadora (el WebView de la app puede bloquear descargas).</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileSpreadsheet className="h-5 w-5" aria-hidden />
+            Respaldo en Excel (listado con fotos)
+          </CardTitle>
+          <CardDescription>
+            Listado legible para hojear y archivar: lugares del más reciente al más antiguo,
+            reseñas, reportes y TODAS las fotos incrustadas (compactadas para que el archivo
+            sea liviano). Para restaurar la base usa el respaldo JSON de arriba.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={exportingXlsx || exporting || restoring}
+            className="w-full min-h-[44px] font-bold"
+          >
+            {exportingXlsx ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Generando Excel…
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" aria-hidden />
+                Descargar Excel con fotos
+              </>
+            )}
+          </Button>
+          <ul className="space-y-1 text-xs leading-relaxed text-stone-500">
+            <li>• Hojas: Resumen, Lugares (nuevos→antiguos), Fotos (con imagen), Reseñas y Reportes.</li>
+            <li>• En “Fotos”, cada foto va una por fila con su imagen, posición (Portada, 2ª…) y estado (las apartadas al baúl también aparecen marcadas).</li>
+            <li>• Descárgalo también desde el navegador de tu computadora.</li>
           </ul>
         </CardContent>
       </Card>
