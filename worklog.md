@@ -1108,3 +1108,15 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - E2E local (Agent Browser): visor abre/cierra sobre el diálogo de edición, pantalla completa OK, mover foto → orden cambia, guardar → reabrir conserva el orden, galería pública refleja el orden. Lint limpio.
 - Commit 787ba5c en main; deploy producción dpl_8in9eSy74opAdAuXS2i93L1PvPR9 READY; verificado: /api/places/[id] responde con galería (el orderBy order asc funcionó → columna en Neon OK).
 - NOTA: el sandbox volvió a borrar /home/z/.vercel-token (3a. vez); restaurado desde el chat y deploy lanzado. Vigilar al inicio de cada sesión.
+
+## Sesión: recorte libre de fotos en el panel (12 nov 2026)
+
+- Usuario pidió poder RECORTAR las fotos (largo y/o ancho a su criterio) en "Por revisar" y en "Editar".
+- Nuevo PhotoCropDialog (react-image-crop v11): selección LIBRE (bordes y esquinas arrastrables; en táctil asas de 24 px solo en esquinas), regla de tercios, área seleccionada en px naturales en vivo, botón "usar toda la foto", Cancelar/Aplicar; capa apilable con useBackClose. Misma mecánica en Validar sugerencia, Editar y Nuevo lugar (componente compartido).
+- image-client: cropPhotoToDataUrl(url, area natural) — recorta y comprime con el estándar de subida (JPEG máx 960 px q0.66, fondo blanco para transparencias); error claro si el origen https externo impide leer píxeles (SecurityError → mensaje).
+- PhotoUpload: botón de recorte (ícono Crop) junto a la ✕; al aplicar reemplaza la url en el arreglo — el PATCH la sincroniza como fila nueva (inline=true) con su order; imageUrl=photos[0] si se recortó la portada.
+- BUGS encontrados y corregidos durante E2E:
+  1) Escala: al aplicar se mezclaban unidades (% × factor de pantalla en vez de % × tamaño natural) → el recorte salía desplazado y reducido. Corregido: área = %/100 × natural.
+  2) Caché: reabrir el diálogo Editar servía la respuesta vieja de ["admin-place"] (staleTime 60 s) → parecía que el recorte/orden no se guardaba (la DB sí lo tenía). Corregido: editPlace y publishValidated invalidan ["admin-place", id] además de ["place-detail", id].
+- E2E local completo: recorte por esquina (546×635 de 1024×1024), recorte por borde (919×768 de 1344×768, ancho puro), aplicar → miniatura data URL con dimensiones EXACTAS de la selección, guardar → reabrir conserva el recorte, galería pública lo sirve vía /api/images/photo/[id] (WebP 59.5 KB). Sugerencia en Por revisar: recorte OK, cerrado sin publicar (demo intacta).
+- Commit c4d2c19 → deploy dpl_8c9Kff6EvVjvi25zgxf65szZVhTh READY → verificado en PRODUCCIÓN (solo lectura): login admin, Editar un lugar, botones "Recortar foto N" presentes; sin mutar datos.
