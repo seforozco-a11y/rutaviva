@@ -250,9 +250,10 @@ export function PlaceFieldsForm({
         label="Fotos del lugar"
       />
       <p className="text-xs leading-relaxed text-stone-400">
-        Toca una foto para verla en grande. Con las flechas ◀ ▶ cambias el orden: la
-        primera foto es la <strong className="font-semibold">portada</strong> de la ficha
-        y las demás aparecen en la galería (máximo 5).
+        Toca una foto para verla en grande. Con el ícono de recorte ajustas el
+        largo y el ancho; con las flechas ◀ ▶ cambias el orden: la primera foto es
+        la <strong className="font-semibold">portada</strong> de la ficha y las
+        demás aparecen en la galería (máximo 5).
       </p>
 
       <div className="space-y-1.5">

@@ -10,6 +10,9 @@ const MAX_INPUT_BYTES = 12 * 1024 * 1024; // 12 MB
 const MAX_SIDE = 960;
 const JPEG_QUALITY = 0.66;
 
+/** Área de recorte en píxeles NATURALES de la imagen original. */
+export type CropArea = { x: number; y: number; width: number; height: number };
+
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -66,5 +69,59 @@ export async function fileToDataUrl(file: File): Promise<string> {
   } catch {
     // Sin redimensionado disponible: enviamos el original comprimido por el usuario.
     return rawDataUrl;
+  }
+}
+
+/**
+ * Recorta un área de la imagen (en píxeles NATURALES) y la comprime con el
+ * MISMO estándar de subida: JPEG, lado mayor máx 960 px, calidad 0.66.
+ * Lo usa el diálogo de recorte del panel (fotos de lugares).
+ * Lanza error con mensaje en claro si el área es inválida o el origen de la
+ * imagen (https externo sin CORS) impide leer los píxeles.
+ */
+export async function cropPhotoToDataUrl(url: string, area: CropArea): Promise<string> {
+  if (area.width < 8 || area.height < 8) {
+    throw new Error(
+      "El recorte quedó demasiado pequeño. Arrastra las esquinas para cubrir más área."
+    );
+  }
+  const img = await loadImage(url);
+  if (!img.naturalWidth || !img.naturalHeight) {
+    throw new Error("La imagen no se pudo procesar para recortar.");
+  }
+  // Recorte acotado a los límites reales de la imagen (evita bordes vacíos).
+  const sx = Math.max(0, Math.min(Math.round(area.x), img.naturalWidth - 1));
+  const sy = Math.max(0, Math.min(Math.round(area.y), img.naturalHeight - 1));
+  const sw = Math.max(1, Math.round(Math.min(area.width, img.naturalWidth - sx)));
+  const sh = Math.max(1, Math.round(Math.min(area.height, img.naturalHeight - sy)));
+
+  const longest = Math.max(sw, sh);
+  const scale = longest > MAX_SIDE ? MAX_SIDE / longest : 1;
+  const w = Math.max(1, Math.round(sw * scale));
+  const h = Math.max(1, Math.round(sh * scale));
+
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("El navegador no pudo procesar el recorte.");
+    // Fondo blanco: fotos con transparencia (PNG) no se aplanan a negro en JPEG.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+
+    const out = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    if (!out.startsWith("data:image/")) {
+      throw new Error("No se pudo generar la imagen recortada.");
+    }
+    return out;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "SecurityError") {
+      throw new Error(
+        "Esta foto no se puede recortar porque viene de un origen externo. Edítala en tu dispositivo y súbela de nuevo."
+      );
+    }
+    throw err;
   }
 }

@@ -450,6 +450,9 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
       });
       refresh();
       refreshPublic();
+      // La galería del lugar cambió (fotos aprobadas y sincronizadas):
+      // invalidar el detalle del panel y el detalle público.
+      void queryClient.invalidateQueries({ queryKey: ["admin-place", pendingId] });
       void queryClient.invalidateQueries({ queryKey: ["place-detail", pendingId] });
     },
     [toast, refresh, refreshPublic, queryClient]
@@ -483,6 +486,9 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
       toast({ title: "Lugar actualizado", description: `${values.name.trim()} quedó al día.` });
       refresh();
       refreshPublic();
+      // El detalle del panel (galería usada por el diálogo Editar) cambió:
+      // invalidar para que reabrir muestre fotos/recortes/orden actuales.
+      void queryClient.invalidateQueries({ queryKey: ["admin-place", row.id] });
       void queryClient.invalidateQueries({ queryKey: ["place-detail", row.id] });
     },
     [toast, refresh, refreshPublic, queryClient]

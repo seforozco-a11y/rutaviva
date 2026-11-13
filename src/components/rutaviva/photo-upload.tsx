@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, ImagePlus, Loader2, X } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Crop, ImagePlus, Loader2, X } from "lucide-react";
 import { fileToDataUrl } from "@/lib/image-client";
 import { cn } from "@/lib/utils";
 import { PhotoLightbox } from "@/components/rutaviva/photo-lightbox";
+import { PhotoCropDialog } from "@/components/rutaviva/photo-crop-dialog";
 
 type PhotoUploadProps = {
   photos: string[];
@@ -25,6 +26,9 @@ type PhotoUploadProps = {
  * Cada miniatura también permite:
  *  - Verla en grande (visor PhotoLightbox con pantalla completa, compatible
  *    con el botón atrás del móvil).
+ *  - Recortarla libremente (largo y/o ancho) con el ícono de recorte: abre un
+ *    editor con asas arrastrables y al aplicar reemplaza la foto comprimida
+ *    con el mismo estándar de subida.
  *  - Reordenarla con flechas ◀ ▶ (la primera posición es la portada de la
  *    ficha; con menos de 2 fotos los controles no aparecen).
  */
@@ -35,6 +39,8 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
   const [error, setError] = useState<string | null>(null);
   /** Índice de la foto ampliada en el visor (null = visor cerrado). */
   const [viewIdx, setViewIdx] = useState<number | null>(null);
+  /** Índice de la foto en el editor de recorte (null = cerrado). */
+  const [cropIdx, setCropIdx] = useState<number | null>(null);
   const full = photos.length >= max;
   const reorderable = photos.length > 1;
 
@@ -130,14 +136,25 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
               </span>
             )}
 
-            <button
-              type="button"
-              onClick={() => removeAt(i)}
-              aria-label={`Quitar foto ${i + 1}`}
-              className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-stone-900/70 text-white shadow transition hover:bg-stone-900"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden />
-            </button>
+            <div className="absolute right-1 top-1 z-10 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCropIdx(i)}
+                aria-label={`Recortar foto ${i + 1}`}
+                title="Recortar esta foto"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-900/70 text-white shadow transition hover:bg-stone-900"
+              >
+                <Crop className="h-3.5 w-3.5" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => removeAt(i)}
+                aria-label={`Quitar foto ${i + 1}`}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-900/70 text-white shadow transition hover:bg-stone-900"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
 
             {reorderable && (
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/55 to-transparent px-1 pb-1 pt-4">
@@ -237,6 +254,23 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
         alt={viewIdx !== null ? `Foto ${viewIdx + 1} de ${photos.length}` : "Foto"}
         onClose={() => setViewIdx(null)}
       />
+
+      {/* Editor de recorte libre: al aplicar, reemplaza la foto del formulario. */}
+      {cropIdx !== null && photos[cropIdx] && (
+        <PhotoCropDialog
+          key={`${cropIdx}-${photos[cropIdx].slice(-24)}`}
+          url={photos[cropIdx]}
+          title={`Recortar foto ${cropIdx + 1} de ${photos.length}`}
+          onApply={(dataUrl) => {
+            const next = [...photos];
+            next[cropIdx] = dataUrl;
+            onChange(next);
+            setCropIdx(null);
+            setError(null);
+          }}
+          onClose={() => setCropIdx(null)}
+        />
+      )}
     </div>
   );
 }
