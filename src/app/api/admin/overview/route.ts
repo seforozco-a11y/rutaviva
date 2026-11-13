@@ -82,7 +82,14 @@ export async function GET(req: NextRequest) {
         coverInline: true,
         createdAt: true,
         updatedAt: true,
-        _count: { select: { reviews: true, photos: true } },
+        _count: {
+          select: {
+            reviews: true,
+            // "Fotos" del catálogo = galería real del lugar: se excluyen las
+            // apartadas en el baúl y las rechazadas.
+            photos: { where: { archived: false, status: { not: "REJECTED" } } },
+          },
+        },
         reviews: { where: { status: "APPROVED" }, select: { rating: true } },
       },
     });
@@ -156,7 +163,12 @@ export async function GET(req: NextRequest) {
         city: p.city,
         state: p.state,
         createdAt: p.createdAt.toISOString(),
-        photos: p.photos.map((ph) => ({ id: ph.id, url: ph.url, status: ph.status })),
+        photos: p.photos.map((ph) => ({
+          id: ph.id,
+          url: ph.url,
+          status: ph.status,
+          archived: ph.archived,
+        })),
       })),
       pendingReviews: pendingReviews.map((r) => ({
         id: r.id,

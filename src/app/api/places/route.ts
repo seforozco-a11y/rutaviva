@@ -201,15 +201,18 @@ export async function POST(req: NextRequest) {
         suggestedBy,
         // Galería completa: cada foto entra con status PENDING y se aprueba
         // junto con el lugar desde el panel de administración. El orden del
-        // arreglo es el que decidió quien sugiere (photos[0] = portada).
+        // arreglo es el que decidió quien sugiere (la primera foto ACTIVA es
+        // la portada); las fotos apartadas en el baúl se conservan con su
+        // bandera para que el equipo las vea al validar.
         ...(photos.length > 0
           ? {
               photos: {
-                create: photos.map((url, idx) => ({
-                  url,
+                create: photos.map((p, idx) => ({
+                  url: p.url,
                   status: "PENDING",
-                  inline: url.startsWith("data:"),
+                  inline: p.url.startsWith("data:"),
                   order: idx,
+                  archived: p.archived,
                 })),
               },
             }

@@ -73,10 +73,15 @@ import {
   PlaceFieldsForm,
   type PlaceFormValues,
 } from "./place-fields-form";
+import {
+  capActivePhotos,
+  firstActivePhotoUrl,
+  type FormPhoto,
+} from "@/components/rutaviva/photo-upload";
 
 /* ==================== Tipos del overview ==================== */
 
-type AdminPhoto = { id: string; url: string; status: string };
+type AdminPhoto = { id: string; url: string; status: string; archived?: boolean };
 
 type AdminPendingPlace = {
   id: string;
@@ -424,9 +429,11 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
           lat,
           lng,
           address: values.address.trim() || null,
-          imageUrl: values.photos[0] ?? null,
-          // Galería completa (photos[0] = portada): el backend sincroniza las
-          // fotos del lugar (quita eliminadas, agrega nuevas).
+          // Portada = primera foto ACTIVA (las del baúl no se publican).
+          imageUrl: firstActivePhotoUrl(values.photos),
+          // Galería completa con banderas de baúl: el backend sincroniza las
+          // fotos del lugar (quita las retiradas del arreglo, conserva las del
+          // baúl para poder restaurarlas).
           photos: values.photos,
           tips: values.tips.trim() || null,
           city: values.city.trim() || "Manzanillo",
@@ -472,9 +479,11 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
           lat,
           lng,
           address: values.address.trim() || null,
-          imageUrl: values.photos[0] ?? null,
-          // Galería completa (photos[0] = portada): el backend sincroniza las
-          // fotos del lugar (quita eliminadas, agrega nuevas).
+          // Portada = primera foto ACTIVA (las del baúl no se publican).
+          imageUrl: firstActivePhotoUrl(values.photos),
+          // Galería completa con banderas de baúl: el backend sincroniza las
+          // fotos del lugar (quita las retiradas del arreglo, conserva las del
+          // baúl para poder restaurarlas).
           photos: values.photos,
           tips: values.tips.trim() || null,
           city: values.city.trim() || row.city,
@@ -1231,9 +1240,13 @@ function ReviewQueue(props: {
                 tips: validating.tips ?? "",
                 city: validating.city || "Manzanillo",
                 state: validating.state || "Colima",
-                // TODAS las fotos enviadas por quien sugirió (la primera es la
-                // portada); el equipo puede quitar o agregar más aquí.
-                photos: validating.photos.map((ph) => ph.url),
+                // TODAS las fotos enviadas por quien sugirió, con su estado de
+                // baúl (si el equipo ya la había apartado en una revisión
+                // anterior); la primera activa es la portada.
+                photos: validating.photos.map((ph) => ({
+                  url: ph.url,
+                  archived: ph.archived ?? false,
+                })),
               }}
               origin={props.origin}
               requireChecks
@@ -1658,14 +1671,18 @@ function EditPlaceContent(props: {
     );
   }
 
-  const galleryUrls = detailQuery.data.photos
+  const galleryPhotos: FormPhoto[] = detailQuery.data.photos
     .filter((ph) => ph.status !== "REJECTED")
-    .map((ph) => ph.url);
-  const photos = (
-    props.place.imageUrl && !galleryUrls.includes(props.place.imageUrl)
-      ? [props.place.imageUrl, ...galleryUrls]
-      : galleryUrls
-  ).slice(0, 5);
+    .map((ph) => ({ url: ph.url, archived: ph.archived ?? false }));
+  const cover = props.place.imageUrl;
+  // La portada se agrega al frente si no está ya en la galería. Las fotos del
+  // baúl SIEMPRE se conservan: el límite de 5 solo aplica a las activas.
+  const photos = capActivePhotos(
+    cover && !galleryPhotos.some((p) => p.url === cover)
+      ? [{ url: cover }, ...galleryPhotos]
+      : galleryPhotos,
+    5
+  );
 
   return (
     <PlaceFormDialogBody
@@ -1754,8 +1771,9 @@ function NewPlaceSection(props: {
           lat,
           lng,
           address: values.address.trim() || null,
-          imageUrl: values.photos[0] ?? null,
-          // Galería completa: el backend crea las fotos de galería aprobadas.
+          // Portada = primera foto ACTIVA; la galería viaja con banderas de
+          // baúl para que el backend conserve también las fotos apartadas.
+          imageUrl: firstActivePhotoUrl(values.photos),
           photos: values.photos,
           tips: values.tips.trim() || null,
           city: values.city.trim() || "Manzanillo",

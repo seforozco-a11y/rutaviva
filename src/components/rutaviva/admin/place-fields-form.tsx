@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PhotoUpload } from "@/components/rutaviva/photo-upload";
+import { PhotoUpload, type FormPhoto } from "@/components/rutaviva/photo-upload";
 import { SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { Coordinates } from "@/lib/place-types";
 
@@ -28,7 +28,8 @@ export type PlaceFormValues = {
   tips: string;
   city: string;
   state: string;
-  photos: string[];
+  /** Galería completa; las fotos con archived=true están en el baúl. */
+  photos: FormPhoto[];
 };
 
 export function emptyPlaceValues(): PlaceFormValues {
@@ -68,7 +69,9 @@ export function placeChecks(v: PlaceFormValues) {
       Number.isFinite(lng) &&
       Math.abs(lat) <= 90 &&
       Math.abs(lng) <= 180,
-    photo: v.photos.length > 0,
+    // Las fotos del baúl no cuentan: para publicar se necesita al menos una
+    // foto activa en la galería.
+    photo: v.photos.some((p) => !p.archived),
   };
 }
 
@@ -251,9 +254,12 @@ export function PlaceFieldsForm({
       />
       <p className="text-xs leading-relaxed text-stone-400">
         Toca una foto para verla en grande. Con el ícono de recorte ajustas el
-        largo y el ancho; con las flechas ◀ ▶ cambias el orden: la primera foto es
-        la <strong className="font-semibold">portada</strong> de la ficha y las
-        demás aparecen en la galería (máximo 5).
+        largo y el ancho; con las flechas ◀ ▶ cambias el orden: la primera foto
+        es la <strong className="font-semibold">portada</strong> de la ficha
+        (máximo 5). Con la ✕ la foto pasa al{" "}
+        <strong className="font-semibold">baúl</strong>: queda atenuada, no se
+        muestra al público, no se borra y tocándola de nuevo regresa a la
+        galería en su lugar.
       </p>
 
       <div className="space-y-1.5">

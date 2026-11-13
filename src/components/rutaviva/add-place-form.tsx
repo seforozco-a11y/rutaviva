@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PhotoUpload } from "./photo-upload";
+import { PhotoUpload, firstActivePhotoUrl, type FormPhoto } from "./photo-upload";
 import { PrivacyNotice } from "./privacy-notice";
 import { SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { Coordinates } from "@/lib/place-types";
@@ -35,7 +35,7 @@ const EMPTY = {
   lng: "",
   tips: "",
   suggestedBy: "",
-  photos: [] as string[],
+  photos: [] as FormPhoto[],
 };
 
 /**
@@ -87,7 +87,9 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
           lat: nLat,
           lng: nLng,
           address: values.address.trim() || null,
-          imageUrl: values.photos[0] ?? null,
+          // Portada = primera foto ACTIVA; la galería viaja con banderas de
+          // baúl (una foto apartada se conserva para que el equipo la vea).
+          imageUrl: firstActivePhotoUrl(values.photos),
           photos: values.photos,
           tips: values.tips.trim() || null,
           suggestedBy: values.suggestedBy.trim() || null,

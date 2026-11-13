@@ -37,8 +37,9 @@ async function resolvePhotoUrl(u: string): Promise<string> {
 
 /**
  * GET /api/admin/places/[id] → detalle completo del lugar con TODAS sus fotos
- * de galería (cualquier estado, en el orden elegido por el equipo; si nunca se
- * reordenó, del más antiguo al más nuevo).
+ * de galería (cualquier estado, incluidas las apartadas en el baúl con
+ * archived=true, en el orden elegido por el equipo; si nunca se reordenó, del
+ * más antiguo al más nuevo).
  * Lo usa el diálogo "Editar" del panel: la portada (imageUrl) puede vivir
  * fuera de la galería, así que el panel la agrega al frente.
  */
@@ -55,7 +56,7 @@ export async function GET(
       include: {
         photos: {
           orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-          select: { id: true, url: true, status: true, createdAt: true },
+          select: { id: true, url: true, status: true, archived: true, createdAt: true },
         },
       },
     });
@@ -70,6 +71,7 @@ export async function GET(
         id: ph.id,
         url: ph.url,
         status: ph.status,
+        archived: ph.archived,
         createdAt: ph.createdAt.toISOString(),
       })),
     });
@@ -89,8 +91,11 @@ export async function GET(
  *  - "feature" / "unfeature" → destacar o quitar destaque.
  *  - "update"  → edita campos (validados con los mismos formatos de publicación).
  *    Si el cliente envía `photos` (arreglo), TAMBIÉN sincroniza la galería
- *    completa del lugar: quita las fotos eliminadas, agrega las nuevas, deja
- *    photos[0] como portada y guarda el orden enviado (photos[i] → order i).
+ *    completa del lugar: quita solo las fotos retiradas del arreglo, agrega
+ *    las nuevas, deja la primera foto ACTIVA como portada y guarda el orden
+ *    enviado (photos[i] → order i) junto con la bandera del baúl — las fotos
+ *    apartadas (archived=true) NO se borran: quedan guardadas para poder
+ *    restaurarlas y no aparecen al público.
  *    Clientes que solo envían imageUrl conservan la galería intacta
  *    (compatibilidad hacia atrás).
  */
@@ -114,7 +119,11 @@ export async function PATCH(
     }
 
     if (action === "approve") {
-      const firstPending = place.photos.find((p) => p.status === "PENDING");
+      // Portada de respaldo: la primera foto PENDIENTE que NO esté en el
+      // baúl (las apartadas no se publican).
+      const firstPending = place.photos.find(
+        (p) => p.status === "PENDING" && !p.archived
+      );
       await db.photo.updateMany({
         where: { placeId: id, status: "PENDING" },
         data: { status: "APPROVED" },
@@ -157,9 +166,24 @@ export async function PATCH(
 
     if (action === "update") {
       // Normaliza URLs ligeras → crudas antes de validar (la validación solo
-      // acepta data URLs, /images/ o https).
+      // acepta data URLs, /images/ o https). Cada entrada puede ser una URL
+      // (string, compatibilidad) o { url, archived } con la bandera del baúl.
       const rawPhotosIn = Array.isArray(body?.photos)
-        ? await Promise.all((body.photos as unknown[]).map((u) => resolvePhotoUrl(String(u))))
+        ? await Promise.all(
+            (body.photos as unknown[]).map(async (p) => {
+              const rawUrl =
+                typeof p === "string"
+                  ? String(p)
+                  : typeof (p as Record<string, unknown> | null)?.url === "string"
+                    ? String((p as Record<string, unknown>).url)
+                    : "";
+              const archived =
+                typeof p === "object" &&
+                p !== null &&
+                Boolean((p as Record<string, unknown>).archived);
+              return { url: await resolvePhotoUrl(rawUrl), archived };
+            })
+          )
         : undefined;
       const rawImageUrlIn =
         typeof body?.imageUrl === "string" ? await resolvePhotoUrl(body.imageUrl) : body?.imageUrl;
@@ -189,12 +213,16 @@ export async function PATCH(
         });
 
         if (syncGallery) {
-          // Sin duplicados y conservando el orden enviado.
-          const nextUrls = [...new Set(photos)];
+          // Sin duplicados y conservando el orden enviado (incluye las fotos
+          // del baúl, que viajan con archived=true).
+          const nextItems = photos;
+          const nextUrls = nextItems.map((p) => p.url);
           const nextSet = new Set(nextUrls);
           const existing = place.photos; // orden elegido (order asc, luego createdAt)
 
-          // 1) Quitar las fotos que el equipo eliminó en la edición.
+          // 1) Quitar SOLO las fotos que el equipo retiró por completo del
+          //    arreglo. Las apartadas en el baúl viajan en el arreglo, así
+          //    que nunca llegan aquí: nada se borra por "guardar al baúl".
           const toDelete = existing.filter((p) => !nextSet.has(p.url));
           if (toDelete.length > 0) {
             await tx.photo.deleteMany({
@@ -202,20 +230,22 @@ export async function PATCH(
             });
           }
 
-          // 2) Agregar las fotos nuevas. En lugares ya publicados nacen
-          //    aprobadas (las sube el equipo tras revisarlas); en sugerencias
-          //    PENDING nacen pendientes y "approve" las aprueba al publicar.
-          //    Cada foto nace con su posición final en la galería.
+          // 2) Agregar las fotos nuevas (con su bandera de baúl si la traen).
+          //    En lugares ya publicados nacen aprobadas (las sube el equipo
+          //    tras revisarlas); en sugerencias PENDING nacen pendientes y
+          //    "approve" las aprueba al publicar. Cada foto nace con su
+          //    posición final en la galería.
           const existingUrls = new Set(existing.map((p) => p.url));
-          const toAdd = nextUrls.filter((u) => !existingUrls.has(u));
+          const toAdd = nextItems.filter((p) => !existingUrls.has(p.url));
           if (toAdd.length > 0) {
             await tx.photo.createMany({
-              data: toAdd.map((url) => ({
+              data: toAdd.map((p) => ({
                 placeId: id,
-                url,
+                url: p.url,
                 status: place.status === "APPROVED" ? "APPROVED" : "PENDING",
-                inline: url.startsWith("data:"),
-                order: nextUrls.indexOf(url),
+                inline: p.url.startsWith("data:"),
+                order: nextUrls.indexOf(p.url),
+                archived: p.archived,
               })),
             });
           }
@@ -230,14 +260,15 @@ export async function PATCH(
             });
           }
 
-          // 4) Guardar el orden elegido por el equipo (la posición i del
-          //    arreglo enviado = order i). Así el reordenamiento sobrevive
-          //    al guardar y la galería pública lo respeta.
+          // 4) Guardar el orden Y el estado de baúl elegidos por el equipo
+          //    (la posición i del arreglo enviado = order i). Así el orden y
+          //    el baúl sobreviven al guardar y la galería pública los
+          //    respeta (filtra archived=true).
           await Promise.all(
-            nextUrls.map((url, idx) =>
+            nextItems.map((p, idx) =>
               tx.photo.updateMany({
-                where: { placeId: id, url },
-                data: { order: idx },
+                where: { placeId: id, url: p.url },
+                data: { order: idx, archived: p.archived },
               })
             )
           );

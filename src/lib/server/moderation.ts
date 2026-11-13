@@ -6,7 +6,17 @@ import { SINGULAR_CATEGORIES } from "@/lib/geo";
 
 export const MAX_PHOTO_CHARS = 2_600_000; // ~1.9 MB binarios en base64
 export const MAX_PHOTOS_PER_REVIEW = 3;
-export const MAX_PHOTOS_PER_PLACE = 5; // galería de un lugar singular
+export const MAX_PHOTOS_PER_PLACE = 5; // galería ACTIVA de un lugar singular
+
+/**
+ * Una foto de la galería de un lugar. archived=true = apartada en el "baúl":
+ * se conserva (nunca se borra desde el panel) pero no se muestra al público y
+ * puede restaurarse con un toque al editar.
+ */
+export type PlacePhotoInput = {
+  url: string;
+  archived: boolean;
+};
 
 export type PlaceInput = {
   name: string;
@@ -16,8 +26,10 @@ export type PlaceInput = {
   lng: number;
   address: string | null;
   imageUrl: string | null;
-  /** Galería completa (0..5). imageUrl siempre es la portada = photos[0]. */
-  photos: string[];
+  /** Galería completa. Solo las fotos ACTIVAS cuentan para el máximo (5); las
+   *  del baúl viajan con archived=true y se conservan sin publicarse. La
+   *  primera foto activa es la portada. */
+  photos: PlacePhotoInput[];
   tips: string | null;
   city: string;
   state: string;
@@ -48,30 +60,43 @@ export function validatePlaceInput(body: unknown): Valid<PlaceInput> | Invalid {
   const city = str(b.city) || "Manzanillo";
   const state = str(b.state) || "Colima";
 
-  // Galería: hasta 5 fotos. imageUrl (portada, compatibilidad) se agrega al
-  // frente si no viene ya en la lista; photos[0] siempre termina siendo la
-  // portada del lugar.
+  // Galería: cada entrada puede ser una URL (string, compatibilidad) o un
+  // objeto { url, archived } con la bandera del baúl. Solo las fotos ACTIVAS
+  // cuentan para el máximo de 5; las apartadas se conservan.
   const rawPhotos = Array.isArray(b.photos) ? b.photos : [];
-  const photos: string[] = [];
+  const photoItems: PlacePhotoInput[] = [];
   for (const p of rawPhotos) {
-    const url = str(p);
+    const url =
+      typeof p === "string"
+        ? str(p)
+        : typeof (p as Record<string, unknown> | null)?.url === "string"
+          ? str((p as Record<string, unknown>).url)
+          : "";
+    const archived =
+      typeof p === "object" && p !== null && Boolean((p as Record<string, unknown>).archived);
     if (!isValidPhotoUrl(url)) {
       return { ok: false, error: "Una de las fotos no es válida o pesa demasiado" };
     }
-    photos.push(url);
+    photoItems.push({ url, archived });
   }
-  if (photos.length > MAX_PHOTOS_PER_PLACE) {
+  // Sin duplicados: se conserva la primera aparición con su bandera.
+  const seenUrls = new Set<string>();
+  const photos: PlacePhotoInput[] = photoItems.filter((p) => {
+    if (seenUrls.has(p.url)) return false;
+    seenUrls.add(p.url);
+    return true;
+  });
+  if (photos.filter((p) => !p.archived).length > MAX_PHOTOS_PER_PLACE) {
     return { ok: false, error: `Máximo ${MAX_PHOTOS_PER_PLACE} fotos por lugar` };
   }
-  const imageUrlFinal = imageUrl ?? photos[0] ?? null;
+  const imageUrlFinal = imageUrl ?? photos.find((p) => !p.archived)?.url ?? null;
   if (imageUrlFinal && !isValidPhotoUrl(imageUrlFinal)) {
     return { ok: false, error: "La foto no es válida (usa una imagen comprimida o una URL https)" };
   }
   const photosFinal =
-    imageUrl && !photos.includes(imageUrl) ? [imageUrl, ...photos] : photos;
-  if (photosFinal.length > MAX_PHOTOS_PER_PLACE) {
-    return { ok: false, error: `Máximo ${MAX_PHOTOS_PER_PLACE} fotos por lugar` };
-  }
+    imageUrl && !photos.some((p) => p.url === imageUrl)
+      ? [{ url: imageUrl, archived: false }, ...photos]
+      : photos;
 
   if (name.length < 3 || name.length > 120) {
     return { ok: false, error: "El nombre debe tener entre 3 y 120 caracteres" };

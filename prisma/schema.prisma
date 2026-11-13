@@ -86,6 +86,10 @@ model Photo {
   // Posición de la foto en la galería del lugar (0 = portada). La define el
   // equipo al editar el lugar; el orden de subida solo es el respaldo inicial.
   order     Int            @default(0)
+  // true = la foto está en el "baúl" del lugar: el equipo la apartó de la
+  // galería (se ve atenuada al editar) pero NUNCA se borra; se restaura con
+  // un toque desde el panel y no aparece en ninguna vista pública.
+  archived  Boolean        @default(false)
   createdAt DateTime       @default(now())
 
   @@index([placeId])

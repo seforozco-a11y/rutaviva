@@ -38,7 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PhotoUpload } from "./photo-upload";
+import { PhotoUpload, type FormPhoto } from "./photo-upload";
 import { PhotoLightbox } from "./photo-lightbox";
 import { PrivacyNotice } from "./privacy-notice";
 import { PhotoCarousel } from "./photo-carousel";
@@ -642,7 +642,7 @@ function ReviewForm(props: {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<FormPhoto[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -666,7 +666,9 @@ function ReviewForm(props: {
           authorName: name.trim(),
           rating,
           comment: comment.trim(),
-          photos,
+          // Solo las fotos activas viajan; si apartó alguna en el baúl antes
+          // de enviar, no se incluye en la reseña.
+          photos: photos.filter((p) => !p.archived).map((p) => p.url),
         }),
       });
       const json = (await res.json().catch(() => null)) as { error?: string } | null;
