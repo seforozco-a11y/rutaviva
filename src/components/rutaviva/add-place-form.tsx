@@ -144,7 +144,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight text-stone-800">
           <Sparkles className="h-5 w-5 text-amber-500" aria-hidden />
-          Sugerir un lugar singular
+          Sugerir un lugar para RutaViva
         </h1>
         <p className="text-sm text-stone-500">
           ¿Conoces una joya de esta ciudad? Cuéntanosla: nuestro equipo la revisa y, si cumple

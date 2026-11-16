@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Map, Plus, ShieldCheck, SquareStack } from "lucide-react";
+import { BookOpen, Map, ShieldCheck, SquareStack } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type AppView = "map" | "list" | "add" | "about" | "admin";
@@ -51,25 +51,16 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
           <button
             type="button"
             onClick={() => onChange("add")}
-            aria-label="Sugiere un lugar singular"
+            aria-label="Sugiere un lugar para RutaViva"
             aria-current={view === "add" ? "page" : undefined}
             className={cn(
               "flex h-11 w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 px-1 text-emerald-950 shadow-md shadow-amber-500/30 transition-transform hover:scale-[1.03] active:scale-95",
               view === "add" && "from-amber-500 to-amber-600"
             )}
           >
-            <Plus
-              className={cn(
-                "h-5 w-5 shrink-0 transition-transform",
-                view === "add" && "rotate-45"
-              )}
-              strokeWidth={2.6}
-              aria-hidden
-            />
             <span className="text-center text-[10px] font-extrabold leading-[1.15] tracking-tight">
-              Sugiere un
-              <br />
-              lugar singular
+              <span className="block whitespace-nowrap">Sugiere un lugar</span>
+              <span className="block whitespace-nowrap">para RutaViva</span>
             </span>
           </button>
         </li>
