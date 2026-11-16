@@ -63,7 +63,10 @@ export function RutavivaApp() {
   const [originSource, setOriginSource] = useState<"gps" | "demo" | null>(null);
   const [locating, setLocating] = useState(false);
   const [gpsProblem, setGpsProblem] = useState<GpsProblem | null>(null);
-  const [filter, setFilter] = useState<MapFilter>("singulares");
+  // Filtro del mapa: categoría singular elegida o null (todas). Los chips
+  // del mapa son las categorías (Playa, Mirador, Monumento…); los servicios
+  // de OpenStreetMap solo viven en la pestaña Servicios de la lista.
+  const [filter, setFilter] = useState<MapFilter>(null);
   const [listTab, setListTab] = useState<"singulares" | "servicios">("singulares");
 
   const [focus, setFocus] = useState<MapFocus | null>(null);
@@ -87,16 +90,15 @@ export function RutavivaApp() {
     },
   });
 
-  // Una query por tipo de servicio: se activa con el filtro del mapa o con la
-  // pestaña Servicios de la lista. Nota: en TanStack v5 una query deshabilitada
-  // está "pending", por eso usamos isLoading (pending + fetching) para la UI.
+  // Una query por tipo de servicio: se activa SOLO con la pestaña Servicios
+  // de la lista (el mapa ya no consulta servicios de OpenStreetMap).
+  // Nota: en TanStack v5 una query deshabilitada está "pending", por eso
+  // usamos isLoading (pending + fetching) para la UI.
   const nearbyQueries = useQueries({
     queries: COMMON_TYPES.map((t) => ({
       queryKey: ["nearby", t.id, origin?.lat ?? null, origin?.lng ?? null],
       queryFn: () => fetchNearbyPlaces(origin as Coordinates, t.id),
-      enabled:
-        origin !== null &&
-        (filter === t.id || (view === "list" && listTab === "servicios")),
+      enabled: origin !== null && view === "list" && listTab === "servicios",
       retry: 1,
       staleTime: 5 * 60 * 1000,
     })),
@@ -108,13 +110,7 @@ export function RutavivaApp() {
 
   const places = placesQuery.data ?? [];
 
-  // Datos para el mapa: solo el tipo seleccionado en el filtro.
-  const selectedNearby =
-    filter !== "singulares" ? nearbyByType.get(filter) : undefined;
-  const nearbyForMap = selectedNearby?.data ?? [];
-  const nearbyLoadingForMap = selectedNearby?.isLoading ?? false;
-
-  // Datos para la lista: todos los tipos juntos.
+  // Datos para la lista: todos los tipos juntos (pestaña Servicios).
   const allNearbyResults = COMMON_TYPES.map((t) => nearbyByType.get(t.id));
   const nearbyForList = allNearbyResults.flatMap((r) => r?.data ?? []);
   const nearbyLoadingForList = allNearbyResults.some(
@@ -363,11 +359,6 @@ export function RutavivaApp() {
 
   const placesError =
     placesQuery.error instanceof Error ? placesQuery.error.message : null;
-  const nearbyError = selectedNearby?.error instanceof Error
-    ? selectedNearby.error.message
-    : selectedNearby?.isError
-      ? "No pudimos consultar los servicios cercanos."
-      : null;
   const nearbyListError = nearbyAllFailed
     ? "No pudimos consultar los servicios cercanos. Revisa tu conexión e intenta de nuevo."
     : null;
@@ -386,15 +377,11 @@ export function RutavivaApp() {
                 locating={locating}
                 gpsProblem={gpsProblem}
                 places={places}
-                nearby={nearbyForMap}
-                nearbyLoading={nearbyLoadingForMap}
-                nearbyError={nearbyError}
                 filter={filter}
                 focus={focus}
                 onFilterChange={setFilter}
                 onSelect={openDetail}
                 onRequestGps={() => requestGps()}
-                onRetryNearby={handleRetryNearby}
               />
             )}
             {view === "list" && (

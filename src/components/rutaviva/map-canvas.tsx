@@ -5,11 +5,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { LocateFixed, Minus, Plus } from "lucide-react";
-import { commonTypeById, categoryLabel } from "@/lib/geo";
+import { categoryLabel } from "@/lib/geo";
 import { categorySvg, categoryVisual } from "@/lib/category-visual";
 import type {
   Coordinates,
-  NearbyPlaceDTO,
   PlaceDetail,
   SingularPlaceDTO,
 } from "@/lib/place-types";
@@ -19,8 +18,8 @@ export type MapFocus = { lat: number; lng: number; zoom?: number; k: number };
 type MapCanvasProps = {
   origin: Coordinates | null;
   singularPlaces: SingularPlaceDTO[];
-  nearbyPlaces: NearbyPlaceDTO[];
-  filter: string;
+  /** Categoría seleccionada (playa, mirador…) o null para mostrar todas. */
+  categoryFilter: string | null;
   focus: MapFocus | null;
   onSelect: (detail: PlaceDetail) => void;
 };
@@ -40,15 +39,6 @@ function singularIcon(categoryId: string): L.DivIcon {
       `</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 27],
-  });
-}
-
-function commonIcon(color: string): L.DivIcon {
-  return L.divIcon({
-    className: "rv-icon",
-    html: `<div class="rv-dot" style="background:${color}"></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
   });
 }
 
@@ -114,13 +104,15 @@ function MapControls({ origin }: { origin: Coordinates | null }) {
 export function MapCanvas({
   origin,
   singularPlaces,
-  nearbyPlaces,
-  filter,
+  categoryFilter,
   focus,
   onSelect,
 }: MapCanvasProps) {
   const center: [number, number] = origin ? [origin.lat, origin.lng] : [19.4326, -99.1332];
-  const showSingulars = filter === "singulares";
+  // Solo lugares singulares: filtrados por la categoría elegida (null = todas).
+  const visiblePlaces = categoryFilter
+    ? singularPlaces.filter((p) => p.category === categoryFilter)
+    : singularPlaces;
 
   return (
     <MapContainer
@@ -150,23 +142,14 @@ export function MapCanvas({
         </>
       )}
 
-      {showSingulars
-        ? singularPlaces.map((p) => (
-            <Marker
-              key={p.id}
-              position={[p.lat, p.lng]}
-              icon={singularIcon(p.category)}
-              eventHandlers={{ click: () => toDetail(p, onSelect) }}
-            />
-          ))
-        : nearbyPlaces.map((n) => (
-            <Marker
-              key={n.id}
-              position={[n.lat, n.lng]}
-              icon={commonIcon(commonTypeById(n.type)?.color ?? "#57534e")}
-              eventHandlers={{ click: () => toNearbyDetail(n, onSelect) }}
-            />
-          ))}
+      {visiblePlaces.map((p) => (
+        <Marker
+          key={p.id}
+          position={[p.lat, p.lng]}
+          icon={singularIcon(p.category)}
+          eventHandlers={{ click: () => toDetail(p, onSelect) }}
+        />
+      ))}
     </MapContainer>
   );
 }
@@ -185,18 +168,5 @@ function toDetail(p: SingularPlaceDTO, onSelect: (d: PlaceDetail) => void) {
     address: p.address,
     tips: p.tips,
     imageUrl: p.imageUrl,
-  });
-}
-
-function toNearbyDetail(n: NearbyPlaceDTO, onSelect: (d: PlaceDetail) => void) {
-  onSelect({
-    kind: "common",
-    id: n.id,
-    name: n.name,
-    lat: n.lat,
-    lng: n.lng,
-    distanceKm: n.distanceKm,
-    categoryLabel: commonTypeById(n.type)?.label ?? "Servicio",
-    color: commonTypeById(n.type)?.color,
   });
 }
