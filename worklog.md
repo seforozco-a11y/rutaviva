@@ -1176,3 +1176,10 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - Cambios (`413c699`): `bottom-nav.tsx` → texto del botón en dos líneas forzadas con whitespace-nowrap («Sugiere un lugar» / «para RutaViva»), sin icono Plus (import eliminado), aria-label actualizado. `add-place-form.tsx` → encabezado «Sugerir un lugar para RutaViva». Textos genéricos de la Guía («Sugieres», «sugieren lugares», «Consejo para sugerir») quedan como estaban: no referencian la etiqueta del botón.
 - Medición en navegador: botón 98 px, líneas 90 px, sin overflow (el corte natural de 3 líneas «Sugiere un / lugar / para RutaViva» se corrigió con spans nowrap por línea).
 - E2E local y en PRODUCCIÓN (`dpl_4GSydrLCqzpgfwLCetQfycGQ3yMN` READY): botón accesible por su nombre nuevo desde el mapa; al tocarlo abre el formulario con encabezado «Sugerir un lugar para RutaViva»; 0 errores de consola; eslint limpio.
+
+## Sesión: Ayuda y comentarios a la barra; Admin anidado en la Guía (16 nov 2026, noche)
+
+- La usuaria pidió: (1) «Ayuda y comentarios» en la columna que ocupa Admin en la barra inferior; (2) Admin anidado en la Guía, exactamente debajo de «Ver portada otra vez».
+- Cambios (`82e7e54`, 4 archivos): `bottom-nav.tsx` → fuera el item Admin; botón «Ayuda» (MessageCirclePlus) en la 5.ª columna con onOpenHelp; `map-view.tsx` → fuera el chip «Ayuda y comentarios» de la barra superior (y su estado feedbackOpen); `rutaviva-app.tsx` → ReportDialog kind=APP a nivel raíz (abre desde cualquier vista), cableado onOpenHelp/onOpenAdmin; `about-panel.tsx` → botón «Panel de administración» (borde stone, ShieldCheck) 8 px debajo de «Ver la portada otra vez».
+- La vista admin sigue excluida de DEEP_VIEWS (?view=) y solo se alcanza desde la Guía; Android back desde Admin regresa a la Guía (historial de vistas intacto).
+- E2E local + PRODUCCIÓN (`dpl_5vx623pw1DP8A228sy5rZ2J6UFbi` READY): nav = Explorar/Lugares/Sugiere…/Guía/Ayuda (0 «Abrir panel» en nav); «Ayuda» abre el diálogo «Ayuda y comentarios»; en Guía, Admin debajo de la portada (gap 8 px medido); clic abre «Panel del equipo RutaViva» con PIN; 0 errores de consola; eslint limpio.
