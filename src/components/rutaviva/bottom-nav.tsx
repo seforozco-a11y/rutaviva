@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Map, ShieldCheck, SquareStack } from "lucide-react";
+import { BookOpen, Map, MessageCirclePlus, SquareStack } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type AppView = "map" | "list" | "add" | "about" | "admin";
@@ -8,6 +8,8 @@ export type AppView = "map" | "list" | "add" | "about" | "admin";
 type BottomNavProps = {
   view: AppView;
   onChange: (view: AppView) => void;
+  /** Abre el canal «Ayuda y comentarios» desde cualquier vista. */
+  onOpenHelp: () => void;
 };
 
 type NavItem = { id: AppView; label: string; icon: typeof Map; ariaLabel?: string };
@@ -21,16 +23,10 @@ const items: NavItem[] = [
     icon: BookOpen,
     ariaLabel: "Abrir la guía de la app",
   },
-  {
-    id: "admin",
-    label: "Admin",
-    icon: ShieldCheck,
-    ariaLabel: "Abrir panel de administración",
-  },
 ];
 
 /** Barra de navegación inferior estilo app móvil (footer fijo con safe-area). */
-export function BottomNav({ view, onChange }: BottomNavProps) {
+export function BottomNav({ view, onChange, onOpenHelp }: BottomNavProps) {
   return (
     <nav
       aria-label="Navegación principal"
@@ -76,6 +72,19 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
             </NavButton>
           </li>
         ))}
+        {/* Canal «Ayuda y comentarios»: ocupa la columna que antes era de
+            Admin (ahora anidado dentro de la Guía). Abre el diálogo de
+            reportes desde cualquier vista, sin cambiar de menú. */}
+        <li className="flex justify-center">
+          <NavButton
+            active={false}
+            label="Ayuda"
+            onClick={onOpenHelp}
+            ariaLabel="Enviar ayuda o comentarios sobre la app"
+          >
+            <MessageCirclePlus className="h-[22px] w-[22px]" aria-hidden />
+          </NavButton>
+        </li>
       </ul>
     </nav>
   );

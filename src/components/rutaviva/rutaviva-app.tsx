@@ -13,6 +13,7 @@ import { AddPlaceForm } from "./add-place-form";
 import { PlaceDetailSheet } from "./place-detail-sheet";
 import { AboutPanel } from "./about-panel";
 import { AdminPanel } from "./admin/admin-panel";
+import { ReportDialog } from "./report-dialog";
 import { fetchNearbyPlaces, clearNearbyCache } from "@/lib/nearby-client";
 import { useToast } from "@/hooks/use-toast";
 import { COMMON_TYPES } from "@/lib/geo";
@@ -73,6 +74,10 @@ export function RutavivaApp() {
   const focusK = useRef(0);
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Canal «Ayuda y comentarios» (diálogo de reportes kind=APP): vive en la
+  // barra inferior (columna que antes era de Admin) y se abre desde
+  // cualquier vista sin cambiar de menú.
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Vista destino de un enlace directo (?view=add|list), leída una vez en el
   // arranque y consumida al pasar la portada (o al saltarla si ya vio la intro).
@@ -417,6 +422,7 @@ export function RutavivaApp() {
                 <AboutPanel
                   places={places}
                   onShowSplash={() => setView("splash")}
+                  onOpenAdmin={() => setView("admin")}
                 />
               </div>
             )}
@@ -426,11 +432,16 @@ export function RutavivaApp() {
               </div>
             )}
           </main>
-          <BottomNav view={view} onChange={(v) => setView(v)} />
+          <BottomNav
+            view={view}
+            onChange={(v) => setView(v)}
+            onOpenHelp={() => setHelpOpen(true)}
+          />
         </>
       )}
 
       <PlaceDetailSheet detail={detail} open={sheetOpen} onOpenChange={setSheetOpen} />
+      {helpOpen && <ReportDialog kind="APP" onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }

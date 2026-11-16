@@ -3,9 +3,8 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { AlertTriangle, Loader2, LocateFixed, MapPin, MessageCirclePlus, Settings, X } from "lucide-react";
+import { AlertTriangle, Loader2, LocateFixed, MapPin, Settings, X } from "lucide-react";
 import { ensureLocationPermission, isNativeApp, openAppSettings, openLocationSettings } from "./gps";
-import { ReportDialog } from "./report-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SINGULAR_CATEGORIES, formatDistance, type SingularCategoryId } from "@/lib/geo";
@@ -132,10 +131,6 @@ export function MapView({
   locating,
   gpsProblem,
 }: MapViewProps) {
-  // Canal "Ayuda y comentarios" (reportes de funcionamiento/contenido) —
-  // accesible siempre desde la barra superior del mapa.
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-
   // El aviso se puede cerrar, pero reaparece ante cada fallo: como se
   // desmonta cuando gpsProblem vuelve a null (cada reintento pasa por ahí),
   // su estado interno se destruye y se remonta abierto.
@@ -203,17 +198,6 @@ export function MapView({
                     : "Ubicación demo · usar mi GPS"}
             </button>
           ) : null}
-
-          {/* Canal de comentarios de la app: siempre visible, discreto. */}
-          <button
-            type="button"
-            onClick={() => setFeedbackOpen(true)}
-            aria-label="Enviar ayuda o comentarios sobre la app"
-            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white/95 px-3 py-1.5 text-xs font-semibold text-stone-600 shadow-md backdrop-blur transition hover:text-emerald-800"
-          >
-            <MessageCirclePlus className="h-3.5 w-3.5" aria-hidden />
-            Ayuda y comentarios
-          </button>
         </div>
 
         <div
@@ -305,7 +289,6 @@ export function MapView({
           )}
         </div>
       </div>
-      {feedbackOpen && <ReportDialog kind="APP" onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }

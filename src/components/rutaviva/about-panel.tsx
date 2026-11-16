@@ -20,9 +20,11 @@ import { PrivacyNotice } from "@/components/rutaviva/privacy-notice";
 type AboutPanelProps = {
   places: SingularPlaceDTO[];
   onShowSplash: () => void;
+  /** Abre el panel de administración (pide PIN) desde la Guía. */
+  onOpenAdmin: () => void;
 };
 
-export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
+export function AboutPanel({ places, onShowSplash, onOpenAdmin }: AboutPanelProps) {
   const categoriesUsed = new Set(places.map((p) => p.category)).size;
 
   return (
@@ -156,13 +158,26 @@ export function AboutPanel({ places, onShowSplash }: AboutPanelProps) {
         </p>
       </div>
 
-      <Button
-        variant="outline"
-        onClick={onShowSplash}
-        className="w-full rounded-2xl border-emerald-300 text-emerald-800 hover:bg-emerald-50"
-      >
-        Ver la portada otra vez
-      </Button>
+      {/* Salida a la portada + acceso del equipo al panel de administración
+          (anidado aquí, en la Guía, ya no ocupa la barra inferior). */}
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          onClick={onShowSplash}
+          className="w-full rounded-2xl border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+        >
+          Ver la portada otra vez
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onOpenAdmin}
+          aria-label="Abrir panel de administración"
+          className="w-full rounded-2xl border-stone-300 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+        >
+          <ShieldCheck className="h-4 w-4" aria-hidden />
+          Panel de administración
+        </Button>
+      </div>
     </div>
   );
 }
