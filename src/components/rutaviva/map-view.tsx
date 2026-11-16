@@ -3,7 +3,7 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { AlertTriangle, Loader2, MapPin, MessageCirclePlus, Settings, X } from "lucide-react";
+import { AlertTriangle, Loader2, LocateFixed, MapPin, MessageCirclePlus, Settings, X } from "lucide-react";
 import { ensureLocationPermission, isNativeApp, openAppSettings, openLocationSettings } from "./gps";
 import { ReportDialog } from "./report-dialog";
 import { Button } from "@/components/ui/button";
@@ -218,9 +218,18 @@ export function MapView({
 
         <div
           role="tablist"
-          aria-label="Filtrar lugares singulares por categoría"
+          aria-label="Filtros del mapa: cerca de mí o por categoría"
           className="rv-scroll pointer-events-auto flex gap-2 overflow-x-auto pb-1"
         >
+          {/* «Cerca de mí»: el estado base del mapa. Siempre primer chip y
+              activo al abrir; un toque regresa a la lista de lugares más
+              cercanos según el GPS, desde cualquier categoría. */}
+          <FilterChip
+            active={filter === null}
+            onClick={() => onFilterChange(null)}
+            label="Cerca de mí"
+            icon={<LocateFixed className="h-3.5 w-3.5" />}
+          />
           {SINGULAR_CATEGORIES.map((c) => (
             <FilterChip
               key={c.id}
@@ -290,7 +299,7 @@ export function MapView({
           {stripSingulars.length === 0 && origin && (
             <div className="w-full rounded-2xl bg-white/95 p-4 text-center text-sm text-stone-500 shadow-lg">
               {filter
-                ? `Aún no hay lugares «${activeLabel}» en el mapa. Prueba con otra categoría.`
+                ? `Aún no hay lugares «${activeLabel}» en el mapa. Toca «Cerca de mí» para volver a ver lo que hay cerca.`
                 : "Aún no hay lugares singulares publicados cerca. Prueba acercando el mapa."}
             </div>
           )}
