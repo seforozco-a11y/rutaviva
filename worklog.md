@@ -1169,3 +1169,10 @@ Task 41: El usuario pidió un respaldo de la base en el disco de su PC para perc
 - Solución (`0bf8520`, solo `map-view.tsx`, +12/-3): chip **«Cerca de mí»** (icono LocateFixed) como PRIMER chip de la fila, activo por defecto (representa `filter=null`, el estado base). Un toque desde cualquier categoría regresa a los lugares más cercanos; el segundo toque sobre una categoría activa también regresa a «Cerca de mí». Mensaje de categoría vacía actualizado: «Toca "Cerca de mí" para volver a ver lo que hay cerca».
 - E2E local (desktop+360×740) y en PRODUCCIÓN (`dpl_8RBqdLaoJFCtU1bZTqhq7f5GNFH1` READY): default = 10 cercanos ordenados por proximidad (Centro Histórico 15 m…); Gastronomía → 5 tarjetas; «Cerca de mí» → 10 de nuevo; 0 errores de consola; eslint limpio.
 - Token Vercel `vcp_0XH4…` (enviado por la usuaria tras quedar inoperativo el `vcp_7dwg…`) funcionando; guardado en `/home/z/.vercel-token`.
+
+## Sesión: botón «Sugiere un lugar para RutaViva» (16 nov 2026, tarde)
+
+- La usuaria pidió cambiar el botón ámbar «Sugiere un lugar singular» por «Sugiere un lugar para RutaViva», sin el signo «+», y actualizar las referencias en los demás apartados.
+- Cambios (`413c699`): `bottom-nav.tsx` → texto del botón en dos líneas forzadas con whitespace-nowrap («Sugiere un lugar» / «para RutaViva»), sin icono Plus (import eliminado), aria-label actualizado. `add-place-form.tsx` → encabezado «Sugerir un lugar para RutaViva». Textos genéricos de la Guía («Sugieres», «sugieren lugares», «Consejo para sugerir») quedan como estaban: no referencian la etiqueta del botón.
+- Medición en navegador: botón 98 px, líneas 90 px, sin overflow (el corte natural de 3 líneas «Sugiere un / lugar / para RutaViva» se corrigió con spans nowrap por línea).
+- E2E local y en PRODUCCIÓN (`dpl_4GSydrLCqzpgfwLCetQfycGQ3yMN` READY): botón accesible por su nombre nuevo desde el mapa; al tocarlo abre el formulario con encabezado «Sugerir un lugar para RutaViva»; 0 errores de consola; eslint limpio.
