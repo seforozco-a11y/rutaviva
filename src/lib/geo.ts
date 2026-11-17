@@ -64,6 +64,39 @@ export function categoryLabel(id: string): string {
   return SINGULAR_CATEGORIES.find((c) => c.id === id)?.label ?? "Lugar singular";
 }
 
+/**
+ * Categorías reordenadas por cercanía a la ubicación del usuario: primero
+ * las que tienen MÁS lugares dentro del radio dado (1 km por defecto) —
+ * si Gastronomía tiene 15 lugares cerca, Monumento 10 y Parque 2, el
+ * orden de los chips queda Gastronomía → Monumento → Parque… — y al final
+ * las categorías sin lugares cerca. «Cerca de mí» no participa: siempre
+ * es el primer chip fijo del mapa.
+ *
+ * Desempates: gana la categoría con más lugares en total (que exista aquí,
+ * aunque estén lejos del radio); si sigue el empate, se conserva el orden
+ * definido arriba (Array.prototype.sort es estable).
+ */
+export function categoriesByProximity(
+  places: ReadonlyArray<{ category: string; distanceKm: number | null | undefined }>,
+  radiusKm = 1,
+): (typeof SINGULAR_CATEGORIES)[number][] {
+  const stats = new Map<string, { near: number; total: number }>();
+  for (const p of places) {
+    const s = stats.get(p.category) ?? { near: 0, total: 0 };
+    s.total += 1;
+    if (p.distanceKm != null && p.distanceKm <= radiusKm) s.near += 1;
+    stats.set(p.category, s);
+  }
+  return [...SINGULAR_CATEGORIES].sort((a, b) => {
+    const sa = stats.get(a.id);
+    const sb = stats.get(b.id);
+    const nearA = sa?.near ?? 0;
+    const nearB = sb?.near ?? 0;
+    if (nearA !== nearB) return nearB - nearA;
+    return (sb?.total ?? 0) - (sa?.total ?? 0);
+  });
+}
+
 /** Tipos de lugares "comunes" consultados en vivo a OpenStreetMap. */
 export const COMMON_TYPES = [
   { id: "pharmacy", label: "Farmacias", color: "#e11d48", osm: ['["amenity"="pharmacy"]'] },

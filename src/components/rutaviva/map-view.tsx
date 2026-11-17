@@ -7,7 +7,12 @@ import { AlertTriangle, Loader2, LocateFixed, MapPin, Settings, X } from "lucide
 import { ensureLocationPermission, isNativeApp, openAppSettings, openLocationSettings } from "./gps";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SINGULAR_CATEGORIES, formatDistance, type SingularCategoryId } from "@/lib/geo";
+import {
+  SINGULAR_CATEGORIES,
+  categoriesByProximity,
+  formatDistance,
+  type SingularCategoryId,
+} from "@/lib/geo";
 import { categoryVisual } from "@/lib/category-visual";
 import { ScrollHint } from "./scroll-hint";
 import { CategoryIcon } from "./category-icon";
@@ -153,6 +158,14 @@ export function MapView({
     ? (SINGULAR_CATEGORIES.find((c) => c.id === filter)?.label ?? "")
     : "";
 
+  // Chips por categoría en orden dinámico: primero las categorías con más
+  // lugares dentro de 1 km del origen (si Gastronomía tiene 15 cerca va
+  // antes que Monumento con 10 y Parque con 2); al final las que no tienen
+  // lugares aquí. Sin ubicación (distanceKm null en todo el catálogo) el
+  // orden es el definido en SINGULAR_CATEGORIES. «Cerca de mí» no
+  // participa: es el primer chip fijo.
+  const chipsOrder = categoriesByProximity(places);
+
   return (
     <div className="absolute inset-0">
       <MapCanvas
@@ -222,7 +235,7 @@ export function MapView({
             label="Cerca de mí"
             icon={<LocateFixed className="h-3.5 w-3.5" />}
           />
-          {SINGULAR_CATEGORIES.map((c) => (
+          {chipsOrder.map((c) => (
             <FilterChip
               key={c.id}
               active={filter === c.id}
