@@ -51,6 +51,10 @@ export const SINGULAR_CATEGORIES = [
   { id: "museo", label: "Museo" },
   { id: "parque", label: "Parque" },
   { id: "cultura", label: "Cultura" },
+  // Infraestructura del municipio que el visitante acaba necesitando:
+  // hospital/centro de salud, policía turística, presidencia municipal,
+  // correos, protección civil, módulos de información…
+  { id: "servicios", label: "Servicios Públicos" },
   { id: "otro", label: "Otro" },
 ] as const;
 
