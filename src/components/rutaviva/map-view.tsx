@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle, Loader2, LocateFixed, MapPin, Settings, X } from "lucide-react";
 import { ensureLocationPermission, isNativeApp, openAppSettings, openLocationSettings } from "./gps";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SINGULAR_CATEGORIES, formatDistance, type SingularCategoryId } from "@/lib/geo";
 import { categoryVisual } from "@/lib/category-visual";
+import { ScrollHint } from "./scroll-hint";
 import { CategoryIcon } from "./category-icon";
 import type {
   Coordinates,
@@ -131,6 +132,11 @@ export function MapView({
   locating,
   gpsProblem,
 }: MapViewProps) {
+  // Refs de las franjas deslizables: el letrero «Desliza…» mide cuánto
+  // contenido queda fuera de vista en cada una.
+  const chipsRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+
   // El aviso se puede cerrar, pero reaparece ante cada fallo: como se
   // desmonta cuando gpsProblem vuelve a null (cada reintento pasa por ahí),
   // su estado interno se destruye y se remonta abierto.
@@ -200,11 +206,13 @@ export function MapView({
           ) : null}
         </div>
 
-        <div
-          role="tablist"
-          aria-label="Filtros del mapa: cerca de mí o por categoría"
-          className="rv-scroll pointer-events-auto flex gap-2 overflow-x-auto pb-1"
-        >
+        <div>
+          <div
+            ref={chipsRef}
+            role="tablist"
+            aria-label="Filtros del mapa: cerca de mí o por categoría"
+            className="rv-scroll pointer-events-auto flex gap-2 overflow-x-auto pb-1"
+          >
           {/* «Cerca de mí»: el estado base del mapa. Siempre primer chip y
               activo al abrir; un toque regresa a la lista de lugares más
               cercanos según el GPS, desde cualquier categoría. */}
@@ -223,6 +231,10 @@ export function MapView({
               icon={<CategoryIcon category={c.id} className="h-3.5 w-3.5" />}
             />
           ))}
+          </div>
+          {/* Letrero «Desliza…»: indica si quedan más categorías fuera de
+              vista y hacia qué lado (se apaga solo cuando todas caben). */}
+          <ScrollHint target={chipsRef} />
         </div>
       </div>
 
@@ -230,7 +242,10 @@ export function MapView({
           El padding inferior despeja la barra de navegación fija (h-16 +
           safe-area) para que las tarjetas y avisos NUNCA queden tapados. */}
       <div className="absolute inset-x-0 bottom-0 z-[880] p-3 pb-[calc(env(safe-area-inset-bottom)+78px)]">
-        <div className="rv-scroll flex gap-3 overflow-x-auto pb-1 [touch-action:pan-x]">
+        <div
+          ref={stripRef}
+          className="rv-scroll flex gap-3 overflow-x-auto pb-1 [touch-action:pan-x]"
+        >
           {stripSingulars.map((p) => {
             const cat = categoryVisual(p.category);
             return (
@@ -288,6 +303,9 @@ export function MapView({
             </div>
           )}
         </div>
+        {/* Letrero «Desliza…»: el usuario descubre que hay más lugares
+            fuera de vista y hacia qué lado (se apaga si todos caben). */}
+        <ScrollHint target={stripRef} />
       </div>
     </div>
   );
