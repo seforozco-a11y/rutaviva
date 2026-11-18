@@ -83,15 +83,18 @@ async function buildDetailBody(id: string): Promise<Record<string, unknown> | nu
     return null;
   }
 
-  // Portada: inline → ruta API; normal → segunda lectura barata.
-  const coverUrl = place.coverInline
-    ? placeCoverUrl(place.id, null, true, place.updatedAt)
+  // Portada: inline → ruta API; normal → segunda lectura barata. La URL
+  // SIEMPRE pasa por placeCoverUrl, que además detecta base64 con bandera
+  // desincronizada y lo sirve por la API (nunca base64 crudo al cliente).
+  const rawCover = place.coverInline
+    ? null
     : (
         await db.singularPlace.findUnique({
           where: { id },
           select: { imageUrl: true },
         })
       )?.imageUrl ?? null;
+  const coverUrl = placeCoverUrl(place.id, rawCover, place.coverInline, place.updatedAt);
 
   // Fotos no inline (estáticas/https): una sola segunda lectura para todas.
   const nonInlineIds = [

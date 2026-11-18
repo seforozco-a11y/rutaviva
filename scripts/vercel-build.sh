@@ -46,6 +46,21 @@ npx prisma generate
 echo "prisma db push..."
 npx prisma db push --skip-generate
 
+# 4b) Auto-reparación de banderas de imágenes incrustadas (idempotente, corre
+# en cada build): coverInline/inline deben reflejar SIEMPRE el contenido real
+# de la fila — si una fila tiene base64 sin bandera, el JSON público lo
+# expondría (defecto visto en producción el 18 nov 2026). Una sentencia por
+# llamada: db execute no garantiza lotes multi-statement. IMPORTANTE: usar
+# --schema (el datasource ya reescrito a PostgreSQL); con --url aislada el
+# comando puede ejecutarse contra el datasource del schema y no contra Neon.
+echo "reparando banderas de imágenes inline..."
+npx prisma db execute --schema prisma/schema.prisma --stdin <<'SQL'
+UPDATE "SingularPlace" SET "coverInline" = ("imageUrl" LIKE 'data:%') WHERE "coverInline" <> ("imageUrl" LIKE 'data:%');
+SQL
+npx prisma db execute --schema prisma/schema.prisma --stdin <<'SQL'
+UPDATE "Photo" SET "inline" = ("url" LIKE 'data:%') WHERE "inline" <> ("url" LIKE 'data:%');
+SQL
+
 # 5) Sembrar catálogo solo si la BD está vacía
 echo "seed si está vacía..."
 if command -v bun >/dev/null 2>&1; then

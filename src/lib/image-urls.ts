@@ -30,7 +30,12 @@ export function placeCoverUrl(
   coverInline: boolean,
   updatedAt: string | Date
 ): string | null {
-  if (coverInline) {
+  // Blindaje doble: la bandera coverInline O el contenido data: → API de
+  // imágenes. Así una bandera desincronizada (fila histórica o respaldo
+  // viejo) NUNCA vuelve a exponer base64 en los JSON públicos — defecto
+  // detectado en producción el 18 nov 2026 (4 portadas de 45-103 KB por
+  // carga). La reparación de banderas corre además en cada build de Vercel.
+  if (coverInline || isInlineImage(imageUrl)) {
     const v = new Date(updatedAt).getTime();
     return `/api/images/place/${placeId}?v=${Number.isFinite(v) ? v : 0}`;
   }
@@ -47,7 +52,9 @@ export function photoImageUrl(
   inline: boolean,
   createdAt: string | Date
 ): string | null {
-  if (inline) {
+  // Mismo blindaje que placeCoverUrl: data: se sirve por la API aunque la
+  // bandera inline venga mal (reparación en build + defensa en runtime).
+  if (inline || isInlineImage(url)) {
     const v = new Date(createdAt).getTime();
     return `/api/images/photo/${photoId}?v=${Number.isFinite(v) ? v : 0}`;
   }
