@@ -38,10 +38,26 @@ type PlaceDTO = {
 const PLACES_CACHE_TTL = 60_000;
 let placesCache: { ts: number; rows: PlaceDTO[] } | null = null;
 
-async function loadCatalogBase(): Promise<PlaceDTO[]> {
-  if (placesCache && Date.now() - placesCache.ts < PLACES_CACHE_TTL) {
-    return placesCache.rows;
-  }
+/**
+ * Single-flight (anti-estampida): la promesa en curso que recarga el catálogo.
+ * Si la caché expira justo cuando llegan N usuarios a la vez, SOLO UNO lee la
+ * DB y los demás esperan la misma promesa — las conexiones a Neon no se
+ * multiplican en los picos de tráfico (enmienda de optimización de
+ * concurrencia). Si la lectura falla, la promesa se libera para reintentar.
+ */
+let placesInflight: Promise<PlaceDTO[]> | null = null;
+
+/**
+ * Contador de lecturas reales a la DB desde que arrancó la instancia.
+ * Expuesto como header X-Places-DB-Reads: permite VERIFICAR que la caché y
+ * el single-flight funcionan (el número NO sube cuando las peticiones se
+ * sirven de memoria, aunque lleguen decenas a la vez).
+ */
+let dbReads = 0;
+
+/** Carga el catálogo desde la DB (SIN caché — la orquesta loadCatalogBase). */
+async function loadCatalogFromDb(): Promise<PlaceDTO[]> {
+  dbReads += 1;
   /**
    * SIN imageUrl: las portadas base64 pesan hasta 150 KB por fila y la lista
    * no las necesita — la URL ligera se construye con coverInline + updatedAt.
@@ -114,8 +130,29 @@ async function loadCatalogBase(): Promise<PlaceDTO[]> {
       createdAt: r.createdAt.toISOString(),
     };
   });
-  placesCache = { ts: Date.now(), rows: mapped };
   return mapped;
+}
+
+/**
+ * Orquestador de lectura del catálogo: caché en memoria → single-flight →
+ * DB. Máximo 1 lectura de DB por minuto por instancia, sin importar cuántos
+ * usuarios coincidan en el mismo instante.
+ */
+async function loadCatalogBase(): Promise<PlaceDTO[]> {
+  if (placesCache && Date.now() - placesCache.ts < PLACES_CACHE_TTL) {
+    return placesCache.rows;
+  }
+  if (!placesInflight) {
+    placesInflight = loadCatalogFromDb()
+      .then((rows) => {
+        placesCache = { ts: Date.now(), rows };
+        return rows;
+      })
+      .finally(() => {
+        placesInflight = null;
+      });
+  }
+  return placesInflight;
 }
 
 /**
@@ -161,6 +198,7 @@ export async function GET(req: NextRequest) {
     // desde el CDN por 60 s (por región) sin invocar la función.
     const res = NextResponse.json({ places: sorted, total: sorted.length });
     res.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    res.headers.set("X-Places-DB-Reads", String(dbReads));
     return res;
   } catch (err) {
     console.error("[api/places GET]", err);
