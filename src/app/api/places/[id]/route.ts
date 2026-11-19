@@ -122,6 +122,28 @@ async function buildDetailBody(id: string): Promise<Record<string, unknown> | nu
     url: photoImageUrl(p.id, staticUrls.get(p.id) ?? null, p.inline, p.createdAt)!,
   }));
 
+  // ¿La galería aprobada ya contiene la imagen de la portada? Comparar URLs
+  // ligeras NO puede responderlo: la portada expone /api/images/place/[id] y
+  // su fila de galería /api/images/photo/[id] — entidades distintas para la
+  // MISMA imagen, así que la comparación por string fallaba y la ficha pública
+  // mostraba la portada dos veces en el carrusel (defecto del 19 nov 2026).
+  // La identidad se decide EN LA BASE con un EXISTS que cruce la fila real:
+  // transfiere un booleano, jamás el base64 de la portada.
+  let coverInGallery = false;
+  if (coverUrl && place.photos.length > 0) {
+    const rows = await db.$queryRaw<{ present: number | boolean }[]>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM "Photo" p
+        JOIN "SingularPlace" s ON s."id" = p."placeId"
+        WHERE p."placeId" = ${id}
+          AND p."url" = s."imageUrl"
+          AND p."status" = 'APPROVED'
+          AND p."archived" = false
+      ) AS present`;
+    coverInGallery = Boolean(Number(rows[0]?.present ?? 0));
+  }
+
   const body = {
     place: {
       id: place.id,
@@ -134,12 +156,11 @@ async function buildDetailBody(id: string): Promise<Record<string, unknown> | nu
       lng: place.lng,
       address: place.address,
       imageUrl: coverUrl,
-      // Galería: portada (imageUrl) primero, luego las fotos aprobadas que
-      // no la dupliquen (p. ej. sugerencias de usuarios con 5 fotos).
+      // Galería: la portada (imageUrl) va primero SOLO si ninguna foto de la
+      // galería es la misma imagen (p. ej. portadas de filas históricas que no
+      // tienen fila propia en la galería).
       photos: [
-        ...(coverUrl && !galleryUrls.some((p) => p.url === coverUrl)
-          ? [{ id: "cover", url: coverUrl }]
-          : []),
+        ...(coverUrl && !coverInGallery ? [{ id: "cover", url: coverUrl }] : []),
         ...galleryUrls,
       ],
       tips: place.tips,

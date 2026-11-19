@@ -61,6 +61,23 @@ npx prisma db execute --schema prisma/schema.prisma --stdin <<'SQL'
 UPDATE "Photo" SET "inline" = ("url" LIKE 'data:%') WHERE "inline" <> ("url" LIKE 'data:%');
 SQL
 
+# 4c) Dedupe de la galería (idempotente, corre en cada build): filas Photo de
+# galería (sin reviewId) con el MISMO lugar y la MISMA url quedaron duplicadas
+# por el defecto del 19 nov 2026 (el diálogo de edición antepone la portada
+# aunque la galería ya la contiene; recortar una copia dejaba original + recorte
+# publicados). Se conserva UNA fila por (placeId, url): preferimos la visible
+# (archived=false), luego la de menor orden, luego la más antigua. Las fotos de
+# reseñas (reviewId) y las sugerencias sin lugar (placeId null) NO se tocan.
+echo "deduplicando galería..."
+npx prisma db execute --schema prisma/schema.prisma --stdin <<'SQL'
+DELETE FROM "Photo"
+WHERE "reviewId" IS NULL AND "placeId" IS NOT NULL AND "id" NOT IN (
+  SELECT DISTINCT ON ("placeId", "url") "id" FROM "Photo"
+  WHERE "reviewId" IS NULL AND "placeId" IS NOT NULL
+  ORDER BY "placeId" ASC, "url" ASC, "archived" ASC, "order" ASC, "createdAt" ASC, "id" ASC
+);
+SQL
+
 # 5) Sembrar catálogo solo si la BD está vacía
 echo "seed si está vacía..."
 if command -v bun >/dev/null 2>&1; then

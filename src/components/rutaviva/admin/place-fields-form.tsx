@@ -259,7 +259,10 @@ export function PlaceFieldsForm({
         (máximo 5). Con la ✕ la foto pasa al{" "}
         <strong className="font-semibold">baúl</strong>: queda atenuada, no se
         muestra al público, no se borra y tocándola de nuevo regresa a la
-        galería en su lugar.
+        galería en su lugar. Desde el baúl también puedes{" "}
+        <strong className="font-semibold">eliminarla definitivamente</strong>{" "}
+        con el ícono de basura (con confirmación: esa acción no se puede
+        deshacer).
       </p>
 
       <div className="space-y-1.5">

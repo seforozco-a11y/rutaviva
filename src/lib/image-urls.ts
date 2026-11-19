@@ -60,3 +60,24 @@ export function photoImageUrl(
   }
   return url ?? null;
 }
+
+/**
+ * ¿Dos URLs apuntan a la MISMA imagen guardada?
+ *
+ * Comparar strings no basta: una misma imagen puede exponerse como URL ligera
+ * del lugar (/api/images/place/[id] — la portada) o como URL ligera de la foto
+ * (/api/images/photo/[id] — su fila en la galería). Son rutas distintas para
+ * el MISMO contenido, y esa diferencia produjo el defecto del 19 nov 2026:
+ * portadas "duplicadas" al editar (el diálogo antepone la portada aunque la
+ * galería ya la contiene) y fichas públicas con la misma foto dos veces en el
+ * carrusel. Aquí las URLs ligeras de la MISMA entidad (mismo tipo + id) se
+ * consideran iguales aunque la versión de caché (?v=) difiera; el resto exige
+ * igualdad exacta (data:, /images/…, https).
+ */
+export function sameImageUrl(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const ma = /^\/api\/images\/(place|photo)\/([a-zA-Z0-9]+)/.exec(a);
+  const mb = /^\/api\/images\/(place|photo)\/([a-zA-Z0-9]+)/.exec(b);
+  return !!ma && !!mb && ma[1] === mb[1] && ma[2] === mb[2];
+}

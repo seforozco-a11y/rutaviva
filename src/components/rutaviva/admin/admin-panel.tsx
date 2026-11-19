@@ -62,6 +62,7 @@ import { PhotoCarousel } from "@/components/rutaviva/photo-carousel";
 import { BackupSection } from "./backup-section";
 import { useToast } from "@/hooks/use-toast";
 import { categoryLabel, SINGULAR_CATEGORIES } from "@/lib/geo";
+import { sameImageUrl } from "@/lib/image-urls";
 import { reportReasonLabel, type ReportKind } from "@/lib/reports";
 import type { Coordinates } from "@/lib/place-types";
 import { cn } from "@/lib/utils";
@@ -166,6 +167,10 @@ type AdminReport = {
 /** Detalle de un lugar con TODAS sus fotos de galería (GET /api/admin/places/[id]). */
 type AdminPlaceDetail = {
   id: string;
+  /** Portada CRUDA (data:/images/…/https). La fila del catálogo del overview
+   *  la trae como URL ligera para no transferir base64; el detalle sí la
+   *  incluye completa para poder comparar y editar. */
+  imageUrl: string | null;
   photos: AdminPhoto[];
 };
 
@@ -1674,11 +1679,19 @@ function EditPlaceContent(props: {
   const galleryPhotos: FormPhoto[] = detailQuery.data.photos
     .filter((ph) => ph.status !== "REJECTED")
     .map((ph) => ({ url: ph.url, archived: ph.archived ?? false }));
-  const cover = props.place.imageUrl;
-  // La portada se agrega al frente si no está ya en la galería. Las fotos del
-  // baúl SIEMPRE se conservan: el límite de 5 solo aplica a las activas.
+  // Portada CRUDA del DETALLE. La fila del catálogo (props.place.imageUrl)
+  // trae la URL ligera /api/images/place/[id] — compararla contra las URLs
+  // crudas de la galería nunca coincidía y el diálogo antepone la portada
+  // como foto EXTRA: el equipo ve la misma imagen dos veces y, al recortar
+  // una copia, la otra se queda publicada — la foto recortada salía DOS
+  // VECES en la ficha (defecto del 19 nov 2026).
+  const cover = detailQuery.data.imageUrl ?? null;
+  // La portada se agrega al frente si no está ya en la galería (mismo
+  // contenido: la comparación entiende también URLs ligeras equivalentes).
+  // Las fotos del baúl SIEMPRE se conservan: el límite de 5 solo aplica a
+  // las activas.
   const photos = capActivePhotos(
-    cover && !galleryPhotos.some((p) => p.url === cover)
+    cover && !galleryPhotos.some((p) => sameImageUrl(p.url, cover))
       ? [{ url: cover }, ...galleryPhotos]
       : galleryPhotos,
     5

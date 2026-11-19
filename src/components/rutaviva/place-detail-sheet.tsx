@@ -116,16 +116,24 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
     staleTime: 30 * 1000,
   });
 
-  // Galería: portada (imageUrl) primero + fotos aprobadas del detalle, sin duplicados.
+  // Galería: el detalle público devuelve el arreglo YA deduplicado contra la
+  // portada (la antepone SOLO si ninguna foto de la galería es la misma
+  // imagen). Aquí NO se vuelve a anteponer: la URL ligera de la portada
+  // (/api/images/place/[id]) y la de su fila en la galería
+  // (/api/images/photo/[id]) son entidades distintas y la comparación por
+  // string nunca coincidía — la misma imagen aparecía DOS veces en el
+  // carrusel (defecto del 19 nov 2026). Mientras el detalle carga, se muestra
+  // solo la portada de la tarjeta.
   const gallery = useMemo(() => {
-    const imgs: string[] = [];
-    for (const p of detailQuery.data?.place.photos ?? []) {
-      if (!imgs.includes(p.url)) imgs.push(p.url);
+    const apiPhotos = detailQuery.data?.place.photos;
+    if (apiPhotos && apiPhotos.length > 0) {
+      const imgs: string[] = [];
+      for (const p of apiPhotos) {
+        if (!imgs.includes(p.url)) imgs.push(p.url);
+      }
+      return imgs;
     }
-    if (detail.imageUrl && !imgs.includes(detail.imageUrl)) {
-      imgs.unshift(detail.imageUrl);
-    }
-    return imgs;
+    return detail.imageUrl ? [detail.imageUrl] : [];
   }, [detail.imageUrl, detailQuery.data]);
 
   return (

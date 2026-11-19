@@ -1,7 +1,26 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, Crop, ImagePlus, Loader2, X } from "lucide-react";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Crop,
+  ImagePlus,
+  Loader2,
+  Trash2,
+  X,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { fileToDataUrl } from "@/lib/image-client";
 import { cn } from "@/lib/utils";
 import { PhotoLightbox } from "@/components/rutaviva/photo-lightbox";
@@ -65,6 +84,9 @@ type PhotoUploadProps = {
  *  - Apartarla en el BAÚL con la ✕: nada se borra — la foto queda atenuada
  *    con la leyenda "Baúl", no se muestra al público y un toque sobre ella la
  *    reincorpora a la galería en su lugar original.
+ *  - Eliminarla DEFINITIVAMENTE desde el baúl con el ícono de basura (con
+ *    confirmación): la foto sale del arreglo y, al guardar, el backend la
+ *    borra de la base de datos. Acción irreversible.
  */
 export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) {
   const camRef = useRef<HTMLInputElement>(null);
@@ -75,6 +97,8 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
   const [viewIdx, setViewIdx] = useState<number | null>(null);
   /** Índice de la foto en el editor de recorte (null = cerrado). */
   const [cropIdx, setCropIdx] = useState<number | null>(null);
+  /** Índice de la foto del baúl con borrado definitivo en confirmación. */
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
   const activeCount = photos.filter((p) => !p.archived).length;
   const full = activeCount >= max;
   const reorderable = photos.length > 1;
@@ -135,6 +159,18 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
     const next = [...photos];
     next[index] = { ...item, archived: false };
     onChange(next);
+    setError(null);
+  };
+
+  /** ELIMINACIÓN DEFINITIVA: la foto sale del arreglo y, al guardar, el
+   *  backend borra su fila de la base de datos (las fotos que no viajan en
+   *  el arreglo se eliminan). Solo se ofrece para fotos del baúl — la ✕ de
+   *  una foto activa SIEMPRE aparta (nada se pierde sin confirmación). */
+  const deleteAt = (index: number) => {
+    const item = photos[index];
+    if (!item || !item.archived) return;
+    onChange(photos.filter((_, idx) => idx !== index));
+    setDeleteIdx(null);
     setError(null);
   };
 
@@ -260,30 +296,43 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
                   )}
                 </>
               ) : (
-                /* EN EL BAÚL: atenuada, sin controles; un toque la restaura. */
-                <button
-                  type="button"
-                  onClick={() => restoreAt(i)}
-                  aria-label={`Restaurar la foto ${i + 1} del baúl`}
-                  title="Toca para devolver esta foto a la galería"
-                  className="absolute inset-0 block cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
-                >
-                  <img
-                    src={item.url}
-                    alt=""
-                    aria-hidden
-                    className="h-full w-full object-cover opacity-40 grayscale"
-                    draggable={false}
-                  />
-                  <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="rounded-full bg-stone-900/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
-                      Baúl
+                /* EN EL BAÚL: atenuada, sin controles de galería; un toque la
+                   restaura y el ícono de basura la ELIMINA definitivamente
+                   (con confirmación, porque no se puede deshacer). */
+                <>
+                  <button
+                    type="button"
+                    onClick={() => restoreAt(i)}
+                    aria-label={`Restaurar la foto ${i + 1} del baúl`}
+                    title="Toca para devolver esta foto a la galería"
+                    className="absolute inset-0 block cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
+                  >
+                    <img
+                      src={item.url}
+                      alt=""
+                      aria-hidden
+                      className="h-full w-full object-cover opacity-40 grayscale"
+                      draggable={false}
+                    />
+                    <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <span className="rounded-full bg-stone-900/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+                        Baúl
+                      </span>
                     </span>
-                  </span>
-                  <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent pb-1 pt-4 text-center text-[10px] font-semibold text-white">
-                    Toca para restaurar
-                  </span>
-                </button>
+                    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent pb-1 pt-4 text-center text-[10px] font-semibold text-white">
+                      Toca para restaurar
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteIdx(i)}
+                    aria-label={`Eliminar definitivamente la foto ${i + 1} del baúl`}
+                    title="Eliminar definitivamente (no se puede deshacer)"
+                    className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-red-700/80 text-white shadow transition hover:bg-red-800"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                </>
               )}
             </div>
           );
@@ -360,7 +409,9 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
         onClose={() => setViewIdx(null)}
       />
 
-      {/* Editor de recorte libre: al aplicar, reemplaza la foto del formulario. */}
+      {/* Editor de recorte libre: al aplicar, reemplaza la foto del formulario.
+          Se conserva la bandera del baúl (el recorte no debe cambiar el estado
+          de la foto, solo su contenido). */}
       {cropIdx !== null && photos[cropIdx] && (
         <PhotoCropDialog
           key={`${cropIdx}-${photos[cropIdx].url.slice(-24)}`}
@@ -368,7 +419,7 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
           title={`Recortar foto ${(photos.slice(0, cropIdx).filter((p) => !p.archived).length + 1)} de ${activeCount}`}
           onApply={(dataUrl) => {
             const next = [...photos];
-            next[cropIdx] = { url: dataUrl };
+            next[cropIdx] = { ...photos[cropIdx], url: dataUrl };
             onChange(next);
             setCropIdx(null);
             setError(null);
@@ -376,6 +427,37 @@ export function PhotoUpload({ photos, onChange, max, label }: PhotoUploadProps) 
           onClose={() => setCropIdx(null)}
         />
       )}
+
+      {/* Confirmación de borrado definitivo (solo fotos del baúl). */}
+      <AlertDialog
+        open={deleteIdx !== null}
+        onOpenChange={(o) => {
+          if (!o) setDeleteIdx(null);
+        }}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar la foto definitivamente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La foto se borrará del baúl y de la base de datos al guardar. Esta
+              acción NO se puede deshacer — si solo querías quitarla del
+              público, cancela y déjala en el baúl.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-11 rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteIdx !== null) deleteAt(deleteIdx);
+              }}
+              className="h-11 rounded-xl bg-red-700 font-bold text-white hover:bg-red-800"
+            >
+              Sí, eliminarla
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
