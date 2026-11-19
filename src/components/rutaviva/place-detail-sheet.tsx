@@ -592,6 +592,8 @@ function ReportReviewDialog(props: {
             </div>
             <Textarea
               id="rv-report-reason"
+              spellCheck
+              autoCapitalize="sentences"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ej. spam, contenido ofensivo, información falsa…"
@@ -702,6 +704,7 @@ function ReviewForm(props: {
         <Label htmlFor="rv-review-name">Tu nombre</Label>
         <Input
           id="rv-review-name"
+          spellCheck
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ej. María G."
@@ -746,6 +749,8 @@ function ReviewForm(props: {
         <Label htmlFor="rv-review-comment">Tu experiencia</Label>
         <Textarea
           id="rv-review-comment"
+          spellCheck
+          autoCapitalize="sentences"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="¿Qué tal tu visita? ¿Qué recomendarías a otros viajeros?"

@@ -128,6 +128,8 @@ export function ReportDialog(props: {
             </Label>
             <Textarea
               id="rv-report-detail"
+              spellCheck
+              autoCapitalize="sentences"
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
               placeholder={
@@ -147,6 +149,7 @@ export function ReportDialog(props: {
             <Label htmlFor="rv-report-contact">Correo o teléfono para dar seguimiento (opcional)</Label>
             <Input
               id="rv-report-contact"
+              spellCheck={false}
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               placeholder="Ej. maria@correo.com o 314 123 4567"

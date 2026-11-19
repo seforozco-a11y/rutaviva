@@ -123,6 +123,7 @@ export function PlacesList({
               aria-hidden
             />
             <Input
+              spellCheck={false}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nombre o categoría…"

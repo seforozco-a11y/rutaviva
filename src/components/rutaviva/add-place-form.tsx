@@ -156,6 +156,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
         <Label htmlFor="rv-name">Nombre del lugar *</Label>
         <Input
           id="rv-name"
+          spellCheck
           value={values.name}
           onChange={(e) => patch({ name: e.target.value })}
           placeholder="Ej. Puestos de tacos del malecón"
@@ -185,6 +186,8 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
         <Label htmlFor="rv-description">Descripción *</Label>
         <Textarea
           id="rv-description"
+          spellCheck
+          autoCapitalize="sentences"
           value={values.description}
           onChange={(e) => patch({ description: e.target.value })}
           placeholder="¿Qué lo hace especial? ¿Qué no debe perderse quien lo visite?"
@@ -216,6 +219,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
             </Label>
             <Input
               id="rv-lat"
+              spellCheck={false}
               inputMode="decimal"
               value={values.lat}
               onChange={(e) => patch({ lat: e.target.value })}
@@ -229,6 +233,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
             </Label>
             <Input
               id="rv-lng"
+              spellCheck={false}
               inputMode="decimal"
               value={values.lng}
               onChange={(e) => patch({ lng: e.target.value })}
@@ -243,6 +248,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
         <Label htmlFor="rv-address">Dirección (opcional)</Label>
         <Input
           id="rv-address"
+          spellCheck
           value={values.address}
           onChange={(e) => patch({ address: e.target.value })}
           placeholder="Calle, número, colonia"
@@ -261,6 +267,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
         <Label htmlFor="rv-tips">Tip local (opcional)</Label>
         <Input
           id="rv-tips"
+          spellCheck
           value={values.tips}
           onChange={(e) => patch({ tips: e.target.value })}
           placeholder="Ej. Ve al atardecer entre semana"
@@ -273,6 +280,7 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
         <Label htmlFor="rv-suggested-by">Tu nombre (para el crédito)</Label>
         <Input
           id="rv-suggested-by"
+          spellCheck
           value={values.suggestedBy}
           onChange={(e) => patch({ suggestedBy: e.target.value })}
           placeholder="Ej. María del Carmen"

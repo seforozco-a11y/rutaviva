@@ -150,6 +150,7 @@ export function PlaceFieldsForm({
         <Label htmlFor={`${idPrefix}-name`}>Nombre del lugar *</Label>
         <Input
           id={`${idPrefix}-name`}
+          spellCheck
           value={values.name}
           onChange={(e) => onPatch({ name: e.target.value })}
           placeholder="Ej. Mirador de la bahía"
@@ -162,6 +163,8 @@ export function PlaceFieldsForm({
         <Label htmlFor={`${idPrefix}-description`}>Descripción *</Label>
         <Textarea
           id={`${idPrefix}-description`}
+          spellCheck
+          autoCapitalize="sentences"
           value={values.description}
           onChange={(e) => onPatch({ description: e.target.value })}
           placeholder="¿Qué lo hace especial? ¿Qué no debe perderse quien lo visite?"
@@ -212,6 +215,7 @@ export function PlaceFieldsForm({
             </Label>
             <Input
               id={`${idPrefix}-lat`}
+              spellCheck={false}
               inputMode="decimal"
               value={values.lat}
               onChange={(e) => onPatch({ lat: e.target.value })}
@@ -225,6 +229,7 @@ export function PlaceFieldsForm({
             </Label>
             <Input
               id={`${idPrefix}-lng`}
+              spellCheck={false}
               inputMode="decimal"
               value={values.lng}
               onChange={(e) => onPatch({ lng: e.target.value })}
@@ -239,6 +244,7 @@ export function PlaceFieldsForm({
         <Label htmlFor={`${idPrefix}-address`}>Dirección (opcional)</Label>
         <Input
           id={`${idPrefix}-address`}
+          spellCheck
           value={values.address}
           onChange={(e) => onPatch({ address: e.target.value })}
           placeholder="Calle, número, colonia"
@@ -269,6 +275,7 @@ export function PlaceFieldsForm({
         <Label htmlFor={`${idPrefix}-tips`}>Tip local (opcional)</Label>
         <Input
           id={`${idPrefix}-tips`}
+          spellCheck
           value={values.tips}
           onChange={(e) => onPatch({ tips: e.target.value })}
           placeholder="Ej. Ve al atardecer entre semana"
@@ -285,6 +292,7 @@ export function PlaceFieldsForm({
             </Label>
             <Input
               id={`${idPrefix}-city`}
+              spellCheck
               value={values.city}
               onChange={(e) => onPatch({ city: e.target.value })}
               className="h-10 rounded-xl"
@@ -297,6 +305,7 @@ export function PlaceFieldsForm({
             </Label>
             <Input
               id={`${idPrefix}-state`}
+              spellCheck
               value={values.state}
               onChange={(e) => onPatch({ state: e.target.value })}
               className="h-10 rounded-xl"
