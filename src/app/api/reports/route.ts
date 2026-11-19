@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ipHashOf } from "@/lib/admin-auth";
+import { rateLimited, type RateBucket } from "@/lib/server/rate-limit";
 import { validateReportInput } from "@/lib/server/moderation";
 
 export const dynamic = "force-dynamic";
@@ -26,24 +27,9 @@ const MAX_REPORTS_PER_HOUR = 10;
 
 // Límite en memoria (por instancia del serverless; suficiente contra spam
 // casual: la cola del panel es privada y los reportes no son públicos).
-const rateBuckets = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(key: string): boolean {
-  const now = Date.now();
-  const bucket = rateBuckets.get(key);
-  if (!bucket || bucket.resetAt < now) {
-    rateBuckets.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    // Limpieza perezosa para que el Map no crezca indefinidamente.
-    if (rateBuckets.size > 5000) {
-      for (const [k, v] of rateBuckets) {
-        if (v.resetAt < now) rateBuckets.delete(k);
-      }
-    }
-    return false;
-  }
-  bucket.count += 1;
-  return bucket.count > MAX_REPORTS_PER_HOUR;
-}
+// Refactor auditoría 20-nov-2026: lógica extraída a src/lib/server/rate-limit.ts
+// y compartida con las sugerencias de lugar y las reseñas.
+const rateBuckets = new Map<string, RateBucket>();
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     const { kind, placeId, reason, detail, contact, meta } = parsed.data;
 
-    if (rateLimited(ipHashOf(req))) {
+    if (rateLimited(rateBuckets, ipHashOf(req), MAX_REPORTS_PER_HOUR)) {
       return NextResponse.json(
         { error: "Recibimos muchos reportes tuyos hoy. Intenta más tarde." },
         { status: 429 }

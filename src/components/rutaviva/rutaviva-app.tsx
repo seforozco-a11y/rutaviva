@@ -387,6 +387,8 @@ export function RutavivaApp() {
                 onFilterChange={setFilter}
                 onSelect={openDetail}
                 onRequestGps={() => requestGps()}
+                placesError={placesError}
+                onRetryPlaces={() => void placesQuery.refetch()}
               />
             )}
             {view === "list" && (

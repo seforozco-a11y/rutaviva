@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { haversineKm, SINGULAR_CATEGORIES } from "@/lib/geo";
 import { validatePlaceInput } from "@/lib/server/moderation";
 import { placeCoverUrl } from "@/lib/image-urls";
+import { ipHashOf } from "@/lib/admin-auth";
+import { rateLimited, type RateBucket } from "@/lib/server/rate-limit";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -211,9 +213,27 @@ export async function GET(req: NextRequest) {
  * El lugar NO se publica: queda en status PENDING y pasa a la cola del panel
  * de administración, donde el equipo RutaViva lo revisa ("previa estudio se
  * dará la validación") antes de aparecer en la app.
+ *
+ * Anti-spam (auditoría 20-nov-2026): la sugerencia lleva fotos (base64 que
+ * ocupa cuota de Neon incluso en PENDING) — sin límite, un script podía
+ * llenar la cola y la base en minutos. Máx 5 sugerencias por hora por IP
+ * pseudonimizada (hash HMAC, nunca la IP en claro).
  */
+const suggestionBuckets = new Map<string, RateBucket>();
+const MAX_SUGGESTIONS_PER_HOUR = 5;
+
 export async function POST(req: NextRequest) {
   try {
+    // Anti-spam ANTES de parsear el body (puede pesar varios MB con fotos):
+    // rechazar el exceso evita gastar CPU/memoria en peticiones que ni siquiera
+    // llegarán a la validación.
+    if (rateLimited(suggestionBuckets, ipHashOf(req), MAX_SUGGESTIONS_PER_HOUR)) {
+      return NextResponse.json(
+        { error: "Recibimos muchas sugerencias tuyas hoy. Intenta más tarde." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     const parsed = validatePlaceInput(body);
     if (!parsed.ok) {

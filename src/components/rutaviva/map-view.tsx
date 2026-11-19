@@ -123,6 +123,14 @@ type MapViewProps = {
   locating: boolean;
   /** Último fallo de GPS (null si no hay problema o el usuario eligió demo). */
   gpsProblem: GpsProblem | null;
+  /**
+   * Error de carga del catálogo (auditoría 20-nov-2026): antes solo la Lista
+   * lo mostraba y en el Mapa el usuario veía un mapa vacío sin explicación
+   * (parecía que la app no tenía lugares). Ahora el mapa avisa y permite
+   * reintentar sin cambiar de pestaña.
+   */
+  placesError: string | null;
+  onRetryPlaces: () => void;
 };
 
 export function MapView({
@@ -136,6 +144,8 @@ export function MapView({
   onRequestGps,
   locating,
   gpsProblem,
+  placesError,
+  onRetryPlaces,
 }: MapViewProps) {
   // Refs de las franjas deslizables: el letrero «Desliza…» mide cuánto
   // contenido queda fuera de vista en cada una.
@@ -182,6 +192,20 @@ export function MapView({
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[850] space-y-2 p-3 pr-16">
         {originSource === "demo" && gpsProblem && (
           <GpsProblemBanner problem={gpsProblem} onRetry={onRequestGps} />
+        )}
+        {placesError && (
+          <div
+            role="alert"
+            className="pointer-events-auto flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50/95 px-3 py-2 text-xs font-semibold text-amber-900 shadow-md backdrop-blur"
+          >
+            <span className="flex-1">No se pudieron cargar los lugares. Revisa tu conexión.</span>
+            <button
+              onClick={onRetryPlaces}
+              className="min-h-11 shrink-0 rounded-full bg-amber-900 px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-900 md:min-h-9"
+            >
+              Reintentar
+            </button>
+          </div>
         )}
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white/95 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-md backdrop-blur">

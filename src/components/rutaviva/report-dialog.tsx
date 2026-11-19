@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { postJson } from "@/lib/fetch-json";
 import {
   MAX_REPORT_CONTACT,
   MAX_REPORT_DETAIL,
@@ -49,20 +50,15 @@ export function ReportDialog(props: {
     if (!reason) return;
     setSending(true);
     try {
-      const res = await fetch("/api/reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: props.kind,
-          placeId: props.kind === "PLACE" ? props.placeId : undefined,
-          reason,
-          detail: detail.trim() || undefined,
-          contact: contact.trim() || undefined,
-          meta: props.kind === "APP" ? deviceMeta() : undefined,
-        }),
+      const result = await postJson("/api/reports", {
+        kind: props.kind,
+        placeId: props.kind === "PLACE" ? props.placeId : undefined,
+        reason,
+        detail: detail.trim() || undefined,
+        contact: contact.trim() || undefined,
+        meta: props.kind === "APP" ? deviceMeta() : undefined,
       });
-      const json = (await res.json().catch(() => null)) as { error?: string } | null;
-      if (!res.ok) throw new Error(json?.error ?? "No se pudo enviar");
+      if (!result.ok) throw new Error(result.error ?? "No se pudo enviar");
       toast.success("Gracias, nuestro equipo lo revisará pronto");
       props.onClose();
     } catch (err) {

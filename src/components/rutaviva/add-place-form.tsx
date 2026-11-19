@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Crosshair, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { PhotoUpload, firstActivePhotoUrl, type FormPhoto } from "./photo-upload";
 import { PrivacyNotice } from "./privacy-notice";
+import { postJson } from "@/lib/fetch-json";
 import { SINGULAR_CATEGORIES } from "@/lib/geo";
 import type { Coordinates } from "@/lib/place-types";
 
@@ -39,6 +40,14 @@ const EMPTY = {
 };
 
 /**
+ * Borrador de la sugerencia (auditoría 20-nov-2026): los campos de texto se
+ * guardan en localStorage mientras se escribe. Si la app se cierra por falta
+ * de señal o por error, al volver el texto SIGUE ahí — solo las fotos no se
+ * recuperan (pesan megas y reventarían la cuota de localStorage), y se avisa.
+ */
+const DRAFT_KEY = "rv_borrador_sugerencia";
+
+/**
  * Formulario "Sugerir un lugar" → POST /api/places (queda PENDING).
  * Nada se publica sin la validación del equipo RutaViva: la sugerencia entra
  * a la cola del panel de administración.
@@ -48,8 +57,46 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [restored, setRestored] = useState(false);
 
   const patch = (p: Partial<typeof EMPTY>) => setValues((v) => ({ ...v, ...p }));
+
+  // Restaurar borrador UNA vez al montar (solo campos de texto).
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw) as Record<string, unknown>;
+        setValues((v) => ({
+          ...v,
+          name: typeof d.name === "string" ? d.name : v.name,
+          category: typeof d.category === "string" ? d.category : v.category,
+          description: typeof d.description === "string" ? d.description : v.description,
+          address: typeof d.address === "string" ? d.address : v.address,
+          lat: typeof d.lat === "string" ? d.lat : v.lat,
+          lng: typeof d.lng === "string" ? d.lng : v.lng,
+          tips: typeof d.tips === "string" ? d.tips : v.tips,
+          suggestedBy: typeof d.suggestedBy === "string" ? d.suggestedBy : v.suggestedBy,
+        }));
+        setRestored(true);
+      }
+    } catch {
+      // Borrador corrupto o sin localStorage disponible: se ignora en silencio.
+    }
+  }, []);
+
+  // Guardar borrador con debounce (400 ms) mientras se escribe.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const { photos: _photos, ...textFields } = values;
+        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(textFields));
+      } catch {
+        // Cuota llena o modo privado: el borrador es best-effort.
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [values]);
 
   const useMyLocation = () => {
     if (!origin) return;
@@ -60,6 +107,11 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
     setValues({ ...EMPTY });
     setError(null);
     setSent(false);
+    try {
+      window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // sin localStorage: nada que limpiar
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -75,28 +127,40 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
     if (!Number.isFinite(nLat) || !Number.isFinite(nLng))
       return setError("Captura una latitud y longitud válidas (o usa tu ubicación).");
 
+    // Auditoría 20-nov-2026: el body de una petición tiene tope en Vercel
+    // (~4.5 MB). Contamos las fotos ANTES de enviar para dar un mensaje claro
+    // y accionable en lugar del fallo genérico de red (que ya se cubrió con
+    // postJson para el caso 413).
+    const totalPhotoChars = values.photos.reduce((a, p) => a + p.url.length, 0);
+    if (totalPhotoChars > 3_400_000) {
+      return setError(
+        "Las fotos elegidas pesan demasiado juntas. Quita una o dos fotos y vuelve a intentar."
+      );
+    }
+
     setSaving(true);
     try {
-      const res = await fetch("/api/places", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name.trim(),
-          description: values.description.trim(),
-          category: values.category,
-          lat: nLat,
-          lng: nLng,
-          address: values.address.trim() || null,
-          // Portada = primera foto ACTIVA; la galería viaja con banderas de
-          // baúl (una foto apartada se conserva para que el equipo la vea).
-          imageUrl: firstActivePhotoUrl(values.photos),
-          photos: values.photos,
-          tips: values.tips.trim() || null,
-          suggestedBy: values.suggestedBy.trim() || null,
-        }),
+      const result = await postJson("/api/places", {
+        name: values.name.trim(),
+        description: values.description.trim(),
+        category: values.category,
+        lat: nLat,
+        lng: nLng,
+        address: values.address.trim() || null,
+        // Portada = primera foto ACTIVA; la galería viaja con banderas de
+        // baúl (una foto apartada se conserva para que el equipo la vea).
+        imageUrl: firstActivePhotoUrl(values.photos),
+        photos: values.photos,
+        tips: values.tips.trim() || null,
+        suggestedBy: values.suggestedBy.trim() || null,
       });
-      const json = (await res.json().catch(() => null)) as { error?: string } | null;
-      if (!res.ok) throw new Error(json?.error ?? "No se pudo enviar la sugerencia");
+      if (!result.ok) throw new Error(result.error ?? "No se pudo enviar la sugerencia");
+      // Éxito: el borrador ya no es necesario.
+      try {
+        window.localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // sin localStorage: nada que limpiar
+      }
       setSent(true);
       onSuggested();
     } catch (err) {
@@ -150,6 +214,15 @@ export function AddPlaceForm({ origin, onSuggested, onDone }: AddPlaceFormProps)
           ¿Conoces una joya de esta ciudad? Cuéntanosla: nuestro equipo la revisa y, si cumple
           los lineamientos, la publica en la app.
         </p>
+        {restored ? (
+          <p
+            role="status"
+            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800"
+          >
+            Recuperamos el texto de tu última sugerencia sin enviar. Las fotos sí se deben
+            elegir de nuevo.
+          </p>
+        ) : null}
       </header>
 
       <div className="space-y-1.5">

@@ -126,6 +126,9 @@ export function MapCanvas({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
+        // Auditoría 20-nov-2026: si un tile falla (OSM saturado o red débil)
+        // se muestra un gris piedra en lugar del ícono de imagen rota.
+        errorTileUrl="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><rect width='256' height='256' fill='%23f5f5f4'/><text x='128' y='136' text-anchor='middle' font-family='system-ui' font-size='14' fill='%23a8a29e'>Sin mapa</text></svg>"
       />
       <SizeInvalidator />
       <FocusController focus={focus} />

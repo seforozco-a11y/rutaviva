@@ -9,6 +9,13 @@
 const MAX_INPUT_BYTES = 12 * 1024 * 1024; // 12 MB
 const MAX_SIDE = 960;
 const JPEG_QUALITY = 0.66;
+/**
+ * Tope por foto tras comprimir (auditoría 20-nov-2026): ~800 KB binarios.
+ * Con el cap de body de Vercel (~4.5 MB), 5 fotos de este tamaño caben justo;
+ * si una foto supera el tope (PNG muy complejo, cámara atípica), se aplica
+ * una SEGUNDA pasada más agresiva (720 px, calidad 0.5) antes de rendirse.
+ */
+const TARGET_MAX_CHARS = 1_100_000;
 
 /** Área de recorte en píxeles NATURALES de la imagen original. */
 export type CropArea = { x: number; y: number; width: number; height: number };
@@ -29,6 +36,36 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error("La imagen no se pudo procesar."));
     img.src = src;
   });
+}
+
+/**
+ * Dibuja `source` en un canvas de destW×destH y devuelve JPEG dataURL.
+ * Con origen (sx/sy/sw/sh) = recorte; con fondo blanco cuando el destino
+ * puede tener transparencia (PNG) para que no se aplane a negro en JPEG.
+ * Devuelve "" si el canvas no está disponible.
+ */
+function canvasToJpeg(
+  source: CanvasImageSource,
+  destW: number,
+  destH: number,
+  quality: number,
+  opts: { sx?: number; sy?: number; sw?: number; sh?: number; fillWhite?: boolean } = {}
+): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = destW;
+  canvas.height = destH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  if (opts.fillWhite) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, destW, destH);
+  }
+  if (opts.sw && opts.sh) {
+    ctx.drawImage(source, opts.sx ?? 0, opts.sy ?? 0, opts.sw, opts.sh, 0, 0, destW, destH);
+  } else {
+    ctx.drawImage(source, 0, 0, destW, destH);
+  }
+  return canvas.toDataURL("image/jpeg", quality);
 }
 
 /**
@@ -57,14 +94,20 @@ export async function fileToDataUrl(file: File): Promise<string> {
     const w = Math.max(1, Math.round(img.naturalWidth * scale));
     const h = Math.max(1, Math.round(img.naturalHeight * scale));
 
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return rawDataUrl;
-    ctx.drawImage(img, 0, 0, w, h);
+    let out = canvasToJpeg(img, w, h, JPEG_QUALITY);
 
-    const out = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    // Red de seguridad: si aún pesa demasiado (p. ej. PNG muy detallado),
+    // segunda pasada más agresiva en lugar de enviar megas de más.
+    if (out.length > TARGET_MAX_CHARS) {
+      const out2 = canvasToJpeg(
+        img,
+        Math.max(1, Math.round(w * 0.75)),
+        Math.max(1, Math.round(h * 0.75)),
+        0.5
+      );
+      if (out2.startsWith("data:image/") && out2.length < out.length) out = out2;
+    }
+
     return out.length > 0 && out.startsWith("data:image/") ? out : rawDataUrl;
   } catch {
     // Sin redimensionado disponible: enviamos el original comprimido por el usuario.
@@ -101,19 +144,23 @@ export async function cropPhotoToDataUrl(url: string, area: CropArea): Promise<s
   const h = Math.max(1, Math.round(sh * scale));
 
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("El navegador no pudo procesar el recorte.");
     // Fondo blanco: fotos con transparencia (PNG) no se aplanan a negro en JPEG.
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
-
-    const out = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    let out = canvasToJpeg(img, w, h, JPEG_QUALITY, { sx, sy, sw, sh, fillWhite: true });
     if (!out.startsWith("data:image/")) {
       throw new Error("No se pudo generar la imagen recortada.");
+    }
+
+    // Misma red de seguridad que la subida completa: recorte aún pesado →
+    // segunda pasada a 0.75× y calidad 0.5 (misma vista, más comprimida).
+    if (out.length > TARGET_MAX_CHARS) {
+      const out2 = canvasToJpeg(
+        img,
+        Math.max(1, Math.round(w * 0.75)),
+        Math.max(1, Math.round(h * 0.75)),
+        0.5,
+        { sx, sy, sw, sh, fillWhite: true }
+      );
+      if (out2.startsWith("data:image/") && out2.length < out.length) out = out2;
     }
     return out;
   } catch (err) {

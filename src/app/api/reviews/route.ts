@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ipHashOf } from "@/lib/admin-auth";
+import { rateLimited, type RateBucket } from "@/lib/server/rate-limit";
 import { validateReviewInput } from "@/lib/server/moderation";
 
 export const dynamic = "force-dynamic";
@@ -8,9 +10,26 @@ export const dynamic = "force-dynamic";
  * POST /api/reviews → reseña enviada por un usuario con sus fotos.
  * La reseña y sus fotos quedan PENDING: solo aparecen en el lugar cuando el
  * admin las aprueba desde el panel de administración.
+ *
+ * Anti-spam (auditoría 20-nov-2026): sin límite, un script podía llenar la
+ * cola de moderación con reseñas basura. Máx 8 reseñas por hora por IP
+ * pseudonimizada (hash HMAC, nunca la IP en claro) — margen holgado para un
+ * usuario real que reseña varios lugares seguidos.
  */
+const reviewBuckets = new Map<string, RateBucket>();
+const MAX_REVIEWS_PER_HOUR = 8;
+
 export async function POST(req: NextRequest) {
   try {
+    // Anti-spam ANTES de parsear el body (las reseñas también pueden llevar
+    // fotos base64 de varios MB).
+    if (rateLimited(reviewBuckets, ipHashOf(req), MAX_REVIEWS_PER_HOUR)) {
+      return NextResponse.json(
+        { error: "Recibimos muchas reseñas tuyas hoy. Intenta más tarde." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     const parsed = validateReviewInput(body);
     if (!parsed.ok) {

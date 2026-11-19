@@ -44,6 +44,7 @@ import { PrivacyNotice } from "./privacy-notice";
 import { PhotoCarousel } from "./photo-carousel";
 import { ReportDialog } from "./report-dialog";
 import { directionsUrl, formatDistance } from "@/lib/geo";
+import { postJson } from "@/lib/fetch-json";
 import { categoryVisual } from "@/lib/category-visual";
 import { CategoryIcon } from "./category-icon";
 import type { PlaceDetail, PlaceDetailResponse } from "@/lib/place-types";
@@ -668,22 +669,17 @@ function ReviewForm(props: {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          placeId: props.placeId,
-          authorName: name.trim(),
-          rating,
-          comment: comment.trim(),
-          // Solo las fotos activas viajan; si apartó alguna en el baúl antes
-          // de enviar, no se incluye en la reseña.
-          photos: photos.filter((p) => !p.archived).map((p) => p.url),
-        }),
+      const result = await postJson("/api/reviews", {
+        placeId: props.placeId,
+        authorName: name.trim(),
+        rating,
+        comment: comment.trim(),
+        // Solo las fotos activas viajan; si apartó alguna en el baúl antes
+        // de enviar, no se incluye en la reseña.
+        photos: photos.filter((p) => !p.archived).map((p) => p.url),
       });
-      const json = (await res.json().catch(() => null)) as { error?: string } | null;
-      if (!res.ok) {
-        throw new Error(json?.error ?? "No se pudo enviar la reseña");
+      if (!result.ok) {
+        throw new Error(result.error ?? "No se pudo enviar la reseña");
       }
       props.onSubmitted(name.trim());
     } catch (err) {
