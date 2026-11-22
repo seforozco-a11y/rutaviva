@@ -74,6 +74,14 @@ export function RutavivaApp() {
   const focusK = useRef(0);
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  /**
+   * Objetivo de edición del equipo (Task: edición rápida desde el mapa).
+   * La ficha pública con sesión admin activa pide editar un lugar → se fija
+   * aquí el id y la app cambia a la vista del panel, que abre el diálogo de
+   * edición de ese lugar en la pestaña Lugares. El panel lo consume (lo pone
+   * a null) en cuanto lo abre (o avisa si ya no existe).
+   */
+  const [adminEditTarget, setAdminEditTarget] = useState<string | null>(null);
   // Canal «Ayuda y comentarios» (diálogo de reportes kind=APP): vive en la
   // barra inferior (columna que antes era de Admin) y se abre desde
   // cualquier vista sin cambiar de menú.
@@ -430,7 +438,11 @@ export function RutavivaApp() {
             )}
             {view === "admin" && (
               <div className="rv-scroll absolute inset-0 overflow-y-auto bg-gradient-to-b from-stone-50 to-background">
-                <AdminPanel origin={origin} />
+                <AdminPanel
+                  origin={origin}
+                  editPlaceId={adminEditTarget}
+                  onEditPlaceConsumed={() => setAdminEditTarget(null)}
+                />
               </div>
             )}
           </main>
@@ -442,7 +454,16 @@ export function RutavivaApp() {
         </>
       )}
 
-      <PlaceDetailSheet detail={detail} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <PlaceDetailSheet
+        detail={detail}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onEditAsAdmin={(placeId) => {
+          setSheetOpen(false);
+          setAdminEditTarget(placeId);
+          setView("admin");
+        }}
+      />
       {helpOpen && <ReportDialog kind="APP" onClose={() => setHelpOpen(false)} />}
     </div>
   );

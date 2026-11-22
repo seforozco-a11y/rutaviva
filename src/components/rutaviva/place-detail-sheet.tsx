@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+// useQueryClient se usa para invalidar la sesión admin antes de saltar al
+// panel desde el botón «Editar lugar» (Task: edición rápida desde el mapa).
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -53,10 +55,23 @@ type PlaceDetailSheetProps = {
   detail: PlaceDetail | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Atajo del equipo RutaViva (Task: edición rápida desde el mapa): con la
+   * sesión admin activa (PIN), la ficha muestra el botón «Editar lugar» y
+   * este callback salta al panel con el diálogo de edición ya abierto para
+   * ESTE lugar. Solo lo pasa el componente raíz; los lugares comunes (OSM,
+   * fuera del catálogo) nunca lo invocan.
+   */
+  onEditAsAdmin?: (placeId: string) => void;
 };
 
 /** Bottom-sheet con el detalle de un lugar (singular o común). */
-export function PlaceDetailSheet({ detail, open, onOpenChange }: PlaceDetailSheetProps) {
+export function PlaceDetailSheet({
+  detail,
+  open,
+  onOpenChange,
+  onEditAsAdmin,
+}: PlaceDetailSheetProps) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="rv-drawer-max">
@@ -65,6 +80,7 @@ export function PlaceDetailSheet({ detail, open, onOpenChange }: PlaceDetailShee
             key={detail.id}
             detail={detail}
             onClose={() => onOpenChange(false)}
+            onEditAsAdmin={onEditAsAdmin}
           />
         )}
       </DrawerContent>
@@ -72,7 +88,15 @@ export function PlaceDetailSheet({ detail, open, onOpenChange }: PlaceDetailShee
   );
 }
 
-function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => void }) {
+function SheetBody({
+  detail,
+  onClose,
+  onEditAsAdmin,
+}: {
+  detail: PlaceDetail;
+  onClose: () => void;
+  onEditAsAdmin?: (placeId: string) => void;
+}) {
   const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
   // Visual de la categoría (icono + colores); para comunes (OSM) manda su color.
   const cat =
@@ -104,6 +128,45 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
   // Canal "¿Información incorrecta?" — reporte del LUGAR (ubicación errónea,
   // cerrado, fotos que no corresponden…) para cualquier tipo de ficha.
   const [reportPlaceOpen, setReportPlaceOpen] = useState(false);
+
+  /**
+   * ¿Hay sesión del equipo activa? (Task: edición rápida desde el mapa)
+   * Misma clave ["admin-session"] que usa el panel: comparten caché de
+   * TanStack Query, así que si la administradora ya entró con su PIN, el
+   * botón aparece al instante sin llamada extra; si la cookie expiró, el
+   * servidor responde con la verdad y el botón no aparece. La SEGURIDAD no
+   * depende de este botón: los endpoints de edición validan la cookie
+   * admin en el servidor siempre.
+   */
+  const adminSessionQuery = useQuery({
+    queryKey: ["admin-session"],
+    queryFn: async (): Promise<{ authenticated: boolean }> => {
+      const res = await fetch("/api/admin/session");
+      if (!res.ok) throw new Error("No se pudo verificar la sesión");
+      return (await res.json()) as { authenticated: boolean };
+    },
+    // Solo tiene sentido preguntar en fichas de lugares singulares (los
+    // comunes de OSM no viven en el catálogo y no se pueden editar).
+    enabled: detail.kind === "singular",
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const isTeamSession =
+    detail.kind === "singular" && adminSessionQuery.data?.authenticated === true;
+
+  /**
+   * «Editar lugar» (solo visible con sesión del equipo activa): invalida la
+   * sesión (el panel la re-verifica al montar — si la cookie expiró, muestra
+   * el login con PIN antes de llegar al catálogo), cierra esta ficha y salta
+   * al panel con la pestaña Lugares y el diálogo de edición ya abierto.
+   */
+  const queryClient = useQueryClient();
+  const handleEditAsAdmin = () => {
+    if (!onEditAsAdmin) return;
+    void queryClient.invalidateQueries({ queryKey: ["admin-session"] });
+    onClose();
+    onEditAsAdmin(detail.id);
+  };
 
   // Detalle público (solo lugares singulares validados): calificación + reseñas.
   const detailQuery = useQuery({
@@ -256,6 +319,30 @@ function SheetBody({ detail, onClose }: { detail: PlaceDetail; onClose: () => vo
           ¿Información incorrecta o desactualizada? Repórtalo
         </button>
       </div>
+
+      {/* Tira del equipo RutaViva (Task: edición rápida desde el mapa): SOLO
+          aparece si hay sesión de administradora activa mediante el PIN. El
+          público general jamás la ve. Colocada justo encima del pie fijo para
+          que siempre sea visible sin depender del scroll de las reseñas. */}
+      {isTeamSession && onEditAsAdmin && (
+        <div
+          role="region"
+          aria-label="Acciones del equipo RutaViva"
+          className="mx-4 mb-1 flex shrink-0 items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2"
+        >
+          <ShieldCheck className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-wide text-amber-800">
+            Sesión del equipo activa
+          </span>
+          <Button
+            onClick={handleEditAsAdmin}
+            className="h-9 shrink-0 gap-1.5 rounded-full bg-amber-600 px-3 text-xs font-bold text-white hover:bg-amber-700 focus-visible:outline-amber-600"
+          >
+            <PenLine className="h-3.5 w-3.5" aria-hidden />
+            Editar lugar
+          </Button>
+        </div>
+      )}
 
       {/* Pie fijo: siempre visible sin depender del scroll de las reseñas */}
       <DrawerFooter className="flex-row gap-2 border-t border-stone-100 bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">

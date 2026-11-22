@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { es as esLocale } from "date-fns/locale";
@@ -213,7 +213,22 @@ function relativeDate(iso: string): string {
 
 /* ==================== Panel (puerta de sesión) ==================== */
 
-export function AdminPanel({ origin = null }: { origin?: Coordinates | null }) {
+export function AdminPanel({
+  origin = null,
+  editPlaceId = null,
+  onEditPlaceConsumed,
+}: {
+  origin?: Coordinates | null;
+  /**
+   * Lugar a editar en abierto (Task: edición rápida desde el mapa). Cuando la
+   * ficha pública pide «Editar lugar», la app monta el panel con este id: la
+   * sesión se valida como siempre (PIN si expiró) y al cargar el catálogo se
+   * abre el diálogo de edición de ese lugar en la pestaña Lugares.
+   */
+  editPlaceId?: string | null;
+  /** Avisa a la app que el objetivo ya fue consumido (abierto o inexistente). */
+  onEditPlaceConsumed?: () => void;
+}) {
   const sessionQuery = useQuery({
     queryKey: ["admin-session"],
     queryFn: async (): Promise<{ authenticated: boolean }> => {
@@ -254,10 +269,18 @@ export function AdminPanel({ origin = null }: { origin?: Coordinates | null }) {
   }
 
   if (!sessionQuery.data.authenticated) {
+    // Sin sesión el PIN es obligatorio: el objetivo de edición se conserva
+    // para que, tras entrar, el panel lo abra automáticamente.
     return <AdminLogin />;
   }
 
-  return <AdminDashboard origin={origin} />;
+  return (
+    <AdminDashboard
+      origin={origin}
+      editPlaceId={editPlaceId}
+      onEditPlaceConsumed={onEditPlaceConsumed}
+    />
+  );
 }
 
 /* ==================== Login con PIN ==================== */
@@ -384,10 +407,20 @@ function AdminLogin() {
 
 /* ==================== Dashboard ==================== */
 
-function AdminDashboard({ origin }: { origin: Coordinates | null }) {
+function AdminDashboard({
+  origin,
+  editPlaceId = null,
+  onEditPlaceConsumed,
+}: {
+  origin: Coordinates | null;
+  editPlaceId?: string | null;
+  onEditPlaceConsumed?: () => void;
+}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState("review");
+  // Con objetivo de edición (llegada desde la ficha del mapa) abrimos
+  // directamente la pestaña del catálogo; el flujo normal entra a "Por revisar".
+  const [tab, setTab] = useState(editPlaceId ? "places" : "review");
 
   const overviewQuery = useQuery({
     queryKey: ["admin-overview"],
@@ -406,6 +439,30 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
   const refreshPublic = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["places"] });
   }, [queryClient]);
+
+  /**
+   * Objetivo de edición (Task: edición rápida desde el mapa): al llegar los
+   * datos del catálogo, la fila del lugar buscado se pasa a PlacesSection
+   * como estado inicial del diálogo de edición. El efecto consume el objetivo
+   * (abierto o inexistente) para que cerrar el diálogo no lo re-abra.
+   */
+  const presetEditing = useMemo(() => {
+    if (!editPlaceId || !overviewQuery.data) return null;
+    return overviewQuery.data.allPlaces.find((p) => p.id === editPlaceId) ?? null;
+  }, [editPlaceId, overviewQuery.data]);
+
+  useEffect(() => {
+    if (!editPlaceId || !overviewQuery.data) return;
+    const row = overviewQuery.data.allPlaces.find((p) => p.id === editPlaceId);
+    if (!row) {
+      toast({
+        title: "No se encontró el lugar en el catálogo",
+        description:
+          "Puede haber sido eliminado o aún estar esperando revisión en la pestaña «Por revisar».",
+      });
+    }
+    onEditPlaceConsumed?.();
+  }, [editPlaceId, overviewQuery.data, onEditPlaceConsumed, toast]);
 
   const logout = useCallback(async () => {
     try {
@@ -752,6 +809,7 @@ function AdminDashboard({ origin }: { origin: Coordinates | null }) {
             <TabsContent value="places" className="mt-4">
               <PlacesSection
                 places={overviewQuery.data.allPlaces}
+                presetEditing={presetEditing}
                 onEditSave={editPlace}
                 onFeature={featurePlace}
                 onDelete={deletePlace}
@@ -1416,11 +1474,19 @@ function PlaceFormDialogBody(props: {
 
 function PlacesSection(props: {
   places: AdminPlaceRow[];
+  /**
+   * Lugar cuyo diálogo de edición debe abrirse ya (Task: edición rápida
+   * desde el mapa). Solo alimenta el estado INICIAL del componente: el
+   * objetivo se consume en el dashboard y cerrar el diálogo no lo re-abre.
+   */
+  presetEditing?: AdminPlaceRow | null;
   onEditSave: (row: AdminPlaceRow, values: PlaceFormValues) => Promise<void>;
   onFeature: (row: AdminPlaceRow) => Promise<void>;
   onDelete: (row: AdminPlaceRow) => Promise<void>;
 }) {
-  const [editing, setEditing] = useState<AdminPlaceRow | null>(null);
+  const [editing, setEditing] = useState<AdminPlaceRow | null>(
+    props.presetEditing ?? null
+  );
   const [deleting, setDeleting] = useState<AdminPlaceRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const { toast } = useToast();
