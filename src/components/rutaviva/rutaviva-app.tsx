@@ -152,6 +152,33 @@ export function RutavivaApp() {
     setSheetOpen(true);
   }, []);
 
+  /**
+   * Búsqueda «como suena» (24-nov-2026): el usuario eligió un resultado del
+   * buscador (mapa o lista). Centra el mapa en el lugar y abre su ficha;
+   * NO cambia de vista: quien busca desde el mapa se queda en el mapa y
+   * quien lo haga desde la lista simplemente ve la ficha.
+   */
+  const handleFinderPick = useCallback(
+    (p: SingularPlaceDTO) => {
+      focusOn({ lat: p.lat, lng: p.lng }, 16);
+      openDetail({
+        kind: "singular",
+        id: p.id,
+        name: p.name,
+        lat: p.lat,
+        lng: p.lng,
+        distanceKm: p.distanceKm,
+        category: p.category,
+        categoryLabel: p.categoryLabel,
+        description: p.description,
+        address: p.address,
+        tips: p.tips,
+        imageUrl: p.imageUrl,
+      });
+    },
+    [openDetail, focusOn]
+  );
+
   // ---- Botón atrás de Android (solo dentro de la APK con puente nativo) ----
   // Jerarquía: cierra la hoja de detalle → regresa al menú anterior →
   // desde el menú principal (mapa) sale de la app (comportamiento estándar).
@@ -397,6 +424,7 @@ export function RutavivaApp() {
                 onRequestGps={() => requestGps()}
                 placesError={placesError}
                 onRetryPlaces={() => void placesQuery.refetch()}
+                onFinderPick={handleFinderPick}
               />
             )}
             {view === "list" && (

@@ -16,6 +16,7 @@ import {
 import { categoryVisual } from "@/lib/category-visual";
 import { ScrollHint } from "./scroll-hint";
 import { CategoryIcon } from "./category-icon";
+import { PlaceFinder } from "./place-finder";
 import type {
   Coordinates,
   PlaceDetail,
@@ -131,6 +132,11 @@ type MapViewProps = {
    */
   placesError: string | null;
   onRetryPlaces: () => void;
+  /**
+   * Búsqueda «como suena» (24-nov-2026): el usuario eligió un resultado
+   * del buscador del mapa → la app centra el mapa ahí y abre la ficha.
+   */
+  onFinderPick: (p: SingularPlaceDTO) => void;
 };
 
 export function MapView({
@@ -146,6 +152,7 @@ export function MapView({
   gpsProblem,
   placesError,
   onRetryPlaces,
+  onFinderPick,
 }: MapViewProps) {
   // Refs de las franjas deslizables: el letrero «Desliza…» mide cuánto
   // contenido queda fuera de vista en cada una.
@@ -242,6 +249,14 @@ export function MapView({
             </button>
           ) : null}
         </div>
+
+        {/* Buscador «como suena»: exacto, parcial o con errores de ortografía.
+            El z-40 hace que sus sugerencias tapen los chips de categoría. */}
+        <PlaceFinder
+          places={places}
+          onPick={onFinderPick}
+          className="pointer-events-auto z-40"
+        />
 
         <div>
           <div

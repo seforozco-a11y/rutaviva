@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categoryVisual } from "@/lib/category-visual";
+import { searchPlaces } from "@/lib/fuzzy-search";
 import { CategoryIcon } from "./category-icon";
 import { PrivacyNotice } from "./privacy-notice";
 import {
@@ -57,20 +58,18 @@ export function PlacesList({
   const [category, setCategory] = useState<string>("all");
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
     let list = places;
     if (category !== "all") list = list.filter((p) => p.category === category);
-    if (q) {
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.categoryLabel.toLowerCase().includes(q)
+    // Búsqueda difusa «como suena» (24-nov-2026): tolera ortografía,
+    // acentos, ñ sin tilde y nombres parciales/fonéticos. Sin consulta,
+    // queda el orden por cercanía de siempre.
+    const q = query.trim();
+    if (!q) {
+      return [...list].sort(
+        (a, b) => (a.distanceKm ?? 1e9) - (b.distanceKm ?? 1e9)
       );
     }
-    return [...list].sort(
-      (a, b) => (a.distanceKm ?? 1e9) - (b.distanceKm ?? 1e9)
-    );
+    return searchPlaces(list, q, 60);
   }, [places, query, category]);
 
   return (
@@ -126,11 +125,15 @@ export function PlacesList({
               spellCheck={false}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre o categoría…"
-              aria-label="Buscar lugares singulares"
+              placeholder="Buscar: exacto, parcial o como suena…"
+              aria-label="Buscar lugares singulares por nombre, parcial o como suena"
               className="h-11 rounded-xl border-stone-200 bg-white pl-9 focus-visible:ring-emerald-600"
             />
           </div>
+          <p className="px-1 text-[11px] leading-snug text-stone-400">
+            No importa la ortografía ni los acentos: escribe una parte del
+            nombre o cómo lo escuchaste («escolera» sí encuentra la Escollera).
+          </p>
 
           <div className="rv-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             <Chip
@@ -158,8 +161,8 @@ export function PlacesList({
             <ErrorBox message={placesError} onRetry={onRetryPlaces} />
           ) : filtered.length === 0 ? (
             <EmptyState
-              title="Sin resultados"
-              text="Prueba con otra búsqueda o quita el filtro de categoría."
+              title="Sin coincidencias"
+              text="Escribe una parte del nombre o como lo escuchas — la búsqueda tolera errores de ortografía — o quita el filtro de categoría."
             />
           ) : (
             <ul className="space-y-3">
