@@ -1,14 +1,17 @@
 /**
  * Búsqueda difusa «como suena» para el catálogo de RutaViva.
  *
- * Objetivo (petición de la dueña, 24-nov-2026): encontrar un lugar sabiendo
- * solo CÓMO SUENA o una PARTE del nombre, sin saber escribirlo exacto.
- * Ejemplos que deben funcionar:
- *   «sin pedrito»       → Escollera de San Pedrito   (n/m trocadas por sonido)
- *   «marcaco municipal» → Mercado Municipal          (e/a trocadas)
- *   «la posaulca»       → … La Pozahualca            (h muda, z/s)
+ * Objetivo (petición de la dueña): encontrar un lugar sabiendo solo CÓMO
+ * SUENA o una PARTE del nombre, sin saber escribirlo exacto. Ejemplos que
+ * deben funcionar (batería en `scripts/test-fuzzy.ts`):
+ *   «mercdao»           → Mercado Municipal          (letras intercambiadas)
+ *   «marcaco municipal» → Mercado Municipal          (vocales trocadas)
+ *   «decampos»          → Playa De Campos            (palabras pegadas)
+ *   «playa de santiago» → Playa Santiago             (muletilla «de»)
+ *   «mercado manzanillo»→ Mercado Municipal          (palabra de más)
+ *   «polvorrete»        → Loncheria El Polvorete     (letra de más)
  *   «escolera»          → Escollera …                (letra faltante)
- *   «peñasco» / «penasco» → mismo resultado           (ñ sin tilde en el teclado)
+ *   «peñasco» / «penasco» → mismo resultado          (ñ sin tilde en el teclado)
  *
  * Todo corre en el CLIENTE sobre el catálogo ya cargado: sin llamadas al
  * servidor, instantáneo y sin costo. Cómo funciona:
@@ -18,11 +21,14 @@
  *    v→b, z→s, ce/ci→se/si, qu→k, c→k, ge/gi→je/ji, ll→y, h muda fuera,
  *    x→s, w→u y letras dobles colapsadas. La MISMA función se aplica al
  *    nombre y a la búsqueda: basta con que ambos «suenen igual».
- * 3. Puntaje: consulta completa como substring > palabra por palabra
- *    (igualdad exacta > prefijo > Levenshtein con tolerancia según
- *    longitud > clave fonética igual > subsecuencia de letras).
- *    Las palabras sueltas pueden apoyarse también en la categoría y la
- *    dirección (con peso menor): «playa san pedrito» funciona.
+ * 3. Puntaje: consulta completa como substring (con y SIN espacios) >
+ *    palabra por palabra (igualdad exacta > prefijo > Damerau-Levenshtein
+ *    con tolerancia según longitud > clave fonética igual > subsecuencia).
+ *    Con Damerau, intercambiar letras vecinas («mercdao») cuesta 1, no 2.
+ *    Las muletillas (de/del/la/el…) no rompen el emparejamiento y se
+ *    tolera UNA palabra desconocida si otra coincide fuerte («mercado
+ *    manzanillo»). Las palabras sueltas pueden apoyarse también en la
+ *    categoría y la dirección (con peso menor).
  * 4. Corte por puntaje mínimo y orden final: puntaje desc, luego
  *    distancia asc, luego nombre (determinista para evitar saltos).
  */
@@ -64,35 +70,50 @@ export function phoneticKey(s: string): string {
 }
 
 /**
- * Distancia de edición (Levenshtein) con poda: si supera `max`, devuelve
- * `max + 1` y corta temprano (no importa el valor exacto, solo el corte).
+ * Distancia Damerau-Levenshtein (OSA) con poda: si supera `max`, devuelve
+ * `max + 1` y corta temprano. A diferencia de Levenshtein simple, el
+ * intercambio de dos letras VECINAS cuesta 1 («mercdao»→«mercado» = 1),
+ * que es el error de tecleo más común.
  */
-function levenshtein(a: string, b: string, max: number): number {
+function editDistance(a: string, b: string, max: number): number {
   if (a === b) return 0;
   const alen = a.length;
   const blen = b.length;
   if (Math.abs(alen - blen) > max) return max + 1;
-  let prev = new Array<number>(blen + 1);
-  let curr = new Array<number>(blen + 1);
+  let prev2: number[] | null = null; // fila i-2 (para transposición)
+  let prev = new Array<number>(blen + 1); // fila i-1
+  let curr = new Array<number>(blen + 1); // fila i
   for (let j = 0; j <= blen; j++) prev[j] = j;
   for (let i = 1; i <= alen; i++) {
     curr[0] = i;
     let rowMin = i;
     const ca = a.charCodeAt(i - 1);
+    const caPrev = i > 1 ? a.charCodeAt(i - 2) : -1;
     for (let j = 1; j <= blen; j++) {
       const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
       let v = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+      if (
+        i > 1 &&
+        j > 1 &&
+        prev2 &&
+        ca === b.charCodeAt(j - 2) &&
+        caPrev === b.charCodeAt(j - 1)
+      ) {
+        // Transposición de adyacentes: d[i-2][j-2] + 1.
+        const t = prev2[j - 2] + 1;
+        if (t < v) v = t;
+      }
       if (v > max) v = max + 1;
       curr[j] = v;
       if (v < rowMin) rowMin = v;
     }
     if (rowMin > max) return max + 1;
-    const swap = prev;
+    const recycle = prev2;
+    prev2 = prev;
     prev = curr;
-    curr = swap;
+    curr = recycle ?? new Array<number>(blen + 1);
   }
-  const result = prev[blen];
-  return result ?? max + 1;
+  return prev[blen] ?? max + 1;
 }
 
 /** ¿Las letras de `q` aparecen en orden dentro de `t`? (tolerancia amplia) */
@@ -113,7 +134,17 @@ function tolerance(len: number): number {
 }
 
 /** Puntaje mínimo para considerar que un lugar «es el que el usuario oye». */
-const MIN_SCORE = 24;
+const MIN_SCORE = 20;
+
+/**
+ * Muletillas que la gente añade al hablar pero que no forman parte del
+ * nombre («playa DE Santiago», «el mercado DE Manzanillo»). Si no
+ * coinciden con nada, se ignoran en vez de romper la búsqueda.
+ */
+const FILLERS = new Set([
+  "de", "del", "la", "el", "los", "las", "y", "e", "o", "u",
+  "en", "al", "a", "un", "una", "para", "con", "que", "es",
+]);
 
 /** Campos de un lugar que la búsqueda puede usar (suficiente con el DTO). */
 export type SearchablePlace = {
@@ -158,10 +189,12 @@ function bestTokenScore(
         s = 40;
       } else if (qpt.length >= 2 && npt === qpt) {
         s = 36;
-      } else if (tol > 0 && qt.length >= 3) {
-        const dPhon = levenshtein(qpt, npt, tol);
+      } else if (tol > 0 && qt.length >= 3 && nt.length >= 3) {
+        // La distancia solo aplica a palabras de 3+ letras: evita que
+        // consultas cortas («hola») empaten con muletillas («la»).
+        const dPhon = editDistance(qpt, npt, tol);
         if (dPhon <= tol) s = 36 - 8 * dPhon;
-        const dNorm = levenshtein(qt, nt, tol);
+        const dNorm = editDistance(qt, nt, tol);
         if (dNorm <= tol) {
           const cand = 32 - 8 * dNorm;
           if (s == null || cand > s) s = cand;
@@ -194,12 +227,36 @@ function scorePlace(
   const namePhon = phoneticKey(item.name);
   let score = 0;
 
-  // 1) La consulta completa dentro del nombre (normalizado y fonético).
+  // 1) La consulta completa dentro del nombre (normalizado, fonético y
+  //    también SIN espacios: «decampos» ≈ «de campos»).
   if (qNorm.length >= 2 && nameNorm.includes(qNorm)) score = 100;
-  if (score < 100 && qPhon.length >= 3 && namePhon.includes(qPhon)) score = 85;
+  if (score < 100 && qPhon.length >= 4 && namePhon.includes(qPhon)) {
+    // 4+ letras: con 3, consultas cortas («hola»→«ola») caen dentro de
+    // palabras largas sin relación («takolandia»).
+    score = Math.max(score, 85);
+  }
+  const qCompact = qNorm.replace(/ /g, "");
+  const nameCompact = nameNorm.replace(/ /g, "");
+  if (score < 100 && qCompact.length >= 3 && nameCompact.includes(qCompact)) {
+    score = Math.max(score, 82);
+  }
+  if (score < 82) {
+    const qPhonCompact = qPhon.replace(/ /g, "");
+    const namePhonCompact = namePhon.replace(/ /g, "");
+    if (
+      // 4+ letras: con 3, fragmentos que cruzan fronteras de palabras
+      // («tortugariO LAguna» ⊃ «ola») causan falsos positivos.
+      qPhonCompact.length >= 4 &&
+      namePhonCompact.includes(qPhonCompact)
+    ) {
+      score = Math.max(score, 78);
+    }
+  }
 
-  // 2) Palabra por palabra: TODAS deben coincidir con algo.
-  if (score < 85) {
+  // 2) Palabra por palabra. Las muletillas (de/del/la…) que no coinciden
+  //    con nada se ignoran; se tolera UNA palabra desconocida si otra
+  //    coincide fuerte («mercado manzanillo» → Mercado Municipal).
+  if (score < 78) {
     const nameNormTokens = nameNorm.split(" ").filter(Boolean);
     const namePhonTokens = namePhon.split(" ").filter(Boolean);
     const auxNorm = normalizeText(
@@ -208,8 +265,8 @@ function scorePlace(
     const auxPhon = phoneticKey(`${item.categoryLabel ?? ""} ${item.address ?? ""}`);
     const auxNormTokens = auxNorm.split(" ").filter(Boolean);
     const auxPhonTokens = auxPhon.split(" ").filter(Boolean);
-    let sum = 0;
-    let all = true;
+
+    const perToken: Array<number | null> = [];
     for (let i = 0; i < qNormTokens.length; i++) {
       const qt = qNormTokens[i];
       if (!qt) continue;
@@ -222,14 +279,40 @@ function scorePlace(
         auxNormTokens,
         auxPhonTokens
       );
-      if (best == null) {
-        all = false;
-        break;
-      }
-      sum += best;
+      perToken.push(best);
     }
-    if (all) {
-      const avg = sum / qNormTokens.length;
+
+    let unknown = 0;
+    let sum = 0;
+    let count = 0;
+    let strong = false;
+    for (const s of perToken) {
+      if (s == null) {
+        unknown++;
+        continue;
+      }
+      sum += s;
+      count++;
+      if (s >= 60) strong = true;
+    }
+    // Muletillas que no coincidieron: no cuentan como desconocidas.
+    if (unknown > 0) {
+      for (let i = 0; i < perToken.length; i++) {
+        if (perToken[i] == null && FILLERS.has(qNormTokens[i] ?? "")) {
+          unknown--;
+        }
+      }
+    }
+    if (count > 0 && unknown === 0) {
+      const avg = sum / count;
+      if (avg > score) score = avg;
+    } else if (count > 0 && unknown === 1 && strong) {
+      // Una palabra de más (p. ej. el nombre de la ciudad) no rompe la
+      // búsqueda si el resto coincide con fuerza, pero penaliza: gana el
+      // lugar que cubre MÁS palabras de la consulta (cov) y el que no
+      // dejó desconocidas.
+      const cov = count / (count + 1);
+      const avg = (sum / count) * cov * 0.7;
       if (avg > score) score = avg;
     }
   }
@@ -288,4 +371,27 @@ export function searchPlaces<T extends SearchablePlace>(
       a.item.name.localeCompare(b.item.name)
   );
   return scored.slice(0, limit).map((r) => r.item);
+}
+
+/**
+ * Depuración (scripts/test-fuzzy.ts): devuelve nombre + puntaje de todos
+ * los lugares ordenados como lo haría searchPlaces, sin cortar.
+ */
+export function debugScores<T extends SearchablePlace>(
+  items: readonly T[],
+  rawQuery: string
+): Array<{ name: string; score: number }> {
+  const q = rawQuery.trim();
+  const qNorm = normalizeText(q);
+  if (!qNorm) return [];
+  const qPhon = phoneticKey(q);
+  const qNormTokens = qNorm.split(" ").filter(Boolean);
+  const qPhonTokens = qPhon.split(" ").filter(Boolean);
+  return items
+    .map((item) => ({
+      name: item.name,
+      score: scorePlace(item, qNorm, qPhon, qNormTokens, qPhonTokens),
+    }))
+    .filter((r) => r.score >= MIN_SCORE)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 }
